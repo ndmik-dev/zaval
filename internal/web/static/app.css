@@ -341,3 +341,37 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
   .releases,.rel-body{flex-direction:column}
   .rel-list,.rel-side{width:auto}
 }
+
+/* phone */
+@media (max-width:760px){
+  .app{flex-direction:column;min-height:100vh}
+  .rail{
+    width:auto;flex-direction:row;align-items:center;gap:10px;padding:10px 14px;
+    border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;
+  }
+  .rail .brand span,.rail .nav-group .up,.rail .proj,.rail-hint{display:none}
+  .rail .nav-group{flex-direction:row;gap:2px}
+  .rail-bottom{margin-top:0;margin-left:auto}
+  .nav{padding:6px 8px;white-space:nowrap}
+  .main{padding:18px 14px 90px}
+  .head{flex-wrap:wrap}
+  .head .filters{margin-left:0;width:100%;order:3}
+  .add{
+    position:fixed;left:0;right:0;bottom:0;margin:0;padding:10px 14px 18px;
+    background:var(--paper-2);border-top:1px solid var(--line);flex-wrap:wrap;gap:8px;z-index:5;
+  }
+  .add-input{flex:1 1 100%;height:44px;border-radius:22px}
+  .add-input .kbd{display:none}
+  .add-project{flex:1;height:40px}
+  .seg span{padding:10px 14px}
+  .task{padding:12px 12px;gap:11px}
+  .task.now{padding:13px 12px}
+  .tick{width:22px;height:22px;margin-top:0}
+  .acts{display:none}
+  .drawer{width:100vw;border-left:0;box-shadow:none}
+  .palette{margin:16px auto 0;width:calc(100vw - 20px)}
+  .palette-foot span:not(.mono):not(.grow){display:none}
+  .pgrid{grid-template-columns:1fr}
+  .banner{flex-wrap:wrap}
+  .banner .next{flex-basis:100%}
+}

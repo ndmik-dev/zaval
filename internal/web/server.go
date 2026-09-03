@@ -73,6 +73,12 @@ func New(st *store.Store) *Server {
 
 	static, _ := fs.Sub(staticFS, "static")
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	// The service worker must be served from the root to control the whole app.
+	s.mux.HandleFunc("GET /sw.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		body, _ := staticFS.ReadFile("static/sw.js")
+		w.Write(body)
+	})
 	s.mux.HandleFunc("GET /{$}", s.board)
 	s.mux.HandleFunc("GET /journal", s.journal)
 	s.mux.HandleFunc("GET /releases", s.releases)

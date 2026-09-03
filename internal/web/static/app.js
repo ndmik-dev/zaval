@@ -85,3 +85,7 @@ document.addEventListener('click', async (e) => {
   btn.textContent = 'Скопійовано';
   setTimeout(() => { btn.textContent = label; }, 1200);
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
