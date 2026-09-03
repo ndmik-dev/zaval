@@ -128,3 +128,29 @@ func TestSetTaskState(t *testing.T) {
 		t.Errorf("deleted task still found: %v", err)
 	}
 }
+
+func TestLinks(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	task, _ := s.CreateTask(atl.ID, "x", "backlog")
+	if _, err := s.AddLink(task.ID, "https://a", "jira", "ATL-1", ""); err != nil {
+		t.Fatal(err)
+	}
+	l2, _ := s.AddLink(task.ID, "https://b", "other", "b", "")
+	got, _ := s.Task(task.ID)
+	if len(got.Links) != 2 || got.Links[0].Label != "ATL-1" {
+		t.Fatalf("links: %+v", got.Links)
+	}
+	s.DeleteLink(l2.ID)
+	got, _ = s.Task(task.ID)
+	if len(got.Links) != 1 {
+		t.Fatalf("after delete: %+v", got.Links)
+	}
+	s.DeleteTask(task.ID)
+	var n int
+	s.db.QueryRow(`select count(*) from task_links`).Scan(&n)
+	if n != 0 {
+		t.Error("links must cascade on task delete")
+	}
+}

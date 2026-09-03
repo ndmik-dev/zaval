@@ -6,11 +6,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ndmik-dev/zaval/internal/links"
 	"github.com/ndmik-dev/zaval/internal/store"
 )
 
 func (s *Server) createTask(w http.ResponseWriter, r *http.Request) {
-	title := strings.TrimSpace(r.FormValue("title"))
+	title, found := links.Parse(strings.TrimSpace(r.FormValue("title")))
 	if title == "" {
 		s.respondBoard(w, r)
 		return
@@ -20,9 +21,16 @@ func (s *Server) createTask(w http.ResponseWriter, r *http.Request) {
 	if state != "now" {
 		state = "backlog"
 	}
-	if _, err := s.store.CreateTask(projectID, title, state); err != nil {
+	task, err := s.store.CreateTask(projectID, title, state)
+	if err != nil {
 		s.fail(w, "create task", err)
 		return
+	}
+	for _, l := range found {
+		if _, err := s.store.AddLink(task.ID, l.URL, l.Kind, l.Label, l.Meta); err != nil {
+			s.fail(w, "add link", err)
+			return
+		}
 	}
 	s.respondBoard(w, r)
 }
