@@ -45,3 +45,40 @@ func TestMigrateAndSeed(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTasks(t *testing.T) {
+	s := testStore(t)
+	if err := s.Seed(); err != nil {
+		t.Fatal(err)
+	}
+	atl, _ := s.ProjectBySlug("atl")
+	nim, _ := s.ProjectBySlug("nim")
+	a, err := s.CreateTask(atl.ID, "first", "now")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !a.NowSince.Valid {
+		t.Error("task created in now must have now_since")
+	}
+	if _, err := s.CreateTask(nim.ID, "second", "backlog"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateTask(atl.ID, "third", "backlog"); err != nil {
+		t.Fatal(err)
+	}
+	now, _ := s.TasksByState("now")
+	backlog, _ := s.TasksByState("backlog")
+	if len(now) != 1 || len(backlog) != 2 {
+		t.Fatalf("now=%d backlog=%d", len(now), len(backlog))
+	}
+	if backlog[0].Title != "second" || backlog[1].Title != "third" {
+		t.Errorf("backlog order wrong: %s, %s", backlog[0].Title, backlog[1].Title)
+	}
+	if now[0].Project.Name != "Atlas" {
+		t.Errorf("project not joined: %+v", now[0].Project)
+	}
+	counts, _ := s.ProjectCounts()
+	if counts[atl.ID] != (Counts{Now: 1, Backlog: 1}) || counts[nim.ID] != (Counts{Backlog: 1}) {
+		t.Errorf("counts: %+v", counts)
+	}
+}

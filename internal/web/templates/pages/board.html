@@ -1,3 +1,36 @@
 {{define "content"}}
-<h1>Дошка</h1>
+<header class="head">
+  <h1>{{.Date}}</h1>
+  <span class="head-note">закрито сьогодні <span class="mono">{{len .DoneToday}}</span></span>
+</header>
+
+<section class="sec">
+  <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
+  <div class="list" id="now">
+    {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty">Порожньо. Перетягни щось із беклогу або додай через ⌘K.</div>{{end}}
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <span class="up">Беклог</span><span class="mono n">{{len .Backlog}}</span><span class="rule"></span>
+    <nav class="filters">
+      <a{{if eq .Filter ""}} class="active"{{end}} href="/">Усі</a>
+      {{range .Projects}}{{if eq .Kind "work"}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/?p={{.Slug}}">{{.Name}}</a>{{end}}{{end}}
+      <a{{if eq .Filter "pet"}} class="active"{{end}} href="/?p=pet">Своє</a>
+    </nav>
+  </div>
+  <div class="list" id="backlog">
+    {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty">Беклог порожній.</div>{{end}}
+  </div>
+</section>
+
+{{if .DoneToday}}
+<section class="sec">
+  <div class="sec-head"><span class="up">Готово сьогодні</span><span class="mono n">{{len .DoneToday}}</span><span class="rule"></span></div>
+  <div class="list done-list" id="done">
+    {{range .DoneToday}}{{template "task_row" .}}{{end}}
+  </div>
+</section>
+{{end}}
 {{end}}

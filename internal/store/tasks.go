@@ -1,0 +1,168 @@
+package store
+
+import (
+	"database/sql"
+	"strings"
+)
+
+type Task struct {
+	ID        int64
+	ProjectID int64
+	Title     string
+	State     string
+	Notes     string
+	Position  int
+	ReleaseID sql.NullInt64
+	CreatedAt string
+	NowSince  sql.NullString
+	DoneAt    sql.NullString
+
+	Project    Project
+	Links      []Link
+	StepsDone  int
+	StepsTotal int
+}
+
+type Link struct {
+	ID     int64
+	TaskID int64
+	URL    string
+	Kind   string
+	Label  string
+	Meta   string
+}
+
+type Counts struct{ Now, Backlog int }
+
+// Timestamps are stored the way SQLite's datetime('now') writes them, in UTC.
+const TimeLayout = "2006-01-02 15:04:05"
+
+const taskSelect = `
+select t.id, t.project_id, t.title, t.state, t.notes, t.position, t.release_id, t.created_at, t.now_since, t.done_at,
+       ` + projectColsPrefixed + `,
+       (select count(*) from task_steps st where st.task_id = t.id and st.done = 1),
+       (select count(*) from task_steps st where st.task_id = t.id)
+from tasks t join projects p on p.id = t.project_id `
+
+const projectColsPrefixed = `p.id, p.name, p.slug, p.color, p.kind, p.jira_key, p.jira_host, p.repos, p.channels, p.on_board, p.position`
+
+func scanTask(rows *sql.Rows) (Task, error) {
+	var t Task
+	p := &t.Project
+	err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.State, &t.Notes, &t.Position, &t.ReleaseID, &t.CreatedAt, &t.NowSince, &t.DoneAt,
+		&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.JiraKey, &p.JiraHost, &p.Repos, &p.Channels, &p.OnBoard, &p.Position,
+		&t.StepsDone, &t.StepsTotal)
+	return t, err
+}
+
+func (s *Store) queryTasks(where string, args ...any) ([]Task, error) {
+	rows, err := s.db.Query(taskSelect+where, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Task
+	for rows.Next() {
+		t, err := scanTask(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, s.attachLinks(out)
+}
+
+func (s *Store) attachLinks(tasks []Task) error {
+	if len(tasks) == 0 {
+		return nil
+	}
+	byID := make(map[int64]*Task, len(tasks))
+	ids := make([]string, 0, len(tasks))
+	args := make([]any, 0, len(tasks))
+	for i := range tasks {
+		byID[tasks[i].ID] = &tasks[i]
+		ids = append(ids, "?")
+		args = append(args, tasks[i].ID)
+	}
+	rows, err := s.db.Query(`select id, task_id, url, kind, label, meta from task_links where task_id in (`+strings.Join(ids, ",")+`) order by position, id`, args...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var l Link
+		if err := rows.Scan(&l.ID, &l.TaskID, &l.URL, &l.Kind, &l.Label, &l.Meta); err != nil {
+			return err
+		}
+		t := byID[l.TaskID]
+		t.Links = append(t.Links, l)
+	}
+	return rows.Err()
+}
+
+func (s *Store) TasksByState(state string) ([]Task, error) {
+	return s.queryTasks(`where t.state = ? order by t.position, t.id`, state)
+}
+
+func (s *Store) DoneToday() ([]Task, error) {
+	return s.queryTasks(`where t.state = 'done' and date(t.done_at, 'localtime') = date('now', 'localtime') order by t.done_at desc`)
+}
+
+func (s *Store) Task(id int64) (Task, error) {
+	ts, err := s.queryTasks(`where t.id = ?`, id)
+	if err != nil {
+		return Task{}, err
+	}
+	if len(ts) == 0 {
+		return Task{}, ErrNotFound
+	}
+	return ts[0], nil
+}
+
+func (s *Store) CreateTask(projectID int64, title, state string) (Task, error) {
+	var nowSince any
+	if state == "now" {
+		nowSince = sqlNow
+	}
+	res, err := s.db.Exec(`insert into tasks (project_id, title, state, now_since, position)
+		values (?, ?, ?, ?, coalesce((select max(position) from tasks where state = ?), 0) + 1)`,
+		projectID, title, state, nowSince, state)
+	if err != nil {
+		return Task{}, err
+	}
+	id, _ := res.LastInsertId()
+	return s.Task(id)
+}
+
+func (s *Store) ProjectCounts() (map[int64]Counts, error) {
+	rows, err := s.db.Query(`select project_id, state, count(*) from tasks where state in ('now', 'backlog') group by project_id, state`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64]Counts{}
+	for rows.Next() {
+		var pid int64
+		var state string
+		var n int
+		if err := rows.Scan(&pid, &state, &n); err != nil {
+			return nil, err
+		}
+		c := out[pid]
+		if state == "now" {
+			c.Now = n
+		} else {
+			c.Backlog = n
+		}
+		out[pid] = c
+	}
+	return out, rows.Err()
+}
+
+// sqlNow is passed as a bound value so callers never format timestamps themselves.
+type sqlNowType struct{}
+
+var sqlNow = sqlNowType{}

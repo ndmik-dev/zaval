@@ -1,0 +1,17 @@
+{{define "task_row"}}
+<div class="task {{.State}}" id="task-{{.ID}}" style="--project:{{.Project.Color}}">
+  <span class="tick" aria-hidden="true"></span>
+  <div class="body">
+    <div class="line">
+      <span class="title">{{.Title}}</span>
+      {{if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}}</span>{{end}}
+      {{if eq .Project.Kind "pet"}}<span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>{{end}}
+      {{if and (eq .State "backlog") .Links}}{{template "chips" .Links}}{{end}}
+    </div>
+    {{if and (ne .State "backlog") .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
+  </div>
+  {{if .StepsTotal}}<span class="mono steps">{{.StepsDone}}/{{.StepsTotal}}</span>{{end}}
+</div>
+{{end}}
+
+{{define "chips"}}{{range .}}<a class="chip" href="{{.URL}}" target="_blank" rel="noopener">{{if .Label}}<span class="{{if eq .Kind "jira"}}mono{{end}}">{{.Label}}</span>{{else}}{{.Kind}}{{end}}{{if .Meta}}<span class="sep">·</span><span class="meta">{{.Meta}}</span>{{end}}</a>{{end}}{{end}}

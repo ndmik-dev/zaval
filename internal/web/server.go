@@ -16,6 +16,20 @@ var templateFS embed.FS
 //go:embed static
 var staticFS embed.FS
 
+var funcs = template.FuncMap{
+	"day":  ukDay,
+	"dict": dict,
+}
+
+// dict lets a template pass several named values to a sub-template.
+func dict(kv ...any) map[string]any {
+	m := make(map[string]any, len(kv)/2)
+	for i := 0; i+1 < len(kv); i += 2 {
+		m[kv[i].(string)] = kv[i+1]
+	}
+	return m
+}
+
 type Server struct {
 	mux   *http.ServeMux
 	pages map[string]*template.Template
@@ -45,7 +59,7 @@ func (s *Server) parseTemplates() {
 	}
 	for _, p := range pages {
 		name := p[len("templates/pages/") : len(p)-len(".html")]
-		s.pages[name] = template.Must(template.ParseFS(templateFS,
+		s.pages[name] = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS,
 			"templates/layout.html", "templates/partials/*.html", p))
 	}
 }
@@ -60,8 +74,4 @@ func (s *Server) render(w http.ResponseWriter, page string, data any) {
 	if err := t.ExecuteTemplate(w, "layout", data); err != nil {
 		log.Printf("render %s: %v", page, err)
 	}
-}
-
-func (s *Server) board(w http.ResponseWriter, r *http.Request) {
-	s.render(w, "board", map[string]any{"Title": "Дошка"})
 }

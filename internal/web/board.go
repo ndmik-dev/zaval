@@ -1,0 +1,102 @@
+package web
+
+import (
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/ndmik-dev/zaval/internal/store"
+)
+
+type projectItem struct {
+	store.Project
+	store.Counts
+}
+
+type taskRow struct {
+	store.Task
+	Age int
+}
+
+type boardData struct {
+	Title       string
+	Nav         string
+	Date        string
+	Projects    []projectItem
+	HiddenCount int
+	Filter      string
+	Now         []taskRow
+	Backlog     []taskRow
+	DoneToday   []taskRow
+}
+
+func (s *Server) board(w http.ResponseWriter, r *http.Request) {
+	filter := r.URL.Query().Get("p")
+	data, err := s.boardData(filter)
+	if err != nil {
+		log.Println("board:", err)
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	s.render(w, "board", data)
+}
+
+func (s *Server) boardData(filter string) (boardData, error) {
+	now := time.Now()
+	d := boardData{Title: "Дошка", Nav: "board", Date: ukDate(now), Filter: filter}
+
+	projects, err := s.store.Projects()
+	if err != nil {
+		return d, err
+	}
+	counts, err := s.store.ProjectCounts()
+	if err != nil {
+		return d, err
+	}
+	for _, p := range projects {
+		if !p.OnBoard {
+			d.HiddenCount++
+			continue
+		}
+		d.Projects = append(d.Projects, projectItem{p, counts[p.ID]})
+	}
+
+	load := func(ts []store.Task, err error) ([]taskRow, error) {
+		if err != nil {
+			return nil, err
+		}
+		var rows []taskRow
+		for _, t := range ts {
+			if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
+				continue
+			}
+			row := taskRow{Task: t}
+			if t.State == "now" && t.NowSince.Valid {
+				row.Age = ageDays(t.NowSince.String, now)
+			}
+			rows = append(rows, row)
+		}
+		return rows, nil
+	}
+	if d.Now, err = load(s.store.TasksByState("now")); err != nil {
+		return d, err
+	}
+	if d.Backlog, err = load(s.store.TasksByState("backlog")); err != nil {
+		return d, err
+	}
+	if d.DoneToday, err = load(s.store.DoneToday()); err != nil {
+		return d, err
+	}
+	return d, nil
+}
+
+func matchesFilter(p store.Project, filter string) bool {
+	switch filter {
+	case "":
+		return true
+	case "pet":
+		return p.Kind == "pet"
+	default:
+		return p.Slug == filter
+	}
+}
