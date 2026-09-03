@@ -214,3 +214,15 @@ func (s *Store) DeleteTask(id int64) error {
 	_, err := s.db.Exec(`delete from tasks where id = ?`, id)
 	return err
 }
+
+// SearchTasks finds tasks by title substring, open ones first.
+func (s *Store) SearchTasks(q string, limit int) ([]Task, error) {
+	return s.queryTasks(`where t.title like ? escape '\'
+		order by case t.state when 'now' then 0 when 'backlog' then 1 else 2 end, t.done_at desc, t.position limit ?`,
+		"%"+escapeLike(q)+"%", limit)
+}
+
+func escapeLike(s string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return r.Replace(s)
+}

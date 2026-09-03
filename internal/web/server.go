@@ -44,6 +44,8 @@ func New(st *store.Store) *Server {
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	s.mux.HandleFunc("GET /{$}", s.board)
 	s.mux.HandleFunc("POST /tasks", s.createTask)
+	s.mux.HandleFunc("GET /palette", s.palette)
+	s.mux.HandleFunc("POST /palette", s.createQuick)
 	s.mux.HandleFunc("POST /tasks/{id}/state", s.setTaskState)
 	s.mux.HandleFunc("DELETE /tasks/{id}", s.deleteTask)
 	s.mux.HandleFunc("POST /tasks/{id}", s.updateTask)

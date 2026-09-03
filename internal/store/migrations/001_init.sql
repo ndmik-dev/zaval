@@ -1,5 +1,5 @@
 create table projects (
-  id         integer primary key,
+  id         integer primary key autoincrement,
   name       text not null unique,
   slug       text not null unique,
   color      text not null,
@@ -13,7 +13,7 @@ create table projects (
 );
 
 create table releases (
-  id          integer primary key,
+  id          integer primary key autoincrement,
   project_id  integer not null references projects(id),
   name        text not null,
   date        text,
@@ -22,7 +22,7 @@ create table releases (
 );
 
 create table tasks (
-  id          integer primary key,
+  id          integer primary key autoincrement,
   project_id  integer not null references projects(id),
   title       text not null,
   state       text not null default 'backlog' check (state in ('now', 'backlog', 'done')),
@@ -36,7 +36,7 @@ create table tasks (
 create index tasks_state_position on tasks(state, position);
 
 create table task_links (
-  id       integer primary key,
+  id       integer primary key autoincrement,
   task_id  integer not null references tasks(id) on delete cascade,
   url      text not null,
   kind     text not null default '',
@@ -46,7 +46,7 @@ create table task_links (
 );
 
 create table task_steps (
-  id       integer primary key,
+  id       integer primary key autoincrement,
   task_id  integer not null references tasks(id) on delete cascade,
   title    text not null,
   done     integer not null default 0,
@@ -54,7 +54,7 @@ create table task_steps (
 );
 
 create table release_templates (
-  id          integer primary key,
+  id          integer primary key autoincrement,
   project_id  integer not null references projects(id) on delete cascade,
   phase       text not null check (phase in ('before', 'after')),
   title       text not null,
@@ -65,7 +65,7 @@ create table release_templates (
 );
 
 create table release_items (
-  id          integer primary key,
+  id          integer primary key autoincrement,
   release_id  integer not null references releases(id) on delete cascade,
   phase       text not null check (phase in ('before', 'after')),
   title       text not null,

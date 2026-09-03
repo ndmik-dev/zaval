@@ -179,3 +179,25 @@ func TestStepsAndUpdate(t *testing.T) {
 		t.Fatalf("after update: %+v", got)
 	}
 }
+
+func TestSearchTasks(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	s.CreateTask(atl.ID, "Ретраї webhook", "backlog")
+	n, _ := s.CreateTask(atl.ID, "Webhook алерт", "now")
+	d, _ := s.CreateTask(atl.ID, "webhook docs", "backlog")
+	s.SetTaskState(d.ID, "done")
+	s.CreateTask(atl.ID, "100% unrelated", "backlog")
+
+	got, err := s.SearchTasks("webhook", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 || got[0].ID != n.ID || got[2].State != "done" {
+		t.Fatalf("search: %+v", got)
+	}
+	if got, _ := s.SearchTasks("%", 10); len(got) != 1 {
+		t.Errorf("like wildcard must be escaped, got %d", len(got))
+	}
+}
