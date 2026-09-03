@@ -560,7 +560,7 @@ dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
 
 /* focus rings, one style everywhere */
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,.dd-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
-.add-input input:focus-visible,.drawer-title:focus-visible,.drawer-notes:focus-visible,.inline-add input:focus-visible,.picker input:focus-visible,.field input:focus-visible,.pname:focus-visible{outline:0}
+.add-input input:focus-visible,.drawer-title:focus-visible,.drawer-notes:focus-visible,.inline-add input:focus-visible,.picker input:focus-visible,.field input:focus-visible,.pname:focus-visible,.palette-input input:focus-visible,.drawer-wait input:focus-visible,.login input:focus-visible,.rel-name-input:focus-visible,.titem input:focus-visible{outline:0}
 
 /* details */
 .sec-head .up{letter-spacing:.09em}
