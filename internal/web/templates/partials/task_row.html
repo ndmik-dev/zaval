@@ -1,9 +1,9 @@
 {{define "task_row"}}
-<div class="task {{.State}}" id="task-{{.ID}}" style="--project:{{.Project.Color}}" data-open="/?t={{.ID}}">
+<div class="task {{.State}}" id="task-{{.ID}}" style="--project:{{.Project.Color}}" data-open="1">
   <button class="tick" type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"{{if eq .State "done"}}backlog{{else}}done{{end}}"}' aria-label="{{if eq .State "done"}}Повернути в беклог{{else}}Готово{{end}}"></button>
   <div class="body">
     <div class="line">
-      <a class="title" href="/?t={{.ID}}" hx-get="/?t={{.ID}}" hx-push-url="true">{{.Title}}</a>
+      <a class="title" href="/?t={{.ID}}{{if .Filter}}&p={{.Filter}}{{end}}" hx-get="/?t={{.ID}}{{if .Filter}}&p={{.Filter}}{{end}}" hx-push-url="true">{{.Title}}</a>
       {{if .Waiting}}<span class="wait"><svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 4.2V7l1.9 1.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>{{.Waiting}}{{if ge .Age 3}} · {{.Age}} дн.{{end}}</span>
       {{else if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}}</span>{{end}}
       {{if eq .State "backlog"}}{{template "chips" .Links}}{{end}}

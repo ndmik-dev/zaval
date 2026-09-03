@@ -16,7 +16,8 @@ type projectItem struct {
 
 type taskRow struct {
 	store.Task
-	Age int
+	Age    int
+	Filter string // active project filter, kept in the row's links
 }
 
 type boardData struct {
@@ -83,7 +84,7 @@ func (s *Server) boardData(filter string, openID int64, daily string) (boardData
 			if t.Waiting != "" && t.State != "done" {
 				continue // shown in its own section
 			}
-			row := taskRow{Task: t}
+			row := taskRow{Task: t, Filter: filter}
 			if t.State == "now" && t.NowSince.Valid {
 				row.Age = ageDays(t.NowSince.String, now)
 			}
@@ -107,7 +108,7 @@ func (s *Server) boardData(filter string, openID int64, daily string) (boardData
 		if !matchesFilter(t.Project, filter) {
 			continue
 		}
-		row := taskRow{Task: t}
+		row := taskRow{Task: t, Filter: filter}
 		if t.WaitingSince.Valid {
 			row.Age = ageDays(t.WaitingSince.String, now)
 		}
