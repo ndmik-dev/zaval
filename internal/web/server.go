@@ -65,10 +65,11 @@ type Server struct {
 	mux   *http.ServeMux
 	pages map[string]*template.Template
 	store *store.Store
+	auth  *auth
 }
 
-func New(st *store.Store) *Server {
-	s := &Server{mux: http.NewServeMux(), pages: map[string]*template.Template{}, store: st}
+func New(st *store.Store, password string) *Server {
+	s := &Server{mux: http.NewServeMux(), pages: map[string]*template.Template{}, store: st, auth: newAuth(password)}
 	s.parseTemplates()
 
 	static, _ := fs.Sub(staticFS, "static")
@@ -79,6 +80,9 @@ func New(st *store.Store) *Server {
 		body, _ := staticFS.ReadFile("static/sw.js")
 		w.Write(body)
 	})
+	s.mux.HandleFunc("GET /login", s.loginPage)
+	s.mux.HandleFunc("POST /login", s.login)
+	s.mux.HandleFunc("POST /logout", s.logout)
 	s.mux.HandleFunc("GET /{$}", s.board)
 	s.mux.HandleFunc("GET /journal", s.journal)
 	s.mux.HandleFunc("GET /releases", s.releases)
@@ -113,7 +117,7 @@ func New(st *store.Store) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+	s.auth.middleware(s.mux).ServeHTTP(w, r)
 }
 
 // Each page gets its own template set: layout + partials + the page file,

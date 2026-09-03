@@ -1,0 +1,19 @@
+{{define "login"}}<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вхід — Day Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<form class="login" method="post" action="/login">
+  <div class="brand"><span>Day Board</span></div>
+  <input type="password" name="password" placeholder="Пароль" autofocus required autocomplete="current-password">
+  {{if .Error}}<div class="notice">Не той пароль</div>{{end}}
+  <button type="submit" class="btn primary">Увійти</button>
+</form>
+</body>
+</html>{{end}}
+{{define "content"}}{{end}}

@@ -1,0 +1,14 @@
+services:
+  dayboard:
+    build: ..
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"   # put Caddy/nginx with TLS in front
+    environment:
+      PASSWORD: ${PASSWORD:?set PASSWORD in .env}
+      TZ: Europe/Kyiv
+    volumes:
+      - data:/data
+
+volumes:
+  data:

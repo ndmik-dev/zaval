@@ -5,3 +5,4 @@
 /zaval
 .DS_Store
 /.claude/
+/deploy/.env

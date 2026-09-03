@@ -8,10 +8,11 @@ type shell struct {
 	Projects    []projectItem
 	HiddenCount int
 	Open        *taskRow
+	AuthOn      bool
 }
 
 func (s *Server) shell(title, nav, filter string) (shell, error) {
-	sh := shell{Title: title, Nav: nav, Filter: filter}
+	sh := shell{Title: title, Nav: nav, Filter: filter, AuthOn: s.auth.enabled()}
 	projects, err := s.store.Projects()
 	if err != nil {
 		return sh, err

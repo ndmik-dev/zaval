@@ -375,3 +375,10 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
   .banner{flex-wrap:wrap}
   .banner .next{flex-basis:100%}
 }
+
+/* login */
+.login{max-width:320px;margin:120px auto;display:flex;flex-direction:column;gap:12px;padding:0 20px}
+.login input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:10px 12px;outline:0}
+.login input:focus{outline:2px solid var(--ink);outline-offset:-1px;border-color:transparent}
+.login .btn{align-self:flex-start}
+.nav.logout{font:inherit;background:none;cursor:pointer;width:100%;text-align:left;color:var(--faint)}

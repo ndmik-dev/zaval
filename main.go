@@ -19,7 +19,7 @@ func main() {
 	if err := st.Seed(); err != nil {
 		log.Fatal(err)
 	}
-	srv := web.New(st)
+	srv := web.New(st, os.Getenv("PASSWORD"))
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, srv); err != nil {
 		log.Fatal(err)
