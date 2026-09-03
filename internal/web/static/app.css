@@ -94,3 +94,38 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .chip:hover{color:var(--ink);border-color:#B9BDB5;background:var(--card-2)}
 .chip .sep{color:#B9BDB5}
 .chip .meta{font-weight:500;color:var(--faint)}
+
+/* add bar */
+.add{display:flex;gap:8px;margin-bottom:22px}
+.add-input{
+  flex:1;display:flex;align-items:center;gap:9px;background:var(--card);
+  border:1px solid var(--line);border-radius:7px;padding:0 12px;color:var(--faint);
+}
+.add-input input{flex:1;min-width:0;font:inherit;color:var(--ink);background:none;border:0;padding:10px 0;outline:0}
+.add-input input::placeholder{color:var(--faint)}
+.add-input:focus-within{outline:2px solid var(--ink);outline-offset:-1px;border-color:transparent}
+.add-project{
+  font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);background:var(--card);
+  border:1px solid var(--line);border-radius:7px;padding:0 12px;cursor:pointer;
+}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg label{display:flex;cursor:pointer}
+.seg input{position:absolute;opacity:0;width:0;height:0}
+.seg span{padding:10px 14px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg input:checked + span{background:var(--ink);color:var(--card)}
+.seg input:focus-visible + span{outline:2px solid var(--ink);outline-offset:-2px}
+
+/* row actions */
+.tick{cursor:pointer;padding:0}
+.tick:hover{border-color:var(--ink)}
+.tick:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.task.done .tick{cursor:pointer}
+.acts{display:flex;gap:2px;flex:none;opacity:0;transition:opacity .12s}
+.task:hover .acts,.task:focus-within .acts{opacity:1}
+.acts button{
+  font:inherit;font-size:12px;background:none;border:0;cursor:pointer;color:var(--muted);
+  padding:2px 6px;border-radius:5px;
+}
+.acts button:hover{background:#EDEEE8;color:var(--ink)}
+.acts .del:hover{color:var(--attention)}
+.task.now .acts{margin-top:-1px}

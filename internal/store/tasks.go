@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 )
 
@@ -166,3 +167,40 @@ func (s *Store) ProjectCounts() (map[int64]Counts, error) {
 type sqlNowType struct{}
 
 var sqlNow = sqlNowType{}
+
+// SetTaskState moves a task between now, backlog and done, keeping the
+// timestamps the board relies on (age in "now", done today) consistent.
+func (s *Store) SetTaskState(id int64, state string) error {
+	var q string
+	switch state {
+	case "now":
+		q = `update tasks set state = 'now', now_since = coalesce(now_since, ?), done_at = null,
+			position = coalesce((select max(position) from tasks where state = 'now'), 0) + 1 where id = ?`
+	case "backlog":
+		q = `update tasks set state = 'backlog', now_since = null, done_at = null,
+			position = coalesce((select max(position) from tasks where state = 'backlog'), 0) + 1 where id = ?`
+	case "done":
+		q = `update tasks set state = 'done', done_at = ?, position = 0 where id = ?`
+	default:
+		return fmt.Errorf("bad state %q", state)
+	}
+	var res sql.Result
+	var err error
+	if state == "backlog" {
+		res, err = s.db.Exec(q, id)
+	} else {
+		res, err = s.db.Exec(q, sqlNow, id)
+	}
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Store) DeleteTask(id int64) error {
+	_, err := s.db.Exec(`delete from tasks where id = ?`, id)
+	return err
+}

@@ -82,3 +82,49 @@ func TestTasks(t *testing.T) {
 		t.Errorf("counts: %+v", counts)
 	}
 }
+
+func TestSetTaskState(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	task, _ := s.CreateTask(atl.ID, "x", "backlog")
+
+	if err := s.SetTaskState(task.ID, "now"); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := s.Task(task.ID)
+	if got.State != "now" || !got.NowSince.Valid {
+		t.Fatalf("after now: %+v", got)
+	}
+	since := got.NowSince.String
+
+	// Done keeps now_since (history), sets done_at.
+	s.SetTaskState(task.ID, "done")
+	got, _ = s.Task(task.ID)
+	if got.State != "done" || !got.DoneAt.Valid || got.NowSince.String != since {
+		t.Fatalf("after done: %+v", got)
+	}
+	today, _ := s.DoneToday()
+	if len(today) != 1 {
+		t.Fatalf("done today: %d", len(today))
+	}
+
+	// Back to backlog clears both.
+	s.SetTaskState(task.ID, "backlog")
+	got, _ = s.Task(task.ID)
+	if got.State != "backlog" || got.NowSince.Valid || got.DoneAt.Valid {
+		t.Fatalf("after backlog: %+v", got)
+	}
+	if err := s.SetTaskState(999, "now"); err != ErrNotFound {
+		t.Errorf("missing task: %v", err)
+	}
+	if err := s.SetTaskState(task.ID, "weird"); err == nil {
+		t.Error("bad state accepted")
+	}
+	if err := s.DeleteTask(task.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Task(task.ID); err != ErrNotFound {
+		t.Errorf("deleted task still found: %v", err)
+	}
+}

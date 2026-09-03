@@ -9,9 +9,11 @@
 <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-<div class="app">
-  {{template "rail" .}}
-  <main class="main">{{template "content" .}}</main>
-</div>
+{{template "app" .}}
 </body>
 </html>{{end}}
+
+{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph">
+  {{template "rail" .}}
+  <main class="main">{{template "content" .}}</main>
+</div>{{end}}

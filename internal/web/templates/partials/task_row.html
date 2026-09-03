@@ -1,6 +1,6 @@
 {{define "task_row"}}
 <div class="task {{.State}}" id="task-{{.ID}}" style="--project:{{.Project.Color}}">
-  <span class="tick" aria-hidden="true"></span>
+  <button class="tick" type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"{{if eq .State "done"}}backlog{{else}}done{{end}}"}' aria-label="{{if eq .State "done"}}Повернути в беклог{{else}}Готово{{end}}"></button>
   <div class="body">
     <div class="line">
       <span class="title">{{.Title}}</span>
@@ -11,6 +11,12 @@
     {{if and (ne .State "backlog") .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
   </div>
   {{if .StepsTotal}}<span class="mono steps">{{.StepsDone}}/{{.StepsTotal}}</span>{{end}}
+  {{if ne .State "done"}}
+  <div class="acts">
+    {{if eq .State "backlog"}}<button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}'>У Зараз</button>{{else}}<button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}'>У беклог</button>{{end}}
+    <button type="button" class="del" hx-delete="/tasks/{{.ID}}" hx-confirm="Видалити задачу?" aria-label="Видалити">✕</button>
+  </div>
+  {{end}}
 </div>
 {{end}}
 

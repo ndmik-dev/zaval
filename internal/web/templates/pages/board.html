@@ -4,6 +4,21 @@
   <span class="head-note">закрито сьогодні <span class="mono">{{len .DoneToday}}</span></span>
 </header>
 
+<form class="add" hx-post="/tasks" hx-on:htmx:after:request="this.reset()">
+  <input type="hidden" name="p" value="{{.Filter}}">
+  <label class="add-input">
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input name="title" type="text" placeholder="Що треба зробити? Вклей лінк — розпізнається сам" autocomplete="off" required>
+  </label>
+  <select name="project_id" class="add-project">
+    {{range .Projects}}<option value="{{.ID}}"{{if eq $.Filter .Slug}} selected{{end}}>{{.Name}}</option>{{end}}
+  </select>
+  <div class="seg">
+    <label><input type="radio" name="state" value="now"><span>Зараз</span></label>
+    <label><input type="radio" name="state" value="backlog" checked><span>Беклог</span></label>
+  </div>
+</form>
+
 <section class="sec">
   <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
   <div class="list" id="now">

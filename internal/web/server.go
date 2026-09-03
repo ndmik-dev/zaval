@@ -43,6 +43,9 @@ func New(st *store.Store) *Server {
 	static, _ := fs.Sub(staticFS, "static")
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	s.mux.HandleFunc("GET /{$}", s.board)
+	s.mux.HandleFunc("POST /tasks", s.createTask)
+	s.mux.HandleFunc("POST /tasks/{id}/state", s.setTaskState)
+	s.mux.HandleFunc("DELETE /tasks/{id}", s.deleteTask)
 	return s
 }
 
@@ -65,13 +68,19 @@ func (s *Server) parseTemplates() {
 }
 
 func (s *Server) render(w http.ResponseWriter, page string, data any) {
+	s.renderPart(w, page, "layout", data)
+}
+
+// renderPart executes one named template from a page's set — "layout" for a
+// full page, "app" for htmx responses that morph the shell in place.
+func (s *Server) renderPart(w http.ResponseWriter, page, name string, data any) {
 	t, ok := s.pages[page]
 	if !ok {
 		http.Error(w, "no such page: "+page, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := t.ExecuteTemplate(w, "layout", data); err != nil {
-		log.Printf("render %s: %v", page, err)
+	if err := t.ExecuteTemplate(w, name, data); err != nil {
+		log.Printf("render %s/%s: %v", page, name, err)
 	}
 }
