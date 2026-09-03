@@ -71,7 +71,7 @@ func (s *Server) boardData(filter string, openID int64, query, daily string) (bo
 			d.FilterProject = &sh.Projects[i].Project
 		}
 	}
-	needle := strings.ToLower(d.Query)
+	needle := d.Query
 	if openID != 0 {
 		t, err := s.store.Task(openID)
 		if err == nil {
@@ -92,7 +92,7 @@ func (s *Server) boardData(filter string, openID int64, query, daily string) (bo
 			if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
 				continue
 			}
-			if needle != "" && !strings.Contains(strings.ToLower(t.Title), needle) {
+			if needle != "" && !matchQuery(t.Title, needle) {
 				continue
 			}
 			if t.Waiting != "" && t.State != "done" {
@@ -119,7 +119,7 @@ func (s *Server) boardData(filter string, openID int64, query, daily string) (bo
 		return d, err
 	}
 	for _, t := range waiting {
-		if !t.Project.OnBoard || !matchesFilter(t.Project, filter) || (needle != "" && !strings.Contains(strings.ToLower(t.Title), needle)) {
+		if !t.Project.OnBoard || !matchesFilter(t.Project, filter) || (needle != "" && !matchQuery(t.Title, needle)) {
 			continue
 		}
 		row := taskRow{Task: t}

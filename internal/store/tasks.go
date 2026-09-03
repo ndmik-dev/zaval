@@ -216,33 +216,35 @@ func (s *Store) DeleteTask(id int64) error {
 	return err
 }
 
-// SearchTasks finds tasks by title substring, open ones first.
-func (s *Store) SearchTasks(q string, limit int) ([]Task, error) {
-	return s.queryTasks(`where t.title like ? escape '\'
-		order by case t.state when 'now' then 0 when 'backlog' then 1 else 2 end, t.done_at desc, t.position limit ?`,
-		"%"+escapeLike(q)+"%", limit)
-}
-
-func escapeLike(s string) string {
-	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
-	return r.Replace(s)
+// SearchTasks returns candidates for a title search: everything open plus
+// what was closed in the last month, open ones first. Matching is done by the
+// caller — SQLite's LIKE only folds ASCII case.
+func (s *Store) SearchTasks() ([]Task, error) {
+	return s.queryTasks(`where t.state in ('now', 'backlog') or t.done_at >= datetime('now', '-30 days')
+		order by case t.state when 'now' then 0 when 'backlog' then 1 else 2 end, t.done_at desc, t.position`)
 }
 
 // Reorder applies the drag result: each list is the full ordered set of ids
-// for that state, so a task that was dragged across lists changes state too.
-func (s *Store) Reorder(now, backlog []int64) error {
+// for that section. Dropping into "now"/"backlog" sets the state and clears
+// waiting; dropping into "waiting" keeps the state and marks the task waiting.
+func (s *Store) Reorder(now, backlog, waiting []int64) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	for i, id := range now {
-		if _, err := tx.Exec(`update tasks set state = 'now', position = ?, now_since = coalesce(now_since, ?), done_at = null where id = ?`, i+1, sqlNow, id); err != nil {
+		if _, err := tx.Exec(`update tasks set state = 'now', position = ?, now_since = coalesce(now_since, ?), done_at = null, waiting = '', waiting_since = null where id = ?`, i+1, sqlNow, id); err != nil {
 			return err
 		}
 	}
 	for i, id := range backlog {
-		if _, err := tx.Exec(`update tasks set state = 'backlog', position = ?, now_since = null, done_at = null where id = ?`, i+1, id); err != nil {
+		if _, err := tx.Exec(`update tasks set state = 'backlog', position = ?, now_since = null, done_at = null, waiting = '', waiting_since = null where id = ?`, i+1, id); err != nil {
+			return err
+		}
+	}
+	for i, id := range waiting {
+		if _, err := tx.Exec(`update tasks set position = ?, waiting = case when waiting = '' then 'чекаю' else waiting end, waiting_since = coalesce(waiting_since, ?) where id = ?`, i+1, sqlNow, id); err != nil {
 			return err
 		}
 	}
@@ -261,5 +263,5 @@ func (s *Store) SetWaiting(id int64, note string) error {
 
 // WaitingTasks lists open tasks that wait on something, oldest wait first.
 func (s *Store) WaitingTasks() ([]Task, error) {
-	return s.queryTasks(`where t.state in ('now', 'backlog') and t.waiting != '' order by t.waiting_since, t.id`)
+	return s.queryTasks(`where t.state in ('now', 'backlog') and t.waiting != '' order by t.position, t.id`)
 }

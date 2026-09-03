@@ -44,7 +44,7 @@
         <button type="button" class="x" hx-delete="/links/{{.ID}}" aria-label="Прибрати лінк">✕</button>
       </div>
       {{end}}
-      <form class="inline-add" hx-post="/tasks/{{.ID}}/links" hx-on:htmx:after:request="this.reset()">
+      <form class="inline-add" hx-post="/tasks/{{.ID}}/links" hx-trigger="submit, change" hx-on:htmx:after:request="this.reset()">
         <input name="url" type="text" placeholder="Встав URL" autocomplete="off" required>
       </form>
     </div>
@@ -60,7 +60,7 @@
         <button type="button" class="x" hx-delete="/steps/{{.ID}}" aria-label="Прибрати крок">✕</button>
       </div>
       {{end}}
-      <form class="inline-add" hx-post="/tasks/{{.ID}}/steps" hx-on:htmx:after:request="this.reset()">
+      <form class="inline-add" hx-post="/tasks/{{.ID}}/steps" hx-trigger="submit, change" hx-on:htmx:after:request="this.reset()">
         <input name="title" type="text" placeholder="Ще крок" autocomplete="off" required>
       </form>
     </div>

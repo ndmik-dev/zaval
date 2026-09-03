@@ -11,7 +11,7 @@ import (
 type projectsData struct {
 	shell
 	All      []projectItem // including hidden ones
-	Expanded int64
+	Expanded *store.Project
 	Error    string
 }
 
@@ -36,10 +36,10 @@ func (s *Server) respondProjects(w http.ResponseWriter, r *http.Request, expandS
 		s.fail(w, "projects", err)
 		return
 	}
-	for _, p := range all {
-		d.All = append(d.All, projectItem{p, counts[p.ID]})
-		if p.Slug == expandSlug {
-			d.Expanded = p.ID
+	for i := range all {
+		d.All = append(d.All, projectItem{all[i], counts[all[i].ID]})
+		if all[i].Slug == expandSlug {
+			d.Expanded = &all[i]
 		}
 	}
 	if r.Header.Get("HX-Request") != "" {
@@ -89,10 +89,6 @@ func (s *Server) updateProject(w http.ResponseWriter, r *http.Request) {
 	if v := r.FormValue("kind"); v == "work" || v == "pet" {
 		p.Kind = v
 	}
-	p.JiraKey = strings.ToUpper(strings.TrimSpace(r.FormValue("jira_key")))
-	p.JiraHost = strings.TrimSpace(r.FormValue("jira_host"))
-	p.Repos = strings.TrimSpace(r.FormValue("repos"))
-	p.Channels = strings.TrimSpace(r.FormValue("channels"))
 	p.OnBoard = r.FormValue("on_board") != ""
 	if err := s.store.UpdateProject(p); err != nil {
 		s.respondProjects(w, r, p.Slug, "Не збереглося: назва або slug уже зайняті")

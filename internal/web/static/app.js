@@ -78,7 +78,7 @@ function initSortable() {
 function sendOrder() {
   const form = document.getElementById('reorder');
   if (!form) return;
-  form.querySelectorAll('input[name=now], input[name=backlog]').forEach((i) => i.remove());
+  form.querySelectorAll('input[name=now], input[name=backlog], input[name=waiting]').forEach((i) => i.remove());
   document.querySelectorAll('.sortable').forEach((list) => {
     list.querySelectorAll('.task').forEach((row) => {
       const input = document.createElement('input');
@@ -239,3 +239,14 @@ confirmDialog?.addEventListener('click', (e) => {
   }
 });
 confirmDialog?.addEventListener('close', () => { confirmTarget = null; });
+
+// Color swatches in project settings: a preset click sets the hidden color input.
+document.addEventListener('click', (e) => {
+  const sw = e.target.closest('.sw[data-color]');
+  if (!sw) return;
+  const wrap = sw.closest('.swatches');
+  wrap.querySelector('input[type=color]').value = sw.dataset.color;
+  wrap.querySelectorAll('.sw').forEach((s) => s.classList.toggle('on', s === sw));
+  const form = sw.closest('form');
+  form.querySelector('.dot.big').style.background = sw.dataset.color;
+});

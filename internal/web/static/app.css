@@ -466,3 +466,12 @@ h1{font-size:23px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .filter-chip{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);background:var(--card-2);border:1px solid var(--line);border-radius:20px;padding:3px 10px 4px;white-space:nowrap}
 .filter-chip .x-in{color:var(--faint);font-size:12px}
 .filter-chip:hover .x-in{color:var(--attention)}
+
+/* swatches */
+.swatches{display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap}
+.sw{width:24px;height:24px;border-radius:6px;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sw.on{border-color:var(--ink)}
+.sw.custom{background:conic-gradient(#A0522D,#8A6A30,#5C7A3E,#3E7D6E,#4E6B8C,#7A5C99,#7C4A6B,#A0522D);position:relative;overflow:hidden}
+.sw.custom input{position:absolute;inset:-4px;width:200%;height:200%;opacity:0;cursor:pointer}
+.empty.drop{padding:10px}
+#waiting .empty{background:transparent}

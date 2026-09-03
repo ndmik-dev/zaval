@@ -27,13 +27,18 @@ func (s *Server) palette(w http.ResponseWriter, r *http.Request) {
 		d.Parsed.Project = s.defaultProject(projects, r.URL.Query().Get("p"))
 	}
 	if len([]rune(d.Parsed.Title)) >= 2 {
-		found, err := s.store.SearchTasks(d.Parsed.Title, 5)
+		all, err := s.store.SearchTasks()
 		if err != nil {
 			s.fail(w, "search", err)
 			return
 		}
-		for _, t := range found {
-			d.Matches = append(d.Matches, taskRow{Task: t})
+		for _, t := range all {
+			if matchQuery(t.Title, d.Parsed.Title) {
+				d.Matches = append(d.Matches, taskRow{Task: t})
+				if len(d.Matches) == 6 {
+					break
+				}
+			}
 		}
 	}
 	if now, err := s.store.TasksByState("now"); err == nil {

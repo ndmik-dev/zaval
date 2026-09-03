@@ -72,14 +72,12 @@
   </div>
 </section>
 
-{{if .Waiting}}
 <section class="sec">
   <div class="sec-head"><span class="up">Чекаю</span><span class="mono n">{{len .Waiting}}</span><span class="rule"></span></div>
-  <div class="list" id="waiting">
-    {{range .Waiting}}{{template "task_row" .}}{{end}}
+  <div class="list sortable" id="waiting" data-state="waiting">
+    {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Перетягни сюди те, що чекає на когось</div>{{end}}
   </div>
 </section>
-{{end}}
 
 {{if .DoneToday}}
 <section class="sec">

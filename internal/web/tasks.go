@@ -72,7 +72,7 @@ func (s *Server) fail(w http.ResponseWriter, what string, err error) {
 
 func (s *Server) reorderTasks(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	if err := s.store.Reorder(ids(r.Form["now"]), ids(r.Form["backlog"])); err != nil {
+	if err := s.store.Reorder(ids(r.Form["now"]), ids(r.Form["backlog"]), ids(r.Form["waiting"])); err != nil {
 		s.fail(w, "reorder", err)
 		return
 	}

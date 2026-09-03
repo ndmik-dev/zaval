@@ -27,7 +27,11 @@ var funcs = template.FuncMap{
 	"doneCount": doneCount,
 	"hostOf":    hostOf,
 	"add":       func(a, b int) int { return a + b },
+	"colors":    func() []string { return projectColors },
 }
+
+// projectColors are the preset swatches offered in project settings.
+var projectColors = []string{"#2F5D50", "#7C4A6B", "#8A6A30", "#4E6B8C", "#7A5C99", "#3E7D6E", "#A0522D", "#5C7A3E"}
 
 func doneCount(items []store.ChecklistItem) int {
 	n := 0

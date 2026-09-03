@@ -190,15 +190,12 @@ func TestSearchTasks(t *testing.T) {
 	s.SetTaskState(d.ID, "done")
 	s.CreateTask(atl.ID, "100% unrelated", "backlog")
 
-	got, err := s.SearchTasks("webhook", 10)
+	got, err := s.SearchTasks()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 3 || got[0].ID != n.ID || got[2].State != "done" {
-		t.Fatalf("search: %+v", got)
-	}
-	if got, _ := s.SearchTasks("%", 10); len(got) != 1 {
-		t.Errorf("like wildcard must be escaped, got %d", len(got))
+	if len(got) != 4 || got[0].ID != n.ID || got[3].State != "done" {
+		t.Fatalf("search candidates: %+v", got)
 	}
 }
 
@@ -210,7 +207,7 @@ func TestReorder(t *testing.T) {
 	b, _ := s.CreateTask(atl.ID, "b", "now")
 	c, _ := s.CreateTask(atl.ID, "c", "backlog")
 	// c dragged to the top of now, a dragged down to backlog
-	if err := s.Reorder([]int64{c.ID, b.ID}, []int64{a.ID}); err != nil {
+	if err := s.Reorder([]int64{c.ID, b.ID}, []int64{a.ID}, nil); err != nil {
 		t.Fatal(err)
 	}
 	now, _ := s.TasksByState("now")
@@ -220,6 +217,18 @@ func TestReorder(t *testing.T) {
 	}
 	if len(backlog) != 1 || backlog[0].ID != a.ID || backlog[0].NowSince.Valid {
 		t.Fatalf("backlog: %+v", backlog)
+	}
+	// b dragged into "Чекаю": keeps its state, gets a default waiting note; back out clears it.
+	if err := s.Reorder([]int64{c.ID}, []int64{a.ID}, []int64{b.ID}); err != nil {
+		t.Fatal(err)
+	}
+	w, _ := s.WaitingTasks()
+	if len(w) != 1 || w[0].ID != b.ID || w[0].State != "now" || w[0].Waiting != "чекаю" {
+		t.Fatalf("waiting via drag: %+v", w)
+	}
+	s.Reorder([]int64{c.ID, b.ID}, []int64{a.ID}, nil)
+	if w, _ := s.WaitingTasks(); len(w) != 0 {
+		t.Error("drag out of waiting must clear it")
 	}
 }
 
@@ -325,9 +334,8 @@ func TestWaiting(t *testing.T) {
 	b, _ := s.CreateTask(atl.ID, "b", "backlog")
 	s.SetWaiting(b.ID, "відповідь Марти")
 	s.SetWaiting(a.ID, "ревʼю")
-	s.db.Exec(`update tasks set waiting_since = '2026-01-01 00:00:00' where id = ?`, b.ID) // b waits longer
 	w, _ := s.WaitingTasks()
-	if len(w) != 2 || w[0].ID != b.ID || w[0].Waiting != "відповідь Марти" || !w[0].WaitingSince.Valid {
+	if len(w) != 2 || w[1].ID != b.ID || w[1].Waiting != "відповідь Марти" || !w[1].WaitingSince.Valid {
 		t.Fatalf("waiting: %+v", w)
 	}
 	s.SetWaiting(a.ID, "")

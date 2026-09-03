@@ -8,10 +8,10 @@
 <a id="collapse-projects" href="/projects" hx-get="/projects" hx-push-url="true" hidden></a>
 <div class="projects">
   {{range .All}}
-  {{if eq .ID $.Expanded}}
+  {{if and $.Expanded (eq .ID $.Expanded.ID)}}
   <form class="pcard open" style="--project:{{.Color}}" hx-post="/projects/{{.ID}}">
     <div class="pcard-head">
-      <input type="color" name="color" value="{{.Color}}" class="swatch" aria-label="Колір">
+      <span class="dot big" style="background:{{.Color}}"></span>
       <input class="pname" name="name" value="{{.Name}}" required>
       {{template "kind_dropdown" .Kind}}
       <span class="grow"></span>
@@ -19,9 +19,12 @@
     </div>
     <div class="pgrid">
       <label><span class="up">Тег для ⌘K</span><span class="field"><span class="dim">#</span><input name="slug" value="{{.Slug}}"></span></label>
-      <label><span class="up">Jira</span><span class="field"><input name="jira_key" value="{{.JiraKey}}" placeholder="ключ" style="width:70px"><input name="jira_host" value="{{.JiraHost}}" placeholder="хост Jira"></span></label>
-      <label><span class="up">Репозиторії</span><span class="field"><input name="repos" value="{{.Repos}}" placeholder="owner/repo, через кому"></span></label>
-      <label><span class="up">Канали Slack</span><span class="field"><input name="channels" value="{{.Channels}}" placeholder="#канал, через кому"></span></label>
+      <div><span class="up">Колір</span>
+        <div class="swatches">
+          {{range $c := colors}}<button type="button" class="sw{{if eq $c $.Expanded.Color}} on{{end}}" style="background:{{$c}}" data-color="{{$c}}" aria-label="{{$c}}"></button>{{end}}
+          <label class="sw custom" title="Свій колір"><input type="color" name="color" value="{{.Color}}"></label>
+        </div>
+      </div>
     </div>
     <div class="pcard-foot">
       <label class="toggle"><input type="checkbox" name="on_board" value="1"{{if .OnBoard}} checked{{end}}><span></span>показувати на дошці</label>
@@ -37,7 +40,6 @@
     <span class="pname-static">{{.Name}}</span>
     <span class="dim">{{if eq .Kind "work"}}робота{{else}}своє{{end}}{{if not .OnBoard}} · приховано з дошки{{end}}</span>
     <span class="grow"></span>
-    <span class="dim">{{if .JiraKey}}{{.JiraKey}} · {{end}}{{.Repos}}{{if .Channels}} · {{.Channels}}{{end}}</span>
     <span class="mono dim">{{.Now}} · {{.Backlog}}</span>
   </a>
   {{end}}
