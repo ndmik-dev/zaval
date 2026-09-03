@@ -271,3 +271,68 @@ func TestProjectsCRUD(t *testing.T) {
 		t.Errorf("missing: %v", err)
 	}
 }
+
+func TestReleases(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	s.AddTemplateItem(atl.ID, "before", "Merge release branch", "", "", "")
+	s.AddTemplateItem(atl.ID, "before", "Run migrate check", "must print 0 pending", "", "scripts/migrate-check.sh")
+	s.AddTemplateItem(atl.ID, "after", "Check Sentry", "", "https://sentry.io", "")
+
+	rel, err := s.CreateRelease(atl.ID, "2.7", "2026-09-05")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rel.Items) != 3 || rel.Total != 3 || rel.Done != 0 || rel.Items[1].Command != "scripts/migrate-check.sh" {
+		t.Fatalf("copied items: %+v", rel.Items)
+	}
+	s.ToggleReleaseItem(rel.Items[0].ID)
+	extra, _ := s.AddReleaseItem(rel.ID, "after", "Only this release", "", "", "")
+	if rid, _ := s.ReleaseItemRelease(extra.ID); rid != rel.ID {
+		t.Error("ReleaseItemRelease wrong")
+	}
+
+	task, _ := s.CreateTask(atl.ID, "x", "now")
+	s.SetTaskRelease(task.ID, rel.ID)
+	got, _ := s.Release(rel.ID)
+	if got.Done != 1 || got.Total != 4 || len(got.Tasks) != 1 || got.Tasks[0].Release.String != "2.7" {
+		t.Fatalf("release: done=%d total=%d tasks=%d rel=%v", got.Done, got.Total, len(got.Tasks), got.Tasks[0].Release)
+	}
+	if tt, _ := s.Task(task.ID); tt.Release.String != "2.7" {
+		t.Error("task release name not joined")
+	}
+
+	later, _ := s.CreateRelease(atl.ID, "2.8", "")
+	next, _ := s.NextRelease(0)
+	if next == nil || next.ID != rel.ID {
+		t.Fatalf("next release should be the dated one, got %+v", next)
+	}
+	up, past, _ := s.Releases()
+	if len(up) != 2 || up[0].ID != rel.ID || up[1].ID != later.ID || len(past) != 0 {
+		t.Fatalf("upcoming %d past %d", len(up), len(past))
+	}
+	s.SetReleased(rel.ID, true)
+	up, past, _ = s.Releases()
+	if len(up) != 1 || len(past) != 1 {
+		t.Fatalf("after release: upcoming %d past %d", len(up), len(past))
+	}
+	if n, _ := s.NextRelease(atl.ID); n == nil || n.ID != later.ID {
+		t.Error("next after releasing should be 2.8")
+	}
+	s.DeleteRelease(later.ID)
+	if tt, _ := s.Task(task.ID); tt.ReleaseID.Valid && tt.ReleaseID.Int64 == later.ID {
+		t.Error("task should not point at a deleted release")
+	}
+	// Template edits do not touch existing releases.
+	tpl, _ := s.Templates(atl.ID)
+	tpl[0].Title = "Renamed"
+	s.UpdateTemplateItem(tpl[0])
+	s.DeleteTemplateItem(tpl[2].ID)
+	if tpl, _ := s.Templates(atl.ID); len(tpl) != 2 || tpl[0].Title != "Renamed" {
+		t.Fatalf("templates: %+v", tpl)
+	}
+	if got, _ := s.Release(rel.ID); len(got.Items) != 4 {
+		t.Error("release items changed with template")
+	}
+}

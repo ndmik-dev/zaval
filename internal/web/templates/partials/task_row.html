@@ -6,9 +6,9 @@
       <a class="title" href="/?t={{.ID}}" hx-get="/?t={{.ID}}" hx-push-url="true">{{.Title}}</a>
       {{if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}}</span>{{end}}
       {{if eq .Project.Kind "pet"}}<span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>{{end}}
-      {{if and (eq .State "backlog") .Links}}{{template "chips" .Links}}{{end}}
+      {{if eq .State "backlog"}}{{template "chips" .Links}}{{template "release_chip" .}}{{end}}
     </div>
-    {{if and (ne .State "backlog") .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
+    {{if and (ne .State "backlog") (or .Links .Release.Valid)}}<div class="chips">{{template "chips" .Links}}{{template "release_chip" .}}</div>{{end}}
   </div>
   {{if .StepsTotal}}<span class="mono steps">{{.StepsDone}}/{{.StepsTotal}}</span>{{end}}
   {{if ne .State "done"}}
@@ -19,5 +19,7 @@
   {{end}}
 </div>
 {{end}}
+
+{{define "release_chip"}}{{if .Release.Valid}}<a class="chip" href="/releases?r={{.ReleaseID.Int64}}">Реліз<span class="sep">·</span><span class="meta">{{.Release.String}}</span></a>{{end}}{{end}}
 
 {{define "chips"}}{{range .}}<a class="chip" href="{{.URL}}" target="_blank" rel="noopener">{{if .Label}}<span class="{{if eq .Kind "jira"}}mono{{end}}">{{.Label}}</span>{{else}}{{.Kind}}{{end}}{{if .Meta}}<span class="sep">·</span><span class="meta">{{.Meta}}</span>{{end}}</a>{{end}}{{end}}

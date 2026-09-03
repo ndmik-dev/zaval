@@ -1,0 +1,146 @@
+{{define "content"}}
+<div class="releases">
+  <aside class="rel-list">
+    <header class="head"><h1>Релізи</h1></header>
+
+    <section class="sec">
+      <div class="sec-head"><span class="up">Готуються</span><span class="rule"></span></div>
+      <div class="list">
+        {{range .Upcoming}}
+        <a class="rel-card{{if and $.Selected (eq $.Selected.ID .ID)}} on{{end}}" style="--project:{{.Project.Color}}" href="/releases?r={{.ID}}">
+          <div class="rel-row"><span class="rel-name">{{.Project.Name}} {{.Name}}</span><span class="grow"></span><span class="dim">{{if .DateLabel}}{{.DateLabel}}{{else}}без дати{{end}}</span></div>
+          <div class="rel-row"><span class="mono n">{{.Done}} / {{.Total}}</span><span class="bar"><span style="width:{{if .Total}}{{percent .Done .Total}}{{else}}0{{end}}%"></span></span></div>
+        </a>
+        {{else}}<div class="empty">Нема релізів у підготовці.</div>{{end}}
+      </div>
+      <form class="pcard new" hx-post="/releases" hx-on:htmx:after:request="this.reset()">
+        <select name="project_id" class="add-project">{{range .Projects}}{{if eq .Kind "work"}}<option value="{{.ID}}">{{.Name}}</option>{{end}}{{end}}</select>
+        <input name="name" placeholder="2.8" autocomplete="off" required style="width:70px">
+        <input name="date" type="date" class="date">
+        <button type="submit" class="btn">Новий</button>
+      </form>
+    </section>
+
+    {{if .Past}}
+    <section class="sec">
+      <div class="sec-head"><span class="up">Минулі</span><span class="rule"></span></div>
+      <div class="list past">
+        {{range .Past}}<a class="rel-past{{if and $.Selected (eq $.Selected.ID .ID)}} on{{end}}" href="/releases?r={{.ID}}"><span class="dot" style="background:{{.Project.Color}}"></span><span class="grow">{{.Project.Name}} {{.Name}}</span><span class="mono dim">{{slice .ReleasedAt.String 8 10}}.{{slice .ReleasedAt.String 5 7}}</span></a>{{end}}
+      </div>
+    </section>
+    {{end}}
+
+    <section class="sec">
+      <div class="sec-head"><span class="up">Шаблони</span><span class="rule"></span></div>
+      <div class="list">
+        {{range .Projects}}{{if eq .Kind "work"}}<a class="rel-past tpl{{if and $.Tpl (eq $.Tpl.Project.ID .ID)}} on{{end}}" href="/releases?tpl={{.Slug}}"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="dim">правити</span></a>{{end}}{{end}}
+      </div>
+      <div class="rail-hint" style="padding:8px 0 0">Новий реліз копіює шаблон. Правки в шаблоні — для наступних.</div>
+    </section>
+  </aside>
+
+  <div class="rel-main">
+    {{with .Selected}}
+    <div class="rel-head" style="--project:{{.Project.Color}}">
+      <span class="dot" style="background:{{.Project.Color}}"></span>
+      <span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>
+      <span class="dim">створено {{slice .CreatedAt 8 10}}.{{slice .CreatedAt 5 7}}</span>
+    </div>
+    <form class="rel-title" hx-post="/releases/{{.ID}}" hx-trigger="change">
+      <span class="h1">Реліз</span><input class="rel-name-input" name="name" value="{{.Name}}" required>
+      <input name="date" type="date" class="date" value="{{.Date.String}}">
+      <span class="dim">{{.DateLabel}}</span>
+      <span class="grow"></span>
+      {{if .ReleasedAt.Valid}}
+      <span class="pill on">зарелізено {{slice .ReleasedAt.String 8 10}}.{{slice .ReleasedAt.String 5 7}}</span>
+      <button type="button" class="btn" hx-post="/releases/{{.ID}}/released" hx-vals='{"released":"0"}'>Повернути</button>
+      {{else}}
+      <button type="button" class="btn primary" hx-post="/releases/{{.ID}}/released"{{if .OpenTasks}} hx-confirm="{{.OpenTasks}} задач(і) в релізі ще в роботі. Все одно позначити зарелізеним?"{{end}}>Зарелізено</button>
+      {{end}}
+    </form>
+
+    <div class="rel-body">
+      <div class="rel-check">
+        {{template "rel_phase" (dict "Label" "Перед релізом" "Phase" "before" "Items" .Before "Release" .Release)}}
+        {{template "rel_phase" (dict "Label" "Після" "Phase" "after" "Items" .After "Release" .Release)}}
+      </div>
+      <aside class="rel-side">
+        <div class="sec-head"><span class="up">Задачі в релізі</span><span class="mono n">{{len .Tasks}}</span><span class="rule"></span></div>
+        <div class="list">
+          {{range .Tasks}}
+          <a class="task {{.State}} mini" style="--project:{{.Project.Color}}" href="/?t={{.ID}}">
+            <span class="title">{{.Title}}</span>
+            <span class="meta dim">{{if eq .State "now"}}Зараз{{else if eq .State "backlog"}}беклог{{else}}готово{{end}}{{range .Links}}{{if eq .Kind "jira"}} · <span class="mono">{{.Label}}</span>{{end}}{{end}}</span>
+          </a>
+          {{else}}<div class="rail-hint">Задача потрапляє сюди через поле «Реліз» у картці.</div>{{end}}
+        </div>
+        {{if and .OpenTasks (not .ReleasedAt.Valid)}}<div class="card warn"><b>{{.OpenTasks}} ще в роботі.</b> «Зарелізено» спитає підтвердження.</div>{{end}}
+        <button type="button" class="btn ghost" style="margin-top:14px" hx-delete="/releases/{{.ID}}" hx-confirm="Видалити реліз {{.Name}}?">Видалити реліз</button>
+      </aside>
+    </div>
+    {{end}}
+
+    {{with .Tpl}}
+    <div class="rel-head"><span class="dot" style="background:{{.Project.Color}}"></span><span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span></div>
+    <h1>Шаблон чекліста</h1>
+    <div class="rel-body">
+      <div class="rel-check">
+        {{template "tpl_phase" (dict "Label" "Перед релізом" "Phase" "before" "Items" .Before "Project" .Project)}}
+        {{template "tpl_phase" (dict "Label" "Після" "Phase" "after" "Items" .After "Project" .Project)}}
+      </div>
+      <aside class="rel-side"><div class="rail-hint">Назва — що зробити. Деталь — на що дивитись. Команда — скопіюється однією кнопкою в релізі. Лінк — куди йти.</div></aside>
+    </div>
+    {{end}}
+
+    {{if and (not .Selected) (not .Tpl)}}<div class="empty" style="margin-top:60px">Створи перший реліз зліва — чекліст скопіюється з шаблону проєкту.</div>{{end}}
+  </div>
+</div>
+{{end}}
+
+{{define "rel_phase"}}
+<section class="sec">
+  <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{doneCount .Items}} / {{len .Items}}</span><span class="rule"></span></div>
+  <div class="list">
+    {{range .Items}}
+    <div class="ritem{{if .Done}} done{{end}}">
+      <button type="button" class="box" hx-post="/release-items/{{.ID}}/toggle" aria-label="Перемкнути"></button>
+      <div class="body">
+        <div class="ritem-title">{{.Title}}{{if .Command}} <code id="cmd-{{.ID}}">{{.Command}}</code>{{end}}</div>
+        {{if .Detail}}<div class="ritem-detail">{{.Detail}}</div>{{end}}
+      </div>
+      {{if .Command}}<button type="button" class="btn small" data-copy="#cmd-{{.ID}}">скопіювати</button>{{end}}
+      {{if .URL}}<a class="chip" href="{{.URL}}" target="_blank" rel="noopener">{{hostOf .URL}}</a>{{end}}
+      <button type="button" class="x" hx-delete="/release-items/{{.ID}}" aria-label="Прибрати">✕</button>
+    </div>
+    {{end}}
+    <form class="inline-add" hx-post="/releases/{{.Release.ID}}/items" hx-on:htmx:after:request="this.reset()">
+      <input type="hidden" name="phase" value="{{.Phase}}">
+      <input name="title" placeholder="Пункт тільки для цього релізу" autocomplete="off" required>
+    </form>
+  </div>
+</section>
+{{end}}
+
+{{define "tpl_phase"}}
+<section class="sec">
+  <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{len .Items}}</span><span class="rule"></span></div>
+  <div class="list">
+    {{range .Items}}
+    <form class="titem" hx-post="/template-items/{{.ID}}" hx-trigger="change">
+      <input type="hidden" name="phase" value="{{.Phase}}">
+      <input class="t-title" name="title" value="{{.Title}}" placeholder="Що зробити" required>
+      <input class="t-detail" name="detail" value="{{.Detail}}" placeholder="Деталь: на що дивитись">
+      <div class="t-row">
+        <span class="field"><span class="dim mono">$</span><input class="mono" name="command" value="{{.Command}}" placeholder="команда"></span>
+        <span class="field"><input name="url" value="{{.URL}}" placeholder="https://…"></span>
+        <button type="button" class="x" hx-delete="/template-items/{{.ID}}" aria-label="Прибрати">✕</button>
+      </div>
+    </form>
+    {{end}}
+    <form class="inline-add" hx-post="/projects/{{.Project.ID}}/template" hx-on:htmx:after:request="this.reset()">
+      <input type="hidden" name="phase" value="{{.Phase}}">
+      <input name="title" placeholder="Новий пункт" autocomplete="off" required>
+    </form>
+  </div>
+</section>
+{{end}}

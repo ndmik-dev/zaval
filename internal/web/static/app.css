@@ -282,3 +282,62 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .toggle input:checked + span::after{left:13px}
 .pcard.new{border-style:dashed;color:var(--faint);gap:9px;padding:8px 18px}
 .pcard.new input{flex:1;font:inherit;color:var(--ink);background:none;border:0;outline:0}
+
+/* releases */
+.banner{
+  display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-left:3px solid var(--project);border-radius:7px;padding:9px 12px;margin-bottom:22px;color:var(--ink);font-size:13px;
+}
+.banner .next{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.banner-cta{font-size:12px;font-weight:600;color:var(--atlas)}
+.main > .releases{max-width:1180px}
+.releases{display:flex;gap:30px;align-items:flex-start}
+.rel-list{width:300px;flex:none}
+.rel-main{flex:1;min-width:0}
+.rel-card{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--project);border-radius:8px;padding:10px 12px;color:var(--ink)}
+.rel-card.on{border-color:var(--ink);border-left-color:var(--project)}
+.rel-row{display:flex;align-items:center;gap:8px;font-size:13px}
+.rel-name{font-weight:600;font-size:14px}
+.bar{flex:1;height:4px;background:#DFE1DA;border-radius:2px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--project)}
+.rel-past{display:flex;align-items:center;gap:9px;padding:6px 10px;font-size:13px;color:var(--muted);border-radius:6px}
+.rel-past.on,.rel-past:hover{background:var(--card);color:var(--ink)}
+.rel-past.tpl{border:1px solid var(--line);background:var(--card);color:var(--ink-2)}
+.rel-list .pcard.new{margin-top:6px;gap:8px}
+.date{font:inherit;font-size:12.5px;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+.rel-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px}
+.rel-title{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.rel-title .h1{font-size:21px;font-weight:600;letter-spacing:-.015em}
+.rel-name-input{font:inherit;font-size:21px;font-weight:600;letter-spacing:-.015em;color:var(--ink);background:none;border:0;border-bottom:1px solid transparent;outline:0;padding:0;width:90px}
+.rel-name-input:focus{border-bottom-color:var(--line)}
+.rel-body{display:flex;gap:22px;align-items:flex-start}
+.rel-check{flex:1;min-width:0}
+.rel-side{width:300px;flex:none}
+.ritem{display:flex;align-items:flex-start;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:9px 12px}
+.ritem .box{width:17px;height:17px;border-radius:4px;border:1.5px solid #B9BDB5;background:none;cursor:pointer;padding:0;flex:none;margin-top:1px}
+.ritem.done{background:transparent;border-color:transparent;color:#8C9189}
+.ritem.done .box{background:#B9BDB5}
+.ritem.done .ritem-title{text-decoration:line-through;text-decoration-color:#C3C7BE}
+.ritem .body{flex:1;min-width:0}
+.ritem-title code{font-family:var(--mono);font-size:12.5px;background:var(--card-2);border:1px solid var(--line-2);border-radius:4px;padding:0 5px}
+.ritem-detail{font-size:12.5px;color:var(--muted);margin-top:3px}
+.btn.small{font-size:12px;padding:3px 9px 4px;white-space:nowrap}
+.ritem .x{opacity:0}
+.ritem:hover .x{opacity:1}
+.task.mini{flex-direction:column;align-items:stretch;gap:5px;padding:8px 10px;color:var(--ink)}
+.task.mini .title{font-size:13px}
+.task.mini .meta{font-size:11.5px}
+.task.mini.done .title{text-decoration:line-through;color:#8C9189}
+.card.warn{margin-top:10px;font-size:12.5px;color:var(--muted)}
+.titem{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:9px 12px}
+.titem input{font:inherit;color:var(--ink);background:none;border:0;outline:0;padding:0;min-width:0}
+.t-title{font-weight:500}
+.t-detail{font-size:12.5px;color:var(--muted)}
+.t-row{display:flex;gap:8px;align-items:center}
+.t-row .field{flex:1}
+.t-row .field input{font-size:12.5px;padding:4px 0}
+.rel-select{font:inherit;font-size:12px;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+@media (max-width:1100px){
+  .releases,.rel-body{flex-direction:column}
+  .rel-list,.rel-side{width:auto}
+}

@@ -25,6 +25,8 @@ type boardData struct {
 	Now       []taskRow
 	Backlog   []taskRow
 	DoneToday []taskRow
+	Release   *releaseView    // nearest upcoming release, for the banner
+	Releases  []store.Release // upcoming releases of the open task's project
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +88,32 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 	}
 	if d.DoneToday, err = load(s.store.DoneToday()); err != nil {
 		return d, err
+	}
+
+	var projectID int64
+	for _, p := range sh.Projects {
+		if p.Slug == filter {
+			projectID = p.ID
+		}
+	}
+	rel, err := s.store.NextRelease(projectID)
+	if err != nil {
+		return d, err
+	}
+	if rel != nil {
+		v := viewRelease(*rel, now)
+		d.Release = &v
+	}
+	if d.Open != nil {
+		up, _, err := s.store.Releases()
+		if err != nil {
+			return d, err
+		}
+		for _, r := range up {
+			if r.ProjectID == d.Open.ProjectID {
+				d.Releases = append(d.Releases, r)
+			}
+		}
 	}
 	return d, nil
 }
