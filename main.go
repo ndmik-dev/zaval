@@ -5,12 +5,21 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ndmik-dev/zaval/internal/store"
 	"github.com/ndmik-dev/zaval/internal/web"
 )
 
 func main() {
 	addr := envOr("ADDR", ":8080")
-	srv := web.New()
+	st, err := store.Open(envOr("DB_PATH", "dayboard.db"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer st.Close()
+	if err := st.Seed(); err != nil {
+		log.Fatal(err)
+	}
+	srv := web.New(st)
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, srv); err != nil {
 		log.Fatal(err)

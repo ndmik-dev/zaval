@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+
+	"github.com/ndmik-dev/zaval/internal/store"
 )
 
 //go:embed templates
@@ -17,10 +19,11 @@ var staticFS embed.FS
 type Server struct {
 	mux   *http.ServeMux
 	pages map[string]*template.Template
+	store *store.Store
 }
 
-func New() *Server {
-	s := &Server{mux: http.NewServeMux(), pages: map[string]*template.Template{}}
+func New(st *store.Store) *Server {
+	s := &Server{mux: http.NewServeMux(), pages: map[string]*template.Template{}, store: st}
 	s.parseTemplates()
 
 	static, _ := fs.Sub(staticFS, "static")
