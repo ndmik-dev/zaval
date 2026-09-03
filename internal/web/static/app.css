@@ -477,9 +477,9 @@ h1{font-size:23px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 #waiting .empty{background:transparent}
 
 /* project label on rows */
-.plabel{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.8;white-space:nowrap}
-.plabel:hover{opacity:1;text-decoration:underline}
+.plabel{width:92px;flex:none;text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:3px}
 .task.log .plabel{padding-top:0}
+.plabel:hover{opacity:1;text-decoration:underline}
 h1 .filter-chip{font-size:13px;vertical-align:middle;margin-left:10px;letter-spacing:0}
 .seg button.on{background:var(--ink);color:var(--card)}
 
