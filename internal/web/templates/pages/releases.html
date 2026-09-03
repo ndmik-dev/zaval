@@ -78,7 +78,7 @@
   <section class="drawer-sec">
     <div class="sec-head"><span class="up">Задача</span><span class="rule"></span></div>
     {{if .TaskID.Valid}}
-    <div class="task-chip big"><a class="grow" href="/releases?p={{index $.Ctx "p"}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{index $.Ctx "p"}}&t={{.TaskID.Int64}}" hx-push-url="true">{{.TaskTitle.String}}</a>{{if eq .TaskState.String "done"}}<span class="dim">готово</span>{{end}}<button type="button" class="x" hx-post="/checklist-items/{{.ID}}/task" hx-vals='{"task_id":"0"}' aria-label="Відвʼязати">✕</button></div>
+    <div class="task-chip big"><a class="grow task-open" href="/releases?p={{index $.Ctx "p"}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{index $.Ctx "p"}}&t={{.TaskID.Int64}}" hx-push-url="true">{{.TaskTitle.String}} <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.4 2.6h6v6M11.4 2.6 6 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>{{if eq .TaskState.String "done"}}<span class="dim">готово</span>{{end}}<button type="button" class="x" hx-post="/checklist-items/{{.ID}}/task" hx-vals='{"task_id":"0"}' aria-label="Відвʼязати">✕</button></div>
     {{else}}
     <div class="picker">
       <input type="search" placeholder="Знайти в беклозі чи журналі…" autocomplete="off" name="text"

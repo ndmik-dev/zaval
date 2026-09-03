@@ -88,7 +88,11 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if itemID != 0 {
+	// A task link inside the line panel opens the task instead of the line.
+	if openID != 0 {
+		d.Open = s.openTask(openID, now)
+	}
+	if d.Open == nil && itemID != 0 {
 		if it, err := s.store.ChecklistItem(itemID); err == nil {
 			d.OpenItem = &it
 		}
@@ -98,9 +102,6 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 		itemVal = strconv.FormatInt(d.OpenItem.ID, 10)
 	}
 	d.Ctx = map[string]string{"page": "releases", "p": slug, "i": itemVal}
-	if d.OpenItem == nil {
-		d.Open = s.openTask(openID, now)
-	}
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "releases", "app", d)
 		return

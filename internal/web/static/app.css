@@ -573,3 +573,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+.ritem .body:focus-visible,.task .title:focus-visible,.task-chip a:focus-visible{outline:0}
+.task-open{display:inline-flex;align-items:center;gap:5px;color:var(--atlas)!important}
+.task-open:hover{text-decoration:underline}
