@@ -576,3 +576,5 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .ritem .body:focus-visible,.task .title:focus-visible,.task-chip a:focus-visible{outline:0}
 .task-open{display:inline-flex;align-items:center;gap:5px;color:var(--atlas)!important}
 .task-open:hover{text-decoration:underline}
+.drawer-back{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted);margin-right:6px;padding:3px 8px 3px 5px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+.drawer-back:hover{color:var(--ink);border-color:#B9BDB5}

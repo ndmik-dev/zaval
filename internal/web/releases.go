@@ -97,9 +97,11 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 			d.OpenItem = &it
 		}
 	}
+	// The line id stays in the context while its task is open, so the task
+	// drawer can offer a way back to the line.
 	itemVal := ""
-	if d.OpenItem != nil {
-		itemVal = strconv.FormatInt(d.OpenItem.ID, 10)
+	if itemID != 0 {
+		itemVal = strconv.FormatInt(itemID, 10)
 	}
 	d.Ctx = map[string]string{"page": "releases", "p": slug, "i": itemVal}
 	if r.Header.Get("HX-Request") != "" {

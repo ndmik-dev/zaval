@@ -1,6 +1,7 @@
 {{define "drawer"}}{{with .Open}}
 <aside class="drawer" id="drawer">
   <header class="drawer-head">
+    {{if and (eq (index $.Ctx "page") "releases") (index $.Ctx "i")}}<a class="drawer-back" href="/releases?p={{index $.Ctx "p"}}&i={{index $.Ctx "i"}}" hx-get="/releases?p={{index $.Ctx "p"}}&i={{index $.Ctx "i"}}" hx-push-url="true" title="Назад до пункту релізу"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>до пункту</a>{{end}}
     <span class="dot" style="background:{{.Project.Color}}"></span>
     <span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>
     <span class="drawer-meta">створено {{slice .CreatedAt 8 10}}.{{slice .CreatedAt 5 7}}</span>
