@@ -3,7 +3,9 @@ package web
 import (
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ndmik-dev/zaval/internal/store"
 )
@@ -63,7 +65,11 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 		s.respondProjects(w, r, "", "")
 		return
 	}
-	p, err := s.store.CreateProject(name, slugify(name), kind, color)
+	slug := slugify(name)
+	if slug == "" {
+		slug = "p" + strconv.FormatInt(time.Now().Unix()%100000, 10)
+	}
+	p, err := s.store.CreateProject(name, slug, kind, color)
 	if err != nil {
 		s.respondProjects(w, r, "", "Проєкт із такою назвою вже є")
 		return
@@ -115,9 +121,17 @@ var (
 	nonSlugRe = regexp.MustCompile(`[^a-z0-9]+`)
 )
 
-// slugify makes the #tag used in ⌘K: ascii letters and digits only.
+// slugify makes the #tag used in ⌘K: ascii letters and digits only,
+// Cyrillic transliterated so «Проєкт» becomes #proiekt.
 func slugify(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
+	s = translit.Replace(strings.ToLower(strings.TrimSpace(s)))
 	s = nonSlugRe.ReplaceAllString(s, "-")
 	return strings.Trim(s, "-")
 }
+
+var translit = strings.NewReplacer(
+	"а", "a", "б", "b", "в", "v", "г", "h", "ґ", "g", "д", "d", "е", "e", "є", "ie", "ж", "zh", "з", "z",
+	"и", "y", "і", "i", "ї", "i", "й", "i", "к", "k", "л", "l", "м", "m", "н", "n", "о", "o", "п", "p",
+	"р", "r", "с", "s", "т", "t", "у", "u", "ф", "f", "х", "kh", "ц", "ts", "ч", "ch", "ш", "sh", "щ", "shch",
+	"ь", "", "ю", "iu", "я", "ia", "ы", "y", "э", "e", "ё", "e", "ъ", "", "ʼ", "", "'", "",
+)
