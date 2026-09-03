@@ -226,3 +226,24 @@ func escapeLike(s string) string {
 	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 	return r.Replace(s)
 }
+
+// Reorder applies the drag result: each list is the full ordered set of ids
+// for that state, so a task that was dragged across lists changes state too.
+func (s *Store) Reorder(now, backlog []int64) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for i, id := range now {
+		if _, err := tx.Exec(`update tasks set state = 'now', position = ?, now_since = coalesce(now_since, ?), done_at = null where id = ?`, i+1, sqlNow, id); err != nil {
+			return err
+		}
+	}
+	for i, id := range backlog {
+		if _, err := tx.Exec(`update tasks set state = 'backlog', position = ?, now_since = null, done_at = null where id = ?`, i+1, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}

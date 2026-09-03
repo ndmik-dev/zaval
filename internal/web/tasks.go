@@ -94,3 +94,22 @@ func (s *Server) fail(w http.ResponseWriter, what string, err error) {
 	log.Printf("%s: %v", what, err)
 	http.Error(w, "db error", http.StatusInternalServerError)
 }
+
+func (s *Server) reorderTasks(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	if err := s.store.Reorder(ids(r.Form["now"]), ids(r.Form["backlog"])); err != nil {
+		s.fail(w, "reorder", err)
+		return
+	}
+	s.respondBoard(w, r)
+}
+
+func ids(raw []string) []int64 {
+	out := make([]int64, 0, len(raw))
+	for _, v := range raw {
+		if id, err := strconv.ParseInt(v, 10, 64); err == nil {
+			out = append(out, id)
+		}
+	}
+	return out
+}

@@ -201,3 +201,24 @@ func TestSearchTasks(t *testing.T) {
 		t.Errorf("like wildcard must be escaped, got %d", len(got))
 	}
 }
+
+func TestReorder(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	a, _ := s.CreateTask(atl.ID, "a", "now")
+	b, _ := s.CreateTask(atl.ID, "b", "now")
+	c, _ := s.CreateTask(atl.ID, "c", "backlog")
+	// c dragged to the top of now, a dragged down to backlog
+	if err := s.Reorder([]int64{c.ID, b.ID}, []int64{a.ID}); err != nil {
+		t.Fatal(err)
+	}
+	now, _ := s.TasksByState("now")
+	backlog, _ := s.TasksByState("backlog")
+	if len(now) != 2 || now[0].ID != c.ID || now[1].ID != b.ID || !now[0].NowSince.Valid {
+		t.Fatalf("now: %+v", now)
+	}
+	if len(backlog) != 1 || backlog[0].ID != a.ID || backlog[0].NowSince.Valid {
+		t.Fatalf("backlog: %+v", backlog)
+	}
+}

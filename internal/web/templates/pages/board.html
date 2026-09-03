@@ -20,9 +20,15 @@
   </div>
 </form>
 
+{{/* Filled by app.js after a drag; the reorder event fires the request. */}}
+<form id="reorder" hx-post="/tasks/reorder" hx-trigger="reorder" hidden>
+  <input type="hidden" name="p" value="{{.Filter}}">
+  <input type="hidden" name="t" value="{{if .Open}}{{.Open.ID}}{{end}}">
+</form>
+
 <section class="sec">
   <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
-  <div class="list" id="now">
+  <div class="list sortable" id="now" data-state="now">
     {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty">Порожньо. Перетягни щось із беклогу або додай через ⌘K.</div>{{end}}
   </div>
 </section>
@@ -36,7 +42,7 @@
       <a{{if eq .Filter "pet"}} class="active"{{end}} href="/?p=pet">Своє</a>
     </nav>
   </div>
-  <div class="list" id="backlog">
+  <div class="list sortable" id="backlog" data-state="backlog">
     {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty">Беклог порожній.</div>{{end}}
   </div>
 </section>
