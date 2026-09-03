@@ -25,8 +25,8 @@ type boardData struct {
 	Now       []taskRow
 	Backlog   []taskRow
 	DoneToday []taskRow
-	Release   *releaseView    // nearest upcoming release, for the banner
-	Releases  []store.Release // upcoming releases of the open task's project
+	Release   *checklistView // a release in progress, for the banner
+	AddSlug   string         // project preselected in the add bar
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
@@ -52,6 +52,11 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 		return boardData{}, err
 	}
 	d := boardData{shell: sh, Date: ukDate(now)}
+	for _, p := range sh.Projects {
+		if p.Slug == filter || d.AddSlug == "" {
+			d.AddSlug = p.Slug
+		}
+	}
 	if openID != 0 {
 		t, err := s.store.Task(openID)
 		if err == nil {
@@ -94,30 +99,20 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 		return d, err
 	}
 
-	var projectID int64
-	for _, p := range sh.Projects {
-		if p.Slug == filter {
-			projectID = p.ID
-		}
-	}
-	rel, err := s.store.NextRelease(projectID)
+	// Banner: the filtered project's release, else the first project with a tick in its checklist.
+	progress, err := s.store.ChecklistProgress()
 	if err != nil {
 		return d, err
 	}
-	if rel != nil {
-		v := viewRelease(*rel, now)
-		d.Release = &v
-	}
-	if d.Open != nil {
-		up, _, err := s.store.Releases()
-		if err != nil {
+	for _, p := range sh.Projects {
+		pr := progress[p.ID]
+		if pr.Done == 0 || (filter != "" && p.Slug != filter) {
+			continue
+		}
+		if d.Release, err = s.checklistView(p.Project, false, now); err != nil {
 			return d, err
 		}
-		for _, r := range up {
-			if r.ProjectID == d.Open.ProjectID {
-				d.Releases = append(d.Releases, r)
-			}
-		}
+		break
 	}
 	return d, nil
 }

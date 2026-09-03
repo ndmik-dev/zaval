@@ -31,3 +31,20 @@ func ageDays(stored string, now time.Time) int {
 func ukDay(n int) string {
 	return fmt.Sprintf("%d-й день", n)
 }
+
+// ukDateShort renders "пт, 5 вересня", or "сьогодні" / "завтра" when that is what it is.
+func ukDateShort(ymd string, now time.Time) string {
+	d, err := time.ParseInLocation("2006-01-02", ymd, now.Location())
+	if err != nil {
+		return ymd
+	}
+	switch {
+	case sameDay(d, now):
+		return "сьогодні"
+	case sameDay(d, now.AddDate(0, 0, 1)):
+		return "завтра"
+	case sameDay(d, now.AddDate(0, 0, -1)):
+		return "вчора"
+	}
+	return fmt.Sprintf("%s, %d %s", ukWeekdaysShort[d.Weekday()], d.Day(), ukMonths[d.Month()-1])
+}

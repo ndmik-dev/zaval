@@ -39,7 +39,7 @@
   <a class="proj{{if eq $.Filter .Slug}} active{{end}}" href="/?p={{.Slug}}">
     <span class="dot" style="background:{{.Color}}"></span>
     <span class="name">{{.Name}}</span>
-    <span class="mono count" title="у Зараз · у беклозі">{{.Now}} · {{.Backlog}}</span>
+    <span class="mono count">{{add .Now .Backlog}}</span>
   </a>
   {{end}}{{end}}
 </div>

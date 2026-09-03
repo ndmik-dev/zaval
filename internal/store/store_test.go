@@ -272,67 +272,47 @@ func TestProjectsCRUD(t *testing.T) {
 	}
 }
 
-func TestReleases(t *testing.T) {
+func TestChecklist(t *testing.T) {
 	s := testStore(t)
 	s.Seed()
 	atl, _ := s.ProjectBySlug("atl")
-	s.AddTemplateItem(atl.ID, "before", "Merge release branch", "", "", "")
-	s.AddTemplateItem(atl.ID, "before", "Run migrate check", "must print 0 pending", "", "scripts/migrate-check.sh")
-	s.AddTemplateItem(atl.ID, "after", "Check Sentry", "", "https://sentry.io", "")
-
-	rel, err := s.CreateRelease(atl.ID, "2.7", "2026-09-05")
-	if err != nil {
+	a, _ := s.AddChecklistItem(atl.ID, "before", "Merge release branch")
+	b, _ := s.AddChecklistItem(atl.ID, "before", "Run migrate check")
+	s.AddChecklistItem(atl.ID, "after", "Check Sentry")
+	b.Command, b.Detail = "scripts/migrate-check.sh", "must print 0 pending"
+	if err := s.UpdateChecklistItem(b); err != nil {
 		t.Fatal(err)
 	}
-	if len(rel.Items) != 3 || rel.Total != 3 || rel.Done != 0 || rel.Items[1].Command != "scripts/migrate-check.sh" {
-		t.Fatalf("copied items: %+v", rel.Items)
+	s.ToggleChecklistItem(a.ID)
+	items, _ := s.Checklist(atl.ID)
+	if len(items) != 3 || !items[0].Done || items[1].Command != "scripts/migrate-check.sh" {
+		t.Fatalf("items: %+v", items)
 	}
-	s.ToggleReleaseItem(rel.Items[0].ID)
-	extra, _ := s.AddReleaseItem(rel.ID, "after", "Only this release", "", "", "")
-	if rid, _ := s.ReleaseItemRelease(extra.ID); rid != rel.ID {
-		t.Error("ReleaseItemRelease wrong")
+	if pid, _ := s.ChecklistItemProject(a.ID); pid != atl.ID {
+		t.Error("ChecklistItemProject wrong")
 	}
-
-	task, _ := s.CreateTask(atl.ID, "x", "now")
-	s.SetTaskRelease(task.ID, rel.ID)
-	got, _ := s.Release(rel.ID)
-	if got.Done != 1 || got.Total != 4 || len(got.Tasks) != 1 || got.Tasks[0].Release.String != "2.7" {
-		t.Fatalf("release: done=%d total=%d tasks=%d rel=%v", got.Done, got.Total, len(got.Tasks), got.Tasks[0].Release)
+	prog, _ := s.ChecklistProgress()
+	if prog[atl.ID] != (Progress{Done: 1, Total: 3}) {
+		t.Fatalf("progress: %+v", prog[atl.ID])
 	}
-	if tt, _ := s.Task(task.ID); tt.Release.String != "2.7" {
-		t.Error("task release name not joined")
+	if err := s.MarkReleased(atl.ID); err != nil {
+		t.Fatal(err)
 	}
-
-	later, _ := s.CreateRelease(atl.ID, "2.8", "")
-	next, _ := s.NextRelease(0)
-	if next == nil || next.ID != rel.ID {
-		t.Fatalf("next release should be the dated one, got %+v", next)
+	prog, _ = s.ChecklistProgress()
+	if prog[atl.ID].Done != 0 {
+		t.Error("release must reset the checklist")
 	}
-	up, past, _ := s.Releases()
-	if len(up) != 2 || up[0].ID != rel.ID || up[1].ID != later.ID || len(past) != 0 {
-		t.Fatalf("upcoming %d past %d", len(up), len(past))
+	hist, _ := s.ReleaseHistory(atl.ID, 5)
+	if len(hist) != 1 || hist[0].ReleasedAt == "" {
+		t.Fatalf("history: %+v", hist)
 	}
-	s.SetReleased(rel.ID, true)
-	up, past, _ = s.Releases()
-	if len(up) != 1 || len(past) != 1 {
-		t.Fatalf("after release: upcoming %d past %d", len(up), len(past))
+	s.ToggleChecklistItem(a.ID)
+	s.ResetChecklist(atl.ID)
+	if prog, _ := s.ChecklistProgress(); prog[atl.ID].Done != 0 {
+		t.Error("reset failed")
 	}
-	if n, _ := s.NextRelease(atl.ID); n == nil || n.ID != later.ID {
-		t.Error("next after releasing should be 2.8")
-	}
-	s.DeleteRelease(later.ID)
-	if tt, _ := s.Task(task.ID); tt.ReleaseID.Valid && tt.ReleaseID.Int64 == later.ID {
-		t.Error("task should not point at a deleted release")
-	}
-	// Template edits do not touch existing releases.
-	tpl, _ := s.Templates(atl.ID)
-	tpl[0].Title = "Renamed"
-	s.UpdateTemplateItem(tpl[0])
-	s.DeleteTemplateItem(tpl[2].ID)
-	if tpl, _ := s.Templates(atl.ID); len(tpl) != 2 || tpl[0].Title != "Renamed" {
-		t.Fatalf("templates: %+v", tpl)
-	}
-	if got, _ := s.Release(rel.ID); len(got.Items) != 4 {
-		t.Error("release items changed with template")
+	s.DeleteChecklistItem(a.ID)
+	if items, _ := s.Checklist(atl.ID); len(items) != 2 {
+		t.Error("delete failed")
 	}
 }

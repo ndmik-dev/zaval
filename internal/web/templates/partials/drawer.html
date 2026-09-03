@@ -22,13 +22,6 @@
       </div>
       {{if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}} у «Зараз»</span>{{end}}
       {{if eq .State "done"}}<span class="drawer-meta">закрито {{slice .DoneAt.String 8 10}}.{{slice .DoneAt.String 5 7}}</span>{{end}}
-      {{if or $.Releases .Release.Valid}}
-      <select class="rel-select" name="release_id" hx-post="/tasks/{{.ID}}/release" hx-trigger="change" aria-label="Реліз">
-        <option value="0">без релізу</option>
-        {{range $.Releases}}<option value="{{.ID}}"{{if and $.Open.ReleaseID.Valid (eq $.Open.ReleaseID.Int64 .ID)}} selected{{end}}>реліз {{.Name}}</option>{{end}}
-        {{if and .Release.Valid (not (hasRelease $.Releases .ReleaseID.Int64))}}<option value="{{.ReleaseID.Int64}}" selected>реліз {{.Release.String}}</option>{{end}}
-      </select>
-      {{end}}
     </div>
     <textarea class="drawer-notes" name="notes" rows="3" placeholder="Нотатки">{{.Notes}}</textarea>
   </form>

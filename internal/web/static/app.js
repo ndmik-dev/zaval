@@ -97,3 +97,49 @@ document.addEventListener('click', (e) => {
   if (!open || !link || e.target.closest('.pcard.open') || e.target.closest('.pcard.new') || e.target.closest('a, button')) return;
   link.click();
 });
+
+// Custom dropdown (.dd): hidden input + button + menu. Choosing an option
+// updates the input and fires a change event so hx-trigger="change" forms react.
+function closeDropdowns(except) {
+  document.querySelectorAll('.dd.open').forEach((dd) => {
+    if (dd === except) return;
+    dd.classList.remove('open');
+    dd.querySelector('.dd-menu').hidden = true;
+    dd.querySelector('.dd-btn').setAttribute('aria-expanded', 'false');
+  });
+}
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.dd-btn');
+  const opt = e.target.closest('.dd-menu [data-value]');
+  if (btn) {
+    const dd = btn.closest('.dd');
+    const open = !dd.classList.contains('open');
+    closeDropdowns(dd);
+    dd.classList.toggle('open', open);
+    dd.querySelector('.dd-menu').hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    return;
+  }
+  if (opt) {
+    const dd = opt.closest('.dd');
+    const input = dd.querySelector('input[type=hidden]');
+    input.value = opt.dataset.value;
+    dd.querySelector('.dd-label').textContent = opt.textContent.trim();
+    const dot = dd.querySelector('.dd-btn .dot');
+    if (dot && opt.dataset.color) dot.style.background = opt.dataset.color;
+    dd.querySelectorAll('[data-value]').forEach((o) => o.toggleAttribute('aria-selected', o === opt));
+    closeDropdowns();
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return;
+  }
+  if (!e.target.closest('.dd')) closeDropdowns();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDropdowns(); });
+
+// A click anywhere on a task row opens its card; controls inside keep their own behaviour.
+document.addEventListener('click', (e) => {
+  const row = e.target.closest('.task[data-open]');
+  if (!row || e.target.closest('a, button, input, .acts')) return;
+  const title = row.querySelector('a.title');
+  if (title) title.click();
+});

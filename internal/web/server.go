@@ -24,17 +24,10 @@ var funcs = template.FuncMap{
 	"percent":   func(a, b int) int { return a * 100 / b },
 	"doneCount": doneCount,
 	"hostOf":    hostOf,
-	"hasRelease": func(rs []store.Release, id int64) bool {
-		for _, r := range rs {
-			if r.ID == id {
-				return true
-			}
-		}
-		return false
-	},
+	"add":       func(a, b int) int { return a + b },
 }
 
-func doneCount(items []store.ReleaseItem) int {
+func doneCount(items []store.ChecklistItem) int {
 	n := 0
 	for _, it := range items {
 		if it.Done {
@@ -86,17 +79,12 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("GET /{$}", s.board)
 	s.mux.HandleFunc("GET /journal", s.journal)
 	s.mux.HandleFunc("GET /releases", s.releases)
-	s.mux.HandleFunc("POST /releases", s.createRelease)
-	s.mux.HandleFunc("POST /releases/{id}", s.updateRelease)
-	s.mux.HandleFunc("POST /releases/{id}/released", s.setReleased)
-	s.mux.HandleFunc("DELETE /releases/{id}", s.deleteRelease)
-	s.mux.HandleFunc("POST /releases/{id}/items", s.addReleaseItem)
-	s.mux.HandleFunc("POST /release-items/{id}/toggle", s.toggleReleaseItem)
-	s.mux.HandleFunc("DELETE /release-items/{id}", s.deleteReleaseItem)
-	s.mux.HandleFunc("POST /projects/{id}/template", s.addTemplateItem)
-	s.mux.HandleFunc("POST /template-items/{id}", s.updateTemplateItem)
-	s.mux.HandleFunc("DELETE /template-items/{id}", s.deleteTemplateItem)
-	s.mux.HandleFunc("POST /tasks/{id}/release", s.setTaskRelease)
+	s.mux.HandleFunc("POST /checklist/{id}/items", s.addChecklistItem)
+	s.mux.HandleFunc("POST /checklist/{id}/released", s.markReleased)
+	s.mux.HandleFunc("POST /checklist/{id}/reset", s.resetChecklist)
+	s.mux.HandleFunc("POST /checklist-items/{id}", s.updateChecklistItem)
+	s.mux.HandleFunc("POST /checklist-items/{id}/toggle", s.toggleChecklistItem)
+	s.mux.HandleFunc("DELETE /checklist-items/{id}", s.deleteChecklistItem)
 	s.mux.HandleFunc("GET /projects", s.projects)
 	s.mux.HandleFunc("POST /projects", s.createProject)
 	s.mux.HandleFunc("POST /projects/{id}", s.updateProject)

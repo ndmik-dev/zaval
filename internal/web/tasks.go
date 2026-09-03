@@ -43,6 +43,9 @@ func (s *Server) createTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// Keep the chosen project selected in the add bar after the morph.
+	r.ParseForm()
+	r.Form.Set("add", task.Project.Slug)
 	s.respondBoard(w, r)
 }
 
@@ -83,6 +86,9 @@ func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.fail(w, "board", err)
 		return
+	}
+	if slug := r.FormValue("add"); slug != "" {
+		data.AddSlug = slug
 	}
 	s.renderPart(w, "board", "app", data)
 }

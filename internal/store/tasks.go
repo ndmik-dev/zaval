@@ -13,8 +13,6 @@ type Task struct {
 	State     string
 	Notes     string
 	Position  int
-	ReleaseID sql.NullInt64
-	Release   sql.NullString // release name, for the chip
 	CreatedAt string
 	NowSince  sql.NullString
 	DoneAt    sql.NullString
@@ -41,18 +39,18 @@ type Counts struct{ Now, Backlog int }
 const TimeLayout = "2006-01-02 15:04:05"
 
 const taskSelect = `
-select t.id, t.project_id, t.title, t.state, t.notes, t.position, t.release_id, r.name, t.created_at, t.now_since, t.done_at,
+select t.id, t.project_id, t.title, t.state, t.notes, t.position, t.created_at, t.now_since, t.done_at,
        ` + projectColsPrefixed + `,
        (select count(*) from task_steps st where st.task_id = t.id and st.done = 1),
        (select count(*) from task_steps st where st.task_id = t.id)
-from tasks t join projects p on p.id = t.project_id left join releases r on r.id = t.release_id `
+from tasks t join projects p on p.id = t.project_id `
 
 const projectColsPrefixed = `p.id, p.name, p.slug, p.color, p.kind, p.jira_key, p.jira_host, p.repos, p.channels, p.on_board, p.position`
 
 func scanTask(rows *sql.Rows) (Task, error) {
 	var t Task
 	p := &t.Project
-	err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.State, &t.Notes, &t.Position, &t.ReleaseID, &t.Release, &t.CreatedAt, &t.NowSince, &t.DoneAt,
+	err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.State, &t.Notes, &t.Position, &t.CreatedAt, &t.NowSince, &t.DoneAt,
 		&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.JiraKey, &p.JiraHost, &p.Repos, &p.Channels, &p.OnBoard, &p.Position,
 		&t.StepsDone, &t.StepsTotal)
 	return t, err

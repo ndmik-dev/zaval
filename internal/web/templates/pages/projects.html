@@ -13,10 +13,7 @@
     <div class="pcard-head">
       <input type="color" name="color" value="{{.Color}}" class="swatch" aria-label="Колір">
       <input class="pname" name="name" value="{{.Name}}" required>
-      <select name="kind" class="add-project">
-        <option value="work"{{if eq .Kind "work"}} selected{{end}}>робота</option>
-        <option value="pet"{{if eq .Kind "pet"}} selected{{end}}>своє</option>
-      </select>
+      {{template "kind_dropdown" .Kind}}
       <span class="grow"></span>
       <span class="mono dim">{{.Now}} у Зараз · {{.Backlog}} у беклозі</span>
     </div>
@@ -49,8 +46,19 @@
   <form class="pcard new" hx-post="/projects" hx-on:htmx:after:request="this.reset()">
     <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.6v8.8M2.6 7h8.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
     <input name="name" placeholder="Новий проєкт" autocomplete="off" required>
-    <select name="kind" class="add-project"><option value="pet">своє</option><option value="work">робота</option></select>
+    {{template "kind_dropdown" "pet"}}
     <button type="submit" class="btn">Додати</button>
   </form>
+</div>
+{{end}}
+
+{{define "kind_dropdown"}}
+<div class="dd" data-dd>
+  <input type="hidden" name="kind" value="{{.}}">
+  <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false"><span class="dd-label">{{if eq . "work"}}робота{{else}}своє{{end}}</span><svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div class="dd-menu" role="listbox" hidden>
+    <button type="button" role="option" data-value="work"{{if eq . "work"}} aria-selected="true"{{end}}>робота</button>
+    <button type="button" role="option" data-value="pet"{{if eq . "pet"}} aria-selected="true"{{end}}>своє</button>
+  </div>
 </div>
 {{end}}
