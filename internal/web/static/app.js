@@ -89,3 +89,11 @@ document.addEventListener('click', async (e) => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
+
+// Projects: a click anywhere outside the expanded card collapses it.
+document.addEventListener('click', (e) => {
+  const open = document.querySelector('.pcard.open');
+  const link = document.getElementById('collapse-projects');
+  if (!open || !link || e.target.closest('.pcard.open') || e.target.closest('.pcard.new') || e.target.closest('a, button')) return;
+  link.click();
+});

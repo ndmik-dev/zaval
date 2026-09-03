@@ -13,11 +13,15 @@
         </a>
         {{else}}<div class="empty">Нема релізів у підготовці.</div>{{end}}
       </div>
-      <form class="pcard new" hx-post="/releases" hx-on:htmx:after:request="this.reset()">
-        <select name="project_id" class="add-project">{{range .Projects}}{{if eq .Kind "work"}}<option value="{{.ID}}">{{.Name}}</option>{{end}}{{end}}</select>
-        <input name="name" placeholder="2.8" autocomplete="off" required style="width:70px">
-        <input name="date" type="date" class="date">
-        <button type="submit" class="btn">Новий</button>
+      <form class="rel-new" hx-post="/releases" hx-on:htmx:after:request="this.reset()">
+        <div class="rel-new-row">
+          <select name="project_id" class="add-project">{{range .Projects}}{{if eq .Kind "work"}}<option value="{{.ID}}">{{.Name}}</option>{{end}}{{end}}</select>
+          <input name="name" placeholder="версія, напр. 2.8" autocomplete="off" required>
+        </div>
+        <div class="rel-new-row">
+          <input name="date" type="date" class="date" aria-label="Дата">
+          <button type="submit" class="btn">Новий реліз</button>
+        </div>
       </form>
     </section>
 

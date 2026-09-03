@@ -39,8 +39,8 @@ a:hover{color:var(--ink)}
   border:1px solid transparent;font-size:13.5px;color:#5A6159;
 }
 .nav.active{background:var(--card);border-color:var(--line);font-weight:600;color:var(--ink)}
-.main{flex:1;min-width:0;padding:24px 40px;display:flex;flex-direction:column;align-items:center}
-.main > *{width:100%;max-width:880px}
+.main{flex:1;min-width:0;padding:24px 32px;display:flex;flex-direction:column}
+.main > *{width:100%}
 h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 
 /* rail */
@@ -150,7 +150,7 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .drawer-title:focus{border-bottom-color:var(--line)}
 .drawer-state{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .drawer-state .seg button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:4px 11px 5px;cursor:pointer}
-.drawer-state .seg button.on{background:var(--atlas);color:var(--card)}
+.drawer-state .seg button.on{background:var(--ink);color:var(--card)}
 .drawer-notes{
   font:inherit;font-size:13px;color:var(--ink-2);line-height:1.5;background:var(--card-2);
   border:1px solid var(--line-2);border-radius:7px;padding:10px 11px;resize:vertical;outline:0;
@@ -190,7 +190,7 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .kbd{font:inherit;font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:1px 6px 2px;background:none;cursor:pointer}
 .kbd:hover{color:var(--ink);border-color:#B9BDB5}
 .palette{
-  width:680px;max-width:calc(100vw - 32px);margin:118px auto 0;padding:0;
+  width:760px;max-width:calc(100vw - 32px);margin:118px auto 0;padding:0;
   background:var(--card);border:1px solid #C7CBC2;border-radius:11px;color:var(--ink);
   box-shadow:0 24px 60px rgba(23,32,28,.28),0 2px 0 rgba(23,32,28,.06);
 }
@@ -290,7 +290,6 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 }
 .banner .next{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .banner-cta{font-size:12px;font-weight:600;color:var(--atlas)}
-.main > .releases{max-width:1180px}
 .releases{display:flex;gap:30px;align-items:flex-start}
 .rel-list{width:300px;flex:none}
 .rel-main{flex:1;min-width:0}
@@ -303,7 +302,11 @@ h1{font-size:21px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .rel-past{display:flex;align-items:center;gap:9px;padding:6px 10px;font-size:13px;color:var(--muted);border-radius:6px}
 .rel-past.on,.rel-past:hover{background:var(--card);color:var(--ink)}
 .rel-past.tpl{border:1px solid var(--line);background:var(--card);color:var(--ink-2)}
-.rel-list .pcard.new{margin-top:6px;gap:8px}
+.rel-new{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:10px 12px;border:1px dashed #CDD0C8;border-radius:8px}
+.rel-new-row{display:flex;gap:6px}
+.rel-new-row input[name=name]{flex:1;min-width:0;font:inherit;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:0 10px}
+.rel-new-row .date{flex:1;min-width:0}
+.rel-new-row .add-project{padding:6px 10px}
 .date{font:inherit;font-size:12.5px;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
 .rel-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px}
 .rel-title{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}

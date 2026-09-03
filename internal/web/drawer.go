@@ -15,6 +15,7 @@ func pathID(r *http.Request) int64 {
 
 // respondTask re-renders the board with the drawer open on the given task.
 func (s *Server) respondTask(w http.ResponseWriter, r *http.Request, taskID int64) {
+	r.ParseForm()
 	r.Form.Set("t", strconv.FormatInt(taskID, 10))
 	s.respondBoard(w, r)
 }

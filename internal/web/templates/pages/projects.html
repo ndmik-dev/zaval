@@ -5,6 +5,7 @@
 
 {{if .Error}}<div class="notice">{{.Error}}</div>{{end}}
 
+<a id="collapse-projects" href="/projects" hx-get="/projects" hx-push-url="true" hidden></a>
 <div class="projects">
   {{range .All}}
   {{if eq .ID $.Expanded}}
@@ -21,9 +22,9 @@
     </div>
     <div class="pgrid">
       <label><span class="up">Тег для ⌘K</span><span class="field"><span class="dim">#</span><input name="slug" value="{{.Slug}}"></span></label>
-      <label><span class="up">Jira</span><span class="field"><input name="jira_key" value="{{.JiraKey}}" placeholder="ATL" style="width:70px"><input name="jira_host" value="{{.JiraHost}}" placeholder="atlas.atlassian.net"></span></label>
-      <label><span class="up">Репозиторії</span><span class="field"><input name="repos" value="{{.Repos}}" placeholder="owner/repo, gitlab.com/group/repo"></span></label>
-      <label><span class="up">Канали Slack</span><span class="field"><input name="channels" value="{{.Channels}}" placeholder="#atlas-eng, #atlas-releases"></span></label>
+      <label><span class="up">Jira</span><span class="field"><input name="jira_key" value="{{.JiraKey}}" placeholder="ключ" style="width:70px"><input name="jira_host" value="{{.JiraHost}}" placeholder="хост Jira"></span></label>
+      <label><span class="up">Репозиторії</span><span class="field"><input name="repos" value="{{.Repos}}" placeholder="owner/repo, через кому"></span></label>
+      <label><span class="up">Канали Slack</span><span class="field"><input name="channels" value="{{.Channels}}" placeholder="#канал, через кому"></span></label>
     </div>
     <div class="pcard-foot">
       <label class="toggle"><input type="checkbox" name="on_board" value="1"{{if .OnBoard}} checked{{end}}><span></span>показувати на дошці</label>

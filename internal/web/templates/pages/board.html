@@ -4,7 +4,7 @@
   <span class="head-note">закрито сьогодні <span class="mono">{{len .DoneToday}}</span></span>
 </header>
 
-<form class="add" hx-post="/tasks" hx-on:htmx:after:request="this.reset()">
+<form class="add" hx-post="/tasks" hx-on:htmx:after:request="this.querySelector('[name=title]').value = ''">
   <input type="hidden" name="p" value="{{.Filter}}">
   <label class="add-input">
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>

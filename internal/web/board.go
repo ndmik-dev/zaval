@@ -63,13 +63,14 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 		}
 	}
 
-	load := func(ts []store.Task, err error) ([]taskRow, error) {
+	// The filter narrows the backlog only: "Зараз" and "Готово" are short and always shown whole.
+	load := func(ts []store.Task, err error, filtered bool) ([]taskRow, error) {
 		if err != nil {
 			return nil, err
 		}
 		var rows []taskRow
 		for _, t := range ts {
-			if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
+			if !t.Project.OnBoard || (filtered && !matchesFilter(t.Project, filter)) {
 				continue
 			}
 			row := taskRow{Task: t}
@@ -80,13 +81,16 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 		}
 		return rows, nil
 	}
-	if d.Now, err = load(s.store.TasksByState("now")); err != nil {
+	nowTasks, err := s.store.TasksByState("now")
+	if d.Now, err = load(nowTasks, err, false); err != nil {
 		return d, err
 	}
-	if d.Backlog, err = load(s.store.TasksByState("backlog")); err != nil {
+	backlog, err := s.store.TasksByState("backlog")
+	if d.Backlog, err = load(backlog, err, true); err != nil {
 		return d, err
 	}
-	if d.DoneToday, err = load(s.store.DoneToday()); err != nil {
+	doneToday, err := s.store.DoneToday()
+	if d.DoneToday, err = load(doneToday, err, false); err != nil {
 		return d, err
 	}
 

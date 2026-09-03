@@ -18,6 +18,16 @@ func (s *Server) createTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	projectID, _ := strconv.ParseInt(r.FormValue("project_id"), 10, 64)
+	if projectID == 0 {
+		projects, err := s.store.Projects()
+		if err != nil {
+			s.fail(w, "projects", err)
+			return
+		}
+		if p := s.defaultProject(projects, r.FormValue("p")); p != nil {
+			projectID = p.ID
+		}
+	}
 	state := r.FormValue("state")
 	if state != "now" {
 		state = "backlog"
@@ -62,6 +72,7 @@ func (s *Server) deleteTask(w http.ResponseWriter, r *http.Request) {
 // respondBoard re-renders the whole app shell after a mutation; htmx morphs it
 // in place. Plain form posts (no htmx) get a redirect back to the board.
 func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
 	filter := r.FormValue("p")
 	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
 	if r.Header.Get("HX-Request") == "" {
