@@ -19,11 +19,8 @@ type Task struct {
 	Waiting      string // what the task waits for; empty = not waiting
 	WaitingSince sql.NullString
 
-	Project    Project
-	Links      []Link
-	Steps      []Step // loaded only by Task(id)
-	StepsDone  int
-	StepsTotal int
+	Project Project
+	Links   []Link
 }
 
 type Link struct {
@@ -42,19 +39,16 @@ const TimeLayout = "2006-01-02 15:04:05"
 
 const taskSelect = `
 select t.id, t.project_id, t.title, t.state, t.notes, t.position, t.created_at, t.now_since, t.done_at, t.waiting, t.waiting_since,
-       ` + projectColsPrefixed + `,
-       (select count(*) from task_steps st where st.task_id = t.id and st.done = 1),
-       (select count(*) from task_steps st where st.task_id = t.id)
+       ` + projectColsPrefixed + `
 from tasks t join projects p on p.id = t.project_id `
 
-const projectColsPrefixed = `p.id, p.name, p.slug, p.color, p.kind, p.jira_key, p.jira_host, p.repos, p.channels, p.on_board, p.position`
+const projectColsPrefixed = `p.id, p.name, p.slug, p.color, p.kind, p.position`
 
 func scanTask(rows *sql.Rows) (Task, error) {
 	var t Task
 	p := &t.Project
 	err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.State, &t.Notes, &t.Position, &t.CreatedAt, &t.NowSince, &t.DoneAt, &t.Waiting, &t.WaitingSince,
-		&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.JiraKey, &p.JiraHost, &p.Repos, &p.Channels, &p.OnBoard, &p.Position,
-		&t.StepsDone, &t.StepsTotal)
+		&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.Position)
 	return t, err
 }
 
@@ -122,11 +116,7 @@ func (s *Store) Task(id int64) (Task, error) {
 	if len(ts) == 0 {
 		return Task{}, ErrNotFound
 	}
-	t := ts[0]
-	if t.Steps, err = s.Steps(id); err != nil {
-		return Task{}, err
-	}
-	return t, nil
+	return ts[0], nil
 }
 
 func (s *Store) UpdateTask(id int64, title, notes string) error {
@@ -264,4 +254,10 @@ func (s *Store) SetWaiting(id int64, note string) error {
 // WaitingTasks lists open tasks that wait on something, oldest wait first.
 func (s *Store) WaitingTasks() ([]Task, error) {
 	return s.queryTasks(`where t.state in ('now', 'backlog') and t.waiting != '' order by t.position, t.id`)
+}
+
+func (s *Store) LinkTask(linkID int64) (int64, error) {
+	var taskID int64
+	err := s.db.QueryRow(`select task_id from task_links where id = ?`, linkID).Scan(&taskID)
+	return taskID, err
 }

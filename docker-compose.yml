@@ -1,0 +1,31 @@
+services:
+  zaval:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Set in Dokploy → Environment. The server refuses to start without a
+      # password on a public address, which is the point.
+      PASSWORD: ${PASSWORD}
+      TZ: Europe/Kyiv
+    volumes:
+      # The whole application state is one SQLite file under here,
+      # nightly copies under /data/backups.
+      - zaval-data:/data
+    healthcheck:
+      # distroless has no shell and no curl, so the binary checks itself.
+      test: ["CMD", "/zaval", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - dokploy-network
+
+volumes:
+  zaval-data:
+
+networks:
+  dokploy-network:
+    external: true

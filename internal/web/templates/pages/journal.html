@@ -8,7 +8,7 @@
   <nav class="filters">
     <a{{if eq .Filter ""}} class="active"{{end}} href="/journal">Усі</a>
     {{range .Projects}}{{if eq .Kind "work"}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}">{{.Name}}</a>{{end}}{{end}}
-    <a{{if eq .Filter "pet"}} class="active"{{end}} href="/journal?p=pet">Своє</a>
+    {{range .Projects}}{{if eq .Kind "pet"}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}">{{.Name}}</a>{{end}}{{end}}
   </nav>
 </header>
 

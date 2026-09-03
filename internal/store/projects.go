@@ -5,25 +5,23 @@ import (
 	"errors"
 )
 
+// Project is a work or pet project. Slug is the #tag used in ⌘K.
+// (The table still carries jira/repos/channels/on_board columns from earlier
+// designs; they are not read.)
 type Project struct {
 	ID       int64
 	Name     string
 	Slug     string
 	Color    string
-	Kind     string
-	JiraKey  string
-	JiraHost string
-	Repos    string
-	Channels string
-	OnBoard  bool
+	Kind     string // work | pet
 	Position int
 }
 
-const projectCols = `id, name, slug, color, kind, jira_key, jira_host, repos, channels, on_board, position`
+const projectCols = `id, name, slug, color, kind, position`
 
 func scanProject(row interface{ Scan(...any) error }) (Project, error) {
 	var p Project
-	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.JiraKey, &p.JiraHost, &p.Repos, &p.Channels, &p.OnBoard, &p.Position)
+	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.Position)
 	return p, err
 }
 
@@ -62,21 +60,21 @@ func (s *Store) Seed() error {
 		return nil
 	}
 	seed := []Project{
-		{Name: "Atlas", Slug: "atl", Color: "#2F5D50", Kind: "work", JiraKey: "ATL", OnBoard: true},
-		{Name: "Nimbus", Slug: "nim", Color: "#7C4A6B", Kind: "work", JiraKey: "NIM", OnBoard: true},
-		{Name: "harbor", Slug: "harbor", Color: "#8A6A30", Kind: "pet", OnBoard: true},
-		{Name: "kite", Slug: "kite", Color: "#8A6A30", Kind: "pet", OnBoard: true},
-		{Name: "moss", Slug: "moss", Color: "#8A6A30", Kind: "pet", OnBoard: true},
-		{Name: "zaval", Slug: "zaval", Color: "#8A6A30", Kind: "pet", OnBoard: true},
-		{Name: "tide", Slug: "tide", Color: "#8A6A30", Kind: "pet", OnBoard: false},
+		{Name: "Atlas", Slug: "atl", Color: "#2F5D50", Kind: "work"},
+		{Name: "Nimbus", Slug: "nim", Color: "#7C4A6B", Kind: "work"},
+		{Name: "harbor", Slug: "harbor", Color: "#8A6A30", Kind: "pet"},
+		{Name: "kite", Slug: "kite", Color: "#4E6B8C", Kind: "pet"},
+		{Name: "moss", Slug: "moss", Color: "#7A5C99", Kind: "pet"},
+		{Name: "zaval", Slug: "zaval", Color: "#3E7D6E", Kind: "pet"},
+		{Name: "tide", Slug: "tide", Color: "#A0522D", Kind: "pet"},
 	}
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
 	for i, p := range seed {
-		_, err := tx.Exec(`insert into projects (name, slug, color, kind, jira_key, on_board, position) values (?, ?, ?, ?, ?, ?, ?)`,
-			p.Name, p.Slug, p.Color, p.Kind, p.JiraKey, p.OnBoard, i)
+		_, err := tx.Exec(`insert into projects (name, slug, color, kind, position) values (?, ?, ?, ?, ?)`,
+			p.Name, p.Slug, p.Color, p.Kind, i)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -98,8 +96,8 @@ func (s *Store) CreateProject(name, slug, kind, color string) (Project, error) {
 }
 
 func (s *Store) UpdateProject(p Project) error {
-	res, err := s.db.Exec(`update projects set name = ?, slug = ?, color = ?, kind = ?, jira_key = ?, jira_host = ?, repos = ?, channels = ?, on_board = ? where id = ?`,
-		p.Name, p.Slug, p.Color, p.Kind, p.JiraKey, p.JiraHost, p.Repos, p.Channels, p.OnBoard, p.ID)
+	res, err := s.db.Exec(`update projects set name = ?, slug = ?, color = ?, kind = ? where id = ?`,
+		p.Name, p.Slug, p.Color, p.Kind, p.ID)
 	if err != nil {
 		return err
 	}
@@ -107,11 +105,6 @@ func (s *Store) UpdateProject(p Project) error {
 		return ErrNotFound
 	}
 	return nil
-}
-
-func (s *Store) SetProjectOnBoard(id int64, on bool) error {
-	_, err := s.db.Exec(`update projects set on_board = ? where id = ?`, on, id)
-	return err
 }
 
 // DeleteProject removes a project that has no tasks; ErrHasTasks otherwise.

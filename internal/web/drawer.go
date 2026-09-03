@@ -68,36 +68,3 @@ func (s *Server) deleteLink(w http.ResponseWriter, r *http.Request) {
 	}
 	s.respondTask(w, r, taskID)
 }
-
-func (s *Server) addStep(w http.ResponseWriter, r *http.Request) {
-	id := pathID(r)
-	if title := strings.TrimSpace(r.FormValue("title")); title != "" {
-		if _, err := s.store.AddStep(id, title); err != nil {
-			s.fail(w, "add step", err)
-			return
-		}
-	}
-	s.respondTask(w, r, id)
-}
-
-func (s *Server) toggleStep(w http.ResponseWriter, r *http.Request) {
-	s.stepAction(w, r, s.store.ToggleStep)
-}
-
-func (s *Server) deleteStep(w http.ResponseWriter, r *http.Request) {
-	s.stepAction(w, r, s.store.DeleteStep)
-}
-
-func (s *Server) stepAction(w http.ResponseWriter, r *http.Request, do func(int64) error) {
-	id := pathID(r)
-	taskID, err := s.store.StepTask(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	if err := do(id); err != nil {
-		s.fail(w, "step", err)
-		return
-	}
-	s.respondTask(w, r, taskID)
-}

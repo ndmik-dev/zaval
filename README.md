@@ -1,30 +1,52 @@
 # Day Board
 
-Personal task board for a couple of work projects and pet projects.
-Go + htmx 4 + SQLite, one binary, one user.
+Personal task board for two work projects and a few pet projects. What is in
+progress, what waits on someone, a backlog, a journal for the daily standup and
+a release checklist per project.
 
-## Run locally
+Self-hosted, single user, server-rendered. Go + htmx 4 + SQLite, one binary,
+one dependency (`modernc.org/sqlite`, pure Go), no frontend build. The
+interface is Ukrainian.
 
-    go run .                       # http://localhost:8080, db at ./dayboard.db
+## Run
 
-No password locally unless `PASSWORD` is set.
+    go run .            # http://localhost:8080, dayboard.db in the working directory
+    go test ./...
+
+No password is needed on a loopback address. Anywhere else the server refuses
+to start without `PASSWORD` (or `INSECURE=1`).
+
+## Configuration
+
+Read from the environment, falling back to `.env` in the working directory.
+A real environment variable always wins over the file.
+
+| Variable     | Default        | Purpose                                              |
+|--------------|----------------|------------------------------------------------------|
+| `ADDR`       | `:8080`        | listen address                                       |
+| `DB_PATH`    | `dayboard.db`  | SQLite file                                          |
+| `PASSWORD`   | —              | the one password; required off loopback              |
+| `BACKUP_DIR` | unset          | nightly `VACUUM INTO` copies here, last 30 kept      |
+| `TZ`         | system         | timezone for day boundaries and the journal          |
+| `ENV_FILE`   | `.env`         | path to the env file                                 |
+| `INSECURE`   | unset          | `1` allows running without a password off loopback   |
 
 ## Deploy
 
-    cp deploy/compose.yml /opt/zaval/deploy/   # or clone the repo there
-    echo PASSWORD=... > /opt/zaval/deploy/.env
-    docker compose -f /opt/zaval/deploy/compose.yml up -d --build
+    docker compose up --build
 
-Port 8080 is bound to localhost; put Caddy or nginx with TLS in front.
-The cookie is marked Secure when the proxy sends `X-Forwarded-Proto: https`.
+Multi-stage into distroless, `CGO_ENABLED=0`, runs as nonroot, database and
+backups on a `/data` volume. `/data` is created in the image owned by uid
+65532: a fresh volume inherits that, so the nonroot process can create the
+database on first start.
 
-Backups: `docker compose exec -T dayboard backup` writes `/data/backups/dayboard-YYYY-MM-DD.db` (keeps 30).
+The image has no shell, so `-healthcheck` makes the binary call its own
+`/healthz` — that is what the compose healthcheck runs.
 
-## Env
+On Dokploy the service is a **Compose** application: `dokploy-network` is
+external and joined by the service, the domain is added in the Domains tab
+(service `zaval`, port `8080`), and `PASSWORD` goes in the Environment tab.
 
-| var        | default          |
-|------------|------------------|
-| `ADDR`     | `:8080`          |
-| `DB_PATH`  | `dayboard.db`    |
-| `PASSWORD` | empty = no login |
-| `TZ`       | system           |
+Backups: with `BACKUP_DIR` set (the image sets `/data/backups`) the server
+writes `dayboard-YYYY-MM-DD.db` every night at 03:00 and keeps 30. To restore,
+stop the container and copy a file over `/data/dayboard.db`.

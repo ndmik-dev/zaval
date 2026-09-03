@@ -30,15 +30,11 @@ func TestMigrateAndSeed(t *testing.T) {
 	if len(ps) != 7 {
 		t.Fatalf("want 7 projects, got %d", len(ps))
 	}
-	if ps[0].Name != "Atlas" || ps[0].Slug != "atl" || !ps[0].OnBoard {
+	if ps[0].Name != "Atlas" || ps[0].Slug != "atl" || ps[0].Kind != "work" {
 		t.Errorf("unexpected first project: %+v", ps[0])
 	}
-	p, err := s.ProjectBySlug("tide")
-	if err != nil {
+	if _, err := s.ProjectBySlug("tide"); err != nil {
 		t.Fatal(err)
-	}
-	if p.OnBoard {
-		t.Error("tide should be hidden from the board")
 	}
 	// Re-opening must not re-run migrations.
 	if _, err := Open(filepath.Join(t.TempDir(), "other.db")); err != nil {
@@ -155,27 +151,16 @@ func TestLinks(t *testing.T) {
 	}
 }
 
-func TestStepsAndUpdate(t *testing.T) {
+func TestUpdateTask(t *testing.T) {
 	s := testStore(t)
 	s.Seed()
 	atl, _ := s.ProjectBySlug("atl")
 	task, _ := s.CreateTask(atl.ID, "x", "backlog")
-	a, _ := s.AddStep(task.ID, "one")
-	s.AddStep(task.ID, "two")
-	s.ToggleStep(a.ID)
-	got, _ := s.Task(task.ID)
-	if len(got.Steps) != 2 || !got.Steps[0].Done || got.StepsDone != 1 || got.StepsTotal != 2 {
-		t.Fatalf("steps: %+v done=%d total=%d", got.Steps, got.StepsDone, got.StepsTotal)
-	}
-	if tid, _ := s.StepTask(a.ID); tid != task.ID {
-		t.Error("StepTask wrong")
-	}
-	s.DeleteStep(a.ID)
 	if err := s.UpdateTask(task.ID, "renamed", "some notes"); err != nil {
 		t.Fatal(err)
 	}
-	got, _ = s.Task(task.ID)
-	if got.Title != "renamed" || got.Notes != "some notes" || len(got.Steps) != 1 {
+	got, _ := s.Task(task.ID)
+	if got.Title != "renamed" || got.Notes != "some notes" {
 		t.Fatalf("after update: %+v", got)
 	}
 }
@@ -257,17 +242,13 @@ func TestProjectsCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p.JiraKey, p.Repos, p.OnBoard = "NP", "ndmik/newpet", false
+	p.Name, p.Color, p.Kind = "New Pet", "#4E6B8C", "work"
 	if err := s.UpdateProject(p); err != nil {
 		t.Fatal(err)
 	}
 	got, _ := s.Project(p.ID)
-	if got.JiraKey != "NP" || got.Repos != "ndmik/newpet" || got.OnBoard {
+	if got.Name != "New Pet" || got.Color != "#4E6B8C" || got.Kind != "work" {
 		t.Fatalf("after update: %+v", got)
-	}
-	s.SetProjectOnBoard(p.ID, true)
-	if got, _ := s.Project(p.ID); !got.OnBoard {
-		t.Error("on_board not set")
 	}
 	s.CreateTask(p.ID, "x", "backlog")
 	if err := s.DeleteProject(p.ID); err != ErrHasTasks {
@@ -327,5 +308,26 @@ func TestChecklist(t *testing.T) {
 	s.DeleteChecklistItem(c.ID)
 	if items, _ := s.Checklist(atl.ID); len(items) != 0 {
 		t.Error("delete failed")
+	}
+}
+
+func TestBackup(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	dir := filepath.Join(t.TempDir(), "backups")
+	if err := s.Backup(dir, 30); err != nil {
+		t.Fatal(err)
+	}
+	files, _ := filepath.Glob(filepath.Join(dir, "dayboard-*.db"))
+	if len(files) != 1 {
+		t.Fatalf("backup files: %v", files)
+	}
+	copyDB, err := Open(files[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer copyDB.Close()
+	if ps, _ := copyDB.Projects(); len(ps) != 7 {
+		t.Errorf("backup has %d projects", len(ps))
 	}
 }

@@ -34,9 +34,8 @@ type journalData struct {
 
 type dailyData struct {
 	Project   *store.Project
-	Scope     string // "day" or "week"
 	Text      string
-	Yesterday string
+	Yesterday string // set when the last closed day was not literally yesterday
 }
 
 func (s *Server) journal(w http.ResponseWriter, r *http.Request) {
@@ -110,12 +109,9 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 }
 
 // daily builds the standup text: what was closed for the project on the last
-// working day (or this week), and what is in "Зараз" for it now.
-func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, error) {
-	d := dailyData{Scope: "day"}
-	if scope == "week" {
-		d.Scope = "week"
-	}
+// working day, what is in "Зараз" for it now, and what it waits on.
+func (s *Server) daily(sh shell, slug string, now time.Time) (dailyData, error) {
+	var d dailyData
 	for i := range sh.Projects {
 		if sh.Projects[i].Slug == slug || ((slug == "" || slug == "-") && sh.Projects[i].Kind == "work") {
 			d.Project = &sh.Projects[i].Project
@@ -126,12 +122,7 @@ func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, 
 		return d, nil
 	}
 	today := dayStart(now)
-	from, to := today.AddDate(0, 0, -7), today
-	if d.Scope == "week" {
-		from = weekStart(now)
-		to = today.AddDate(0, 0, 1)
-	}
-	done, err := s.store.DoneBetween(utc(from), utc(to))
+	done, err := s.store.DoneBetween(utc(today.AddDate(0, 0, -7)), utc(today))
 	if err != nil {
 		return d, err
 	}
@@ -142,13 +133,11 @@ func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, 
 			continue
 		}
 		day := localDay(t.DoneAt.String, now.Location())
-		if d.Scope == "day" {
-			if lastDay.IsZero() {
-				lastDay = day
-			}
-			if !sameDay(day, lastDay) {
-				break
-			}
+		if lastDay.IsZero() {
+			lastDay = day
+		}
+		if !sameDay(day, lastDay) {
+			break
 		}
 		closed = append(closed, t)
 	}
@@ -159,9 +148,7 @@ func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, 
 
 	var b strings.Builder
 	head := "Вчора"
-	if d.Scope == "week" {
-		head = "Цього тижня"
-	} else if !lastDay.IsZero() && !sameDay(lastDay, today.AddDate(0, 0, -1)) {
+	if !lastDay.IsZero() && !sameDay(lastDay, today.AddDate(0, 0, -1)) {
 		head = fmt.Sprintf("%s, %d", ukWeekdays[lastDay.Weekday()], lastDay.Day())
 		d.Yesterday = head
 	}

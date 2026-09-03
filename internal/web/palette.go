@@ -90,11 +90,6 @@ func (s *Server) defaultProject(projects []store.Project, filter string) *store.
 			return &projects[i]
 		}
 	}
-	for i := range projects {
-		if projects[i].OnBoard {
-			return &projects[i]
-		}
-	}
 	if len(projects) > 0 {
 		return &projects[0]
 	}

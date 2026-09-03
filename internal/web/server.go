@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/ndmik-dev/zaval/internal/store"
 )
@@ -21,15 +20,13 @@ var templateFS embed.FS
 var staticFS embed.FS
 
 var funcs = template.FuncMap{
-	"day":       ukDay,
-	"dict":      dict,
-	"percent":   func(a, b int) int { return a * 100 / b },
-	"doneCount": doneCount,
-	"hostOf":    hostOf,
-	"add":       func(a, b int) int { return a + b },
-	"colors":    func() []string { return projectColors },
-	"closeURL":  closeURL,
-	"without":   without,
+	"day":      ukDay,
+	"dict":     dict,
+	"percent":  func(a, b int) int { return a * 100 / b },
+	"add":      func(a, b int) int { return a + b },
+	"colors":   func() []string { return projectColors },
+	"closeURL": closeURL,
+	"without":  without,
 	"doneHistory": func(items []store.HistoryItem) int {
 		n := 0
 		for _, it := range items {
@@ -77,25 +74,7 @@ func closeURL(ctx map[string]string) string {
 // projectColors are the preset swatches offered in project settings.
 var projectColors = []string{"#2F5D50", "#7C4A6B", "#8A6A30", "#4E6B8C", "#7A5C99", "#3E7D6E", "#A0522D", "#5C7A3E"}
 
-func doneCount(items []store.ChecklistItem) int {
-	n := 0
-	for _, it := range items {
-		if it.Done {
-			n++
-		}
-	}
-	return n
-}
-
-func hostOf(raw string) string {
-	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" {
-		return raw
-	}
-	return strings.TrimPrefix(u.Host, "www.")
-}
-
-// dict lets a template pass several named values to a sub-template.
+// hashStatic fingerprints the embedded static files for cache-busting URLs.
 func hashStatic() string {
 	h := fnv.New64a()
 	fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
@@ -137,6 +116,7 @@ func New(st *store.Store, password string) *Server {
 		body, _ := staticFS.ReadFile("static/sw.js")
 		w.Write(body)
 	})
+	s.mux.HandleFunc("GET /healthz", s.healthz)
 	s.mux.HandleFunc("GET /login", s.loginPage)
 	s.mux.HandleFunc("POST /login", s.login)
 	s.mux.HandleFunc("POST /logout", s.logout)
@@ -163,9 +143,6 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("POST /tasks/{id}", s.updateTask)
 	s.mux.HandleFunc("POST /tasks/{id}/links", s.addLink)
 	s.mux.HandleFunc("DELETE /links/{id}", s.deleteLink)
-	s.mux.HandleFunc("POST /tasks/{id}/steps", s.addStep)
-	s.mux.HandleFunc("POST /steps/{id}/toggle", s.toggleStep)
-	s.mux.HandleFunc("DELETE /steps/{id}", s.deleteStep)
 	return s
 }
 
@@ -204,4 +181,13 @@ func (s *Server) renderPart(w http.ResponseWriter, page, name string, data any) 
 	if err := t.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render %s/%s: %v", page, name, err)
 	}
+}
+
+// healthz answers 200 when the database responds; the compose healthcheck calls it.
+func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
+	if _, err := s.store.Projects(); err != nil {
+		http.Error(w, "db: "+err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+	w.Write([]byte("ok"))
 }

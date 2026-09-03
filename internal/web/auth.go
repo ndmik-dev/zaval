@@ -43,7 +43,7 @@ func (a *auth) loggedIn(r *http.Request) bool {
 func (a *auth) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
-		if !a.enabled() || a.loggedIn(r) || p == "/login" || p == "/sw.js" || strings.HasPrefix(p, "/static/") {
+		if !a.enabled() || a.loggedIn(r) || p == "/login" || p == "/healthz" || p == "/sw.js" || strings.HasPrefix(p, "/static/") {
 			next.ServeHTTP(w, r)
 			return
 		}

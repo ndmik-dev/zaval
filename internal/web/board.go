@@ -140,7 +140,7 @@ func (s *Server) boardData(filter string, openID int64, daily string) (boardData
 
 	// Daily text, only when asked for.
 	if daily != "" {
-		dd, err := s.daily(sh, daily, "day", now)
+		dd, err := s.daily(sh, daily, now)
 		if err != nil {
 			return d, err
 		}
@@ -154,12 +154,5 @@ func (s *Server) boardData(filter string, openID int64, daily string) (boardData
 }
 
 func matchesFilter(p store.Project, filter string) bool {
-	switch filter {
-	case "":
-		return true
-	case "pet":
-		return p.Kind == "pet"
-	default:
-		return p.Slug == filter
-	}
+	return filter == "" || p.Slug == filter
 }
