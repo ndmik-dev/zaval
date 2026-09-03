@@ -3,6 +3,7 @@ package web
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -54,6 +55,7 @@ func (s *Server) deleteTask(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "delete task", err)
 		return
 	}
+	r.Form.Del("t")
 	s.respondBoard(w, r)
 }
 
@@ -61,20 +63,31 @@ func (s *Server) deleteTask(w http.ResponseWriter, r *http.Request) {
 // in place. Plain form posts (no htmx) get a redirect back to the board.
 func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 	filter := r.FormValue("p")
+	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
 	if r.Header.Get("HX-Request") == "" {
-		url := "/"
-		if filter != "" {
-			url += "?p=" + filter
-		}
-		http.Redirect(w, r, url, http.StatusSeeOther)
+		http.Redirect(w, r, boardURL(filter, openID), http.StatusSeeOther)
 		return
 	}
-	data, err := s.boardData(filter)
+	data, err := s.boardData(filter, openID)
 	if err != nil {
 		s.fail(w, "board", err)
 		return
 	}
 	s.renderPart(w, "board", "app", data)
+}
+
+func boardURL(filter string, openID int64) string {
+	q := url.Values{}
+	if filter != "" {
+		q.Set("p", filter)
+	}
+	if openID != 0 {
+		q.Set("t", strconv.FormatInt(openID, 10))
+	}
+	if len(q) == 0 {
+		return "/"
+	}
+	return "/?" + q.Encode()
 }
 
 func (s *Server) fail(w http.ResponseWriter, what string, err error) {

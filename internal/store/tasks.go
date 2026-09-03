@@ -20,6 +20,7 @@ type Task struct {
 
 	Project    Project
 	Links      []Link
+	Steps      []Step // loaded only by Task(id)
 	StepsDone  int
 	StepsTotal int
 }
@@ -120,7 +121,16 @@ func (s *Store) Task(id int64) (Task, error) {
 	if len(ts) == 0 {
 		return Task{}, ErrNotFound
 	}
-	return ts[0], nil
+	t := ts[0]
+	if t.Steps, err = s.Steps(id); err != nil {
+		return Task{}, err
+	}
+	return t, nil
+}
+
+func (s *Store) UpdateTask(id int64, title, notes string) error {
+	_, err := s.db.Exec(`update tasks set title = ?, notes = ? where id = ?`, title, notes, id)
+	return err
 }
 
 func (s *Store) CreateTask(projectID int64, title, state string) (Task, error) {

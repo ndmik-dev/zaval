@@ -154,3 +154,28 @@ func TestLinks(t *testing.T) {
 		t.Error("links must cascade on task delete")
 	}
 }
+
+func TestStepsAndUpdate(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	task, _ := s.CreateTask(atl.ID, "x", "backlog")
+	a, _ := s.AddStep(task.ID, "one")
+	s.AddStep(task.ID, "two")
+	s.ToggleStep(a.ID)
+	got, _ := s.Task(task.ID)
+	if len(got.Steps) != 2 || !got.Steps[0].Done || got.StepsDone != 1 || got.StepsTotal != 2 {
+		t.Fatalf("steps: %+v done=%d total=%d", got.Steps, got.StepsDone, got.StepsTotal)
+	}
+	if tid, _ := s.StepTask(a.ID); tid != task.ID {
+		t.Error("StepTask wrong")
+	}
+	s.DeleteStep(a.ID)
+	if err := s.UpdateTask(task.ID, "renamed", "some notes"); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = s.Task(task.ID)
+	if got.Title != "renamed" || got.Notes != "some notes" || len(got.Steps) != 1 {
+		t.Fatalf("after update: %+v", got)
+	}
+}

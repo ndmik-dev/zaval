@@ -1,0 +1,69 @@
+{{define "drawer"}}{{with .Open}}
+<aside class="drawer" id="drawer">
+  <header class="drawer-head">
+    <span class="dot" style="background:{{.Project.Color}}"></span>
+    <span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>
+    <span class="drawer-meta">створено {{slice .CreatedAt 8 10}}.{{slice .CreatedAt 5 7}}</span>
+    <a class="drawer-close" href="/{{if $.Filter}}?p={{$.Filter}}{{end}}" hx-get="/{{if $.Filter}}?p={{$.Filter}}{{end}}" hx-push-url="true" aria-label="Закрити">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </a>
+  </header>
+
+  {{/* Everything below keeps the drawer open after a mutation; the close link above must not inherit this. */}}
+  <div class="drawer-scope" hx-vals:inherited='{"t":{{.ID}},"p":"{{$.Filter}}"}'>
+  <form class="drawer-body" hx-post="/tasks/{{.ID}}" hx-trigger="submit, change">
+    <input class="drawer-title" name="title" value="{{.Title}}" required>
+    <div class="drawer-state">
+      <div class="seg">
+        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}' class="{{if eq .State "now"}}on{{end}}">Зараз</button>
+        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}' class="{{if eq .State "backlog"}}on{{end}}">Беклог</button>
+      </div>
+      {{if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}} у «Зараз»</span>{{end}}
+      {{if eq .State "done"}}<span class="drawer-meta">закрито {{slice .DoneAt.String 8 10}}.{{slice .DoneAt.String 5 7}}</span>{{end}}
+    </div>
+    <textarea class="drawer-notes" name="notes" rows="3" placeholder="Нотатки">{{.Notes}}</textarea>
+  </form>
+
+  <section class="drawer-sec">
+    <div class="sec-head"><span class="up">Лінки</span><span class="rule"></span></div>
+    <div class="links">
+      {{range .Links}}
+      <div class="link-row">
+        <a class="link-main" href="{{.URL}}" target="_blank" rel="noopener">
+          <span class="link-label {{if eq .Kind "jira"}}mono{{end}}">{{.Label}}</span>
+          {{if .Meta}}<span class="link-meta">{{.Meta}}</span>{{end}}
+          <span class="link-url">{{.URL}}</span>
+        </a>
+        <button type="button" class="x" hx-delete="/links/{{.ID}}" aria-label="Прибрати лінк">✕</button>
+      </div>
+      {{end}}
+      <form class="inline-add" hx-post="/tasks/{{.ID}}/links" hx-on:htmx:after:request="this.reset()">
+        <input name="url" type="text" placeholder="Встав URL" autocomplete="off" required>
+      </form>
+    </div>
+  </section>
+
+  <section class="drawer-sec">
+    <div class="sec-head"><span class="up">Кроки</span>{{if .StepsTotal}}<span class="mono n">{{.StepsDone}}/{{.StepsTotal}}</span>{{end}}<span class="rule"></span></div>
+    <div class="steps-list">
+      {{range .Steps}}
+      <div class="step {{if .Done}}done{{end}}">
+        <button type="button" class="box" hx-post="/steps/{{.ID}}/toggle" aria-label="Перемкнути"></button>
+        <span class="step-title">{{.Title}}</span>
+        <button type="button" class="x" hx-delete="/steps/{{.ID}}" aria-label="Прибрати крок">✕</button>
+      </div>
+      {{end}}
+      <form class="inline-add" hx-post="/tasks/{{.ID}}/steps" hx-on:htmx:after:request="this.reset()">
+        <input name="title" type="text" placeholder="Ще крок" autocomplete="off" required>
+      </form>
+    </div>
+  </section>
+
+  <footer class="drawer-foot">
+    {{if ne .State "done"}}<button type="button" class="btn primary" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"done"}'>Готово</button>{{else}}<button type="button" class="btn" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}'>Повернути в беклог</button>{{end}}
+    <span class="grow"></span>
+    <button type="button" class="btn ghost" hx-delete="/tasks/{{.ID}}" hx-confirm="Видалити задачу?">Видалити</button>
+  </footer>
+  </div>
+</aside>
+{{end}}{{end}}

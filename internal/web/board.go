@@ -3,6 +3,7 @@ package web
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/ndmik-dev/zaval/internal/store"
@@ -28,22 +29,38 @@ type boardData struct {
 	Now         []taskRow
 	Backlog     []taskRow
 	DoneToday   []taskRow
+	Open        *taskRow // task shown in the drawer, if any
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
-	filter := r.URL.Query().Get("p")
-	data, err := s.boardData(filter)
+	q := r.URL.Query()
+	openID, _ := strconv.ParseInt(q.Get("t"), 10, 64)
+	data, err := s.boardData(q.Get("p"), openID)
 	if err != nil {
 		log.Println("board:", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
 	}
+	if r.Header.Get("HX-Request") != "" {
+		s.renderPart(w, "board", "app", data)
+		return
+	}
 	s.render(w, "board", data)
 }
 
-func (s *Server) boardData(filter string) (boardData, error) {
+func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 	now := time.Now()
 	d := boardData{Title: "Дошка", Nav: "board", Date: ukDate(now), Filter: filter}
+	if openID != 0 {
+		t, err := s.store.Task(openID)
+		if err == nil {
+			row := taskRow{Task: t}
+			if t.State == "now" && t.NowSince.Valid {
+				row.Age = ageDays(t.NowSince.String, now)
+			}
+			d.Open = &row
+		}
+	}
 
 	projects, err := s.store.Projects()
 	if err != nil {

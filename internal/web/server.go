@@ -46,6 +46,12 @@ func New(st *store.Store) *Server {
 	s.mux.HandleFunc("POST /tasks", s.createTask)
 	s.mux.HandleFunc("POST /tasks/{id}/state", s.setTaskState)
 	s.mux.HandleFunc("DELETE /tasks/{id}", s.deleteTask)
+	s.mux.HandleFunc("POST /tasks/{id}", s.updateTask)
+	s.mux.HandleFunc("POST /tasks/{id}/links", s.addLink)
+	s.mux.HandleFunc("DELETE /links/{id}", s.deleteLink)
+	s.mux.HandleFunc("POST /tasks/{id}/steps", s.addStep)
+	s.mux.HandleFunc("POST /steps/{id}/toggle", s.toggleStep)
+	s.mux.HandleFunc("DELETE /steps/{id}", s.deleteStep)
 	return s
 }
 
