@@ -43,6 +43,7 @@ func New(st *store.Store) *Server {
 	static, _ := fs.Sub(staticFS, "static")
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	s.mux.HandleFunc("GET /{$}", s.board)
+	s.mux.HandleFunc("GET /journal", s.journal)
 	s.mux.HandleFunc("POST /tasks", s.createTask)
 	s.mux.HandleFunc("POST /tasks/reorder", s.reorderTasks)
 	s.mux.HandleFunc("GET /palette", s.palette)

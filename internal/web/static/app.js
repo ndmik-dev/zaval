@@ -73,3 +73,15 @@ function sendOrder() {
 }
 initSortable();
 document.addEventListener('htmx:after:swap', initSortable);
+
+// Copy-to-clipboard buttons: data-copy holds the selector of the text source.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  const src = document.querySelector(btn.dataset.copy);
+  if (!src) return;
+  await navigator.clipboard.writeText(src.textContent);
+  const label = btn.textContent;
+  btn.textContent = 'Скопійовано';
+  setTimeout(() => { btn.textContent = label; }, 1200);
+});

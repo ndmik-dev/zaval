@@ -222,3 +222,21 @@ func TestReorder(t *testing.T) {
 		t.Fatalf("backlog: %+v", backlog)
 	}
 }
+
+func TestDoneBetween(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	a, _ := s.CreateTask(atl.ID, "old", "backlog")
+	b, _ := s.CreateTask(atl.ID, "new", "backlog")
+	s.SetTaskState(a.ID, "done")
+	s.SetTaskState(b.ID, "done")
+	s.db.Exec(`update tasks set done_at = '2026-08-01 10:00:00' where id = ?`, a.ID)
+	got, err := s.DoneBetween("2026-08-01 00:00:00", "2026-08-02 00:00:00")
+	if err != nil || len(got) != 1 || got[0].ID != a.ID {
+		t.Fatalf("got %v %+v", err, got)
+	}
+	if got, _ := s.DoneBetween("2000-01-01 00:00:00", "2100-01-01 00:00:00"); len(got) != 2 || got[0].ID != b.ID {
+		t.Fatalf("order: %+v", got)
+	}
+}

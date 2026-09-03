@@ -20,16 +20,11 @@ type taskRow struct {
 }
 
 type boardData struct {
-	Title       string
-	Nav         string
-	Date        string
-	Projects    []projectItem
-	HiddenCount int
-	Filter      string
-	Now         []taskRow
-	Backlog     []taskRow
-	DoneToday   []taskRow
-	Open        *taskRow // task shown in the drawer, if any
+	shell
+	Date      string
+	Now       []taskRow
+	Backlog   []taskRow
+	DoneToday []taskRow
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +45,11 @@ func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 	now := time.Now()
-	d := boardData{Title: "Дошка", Nav: "board", Date: ukDate(now), Filter: filter}
+	sh, err := s.shell("Дошка", "board", filter)
+	if err != nil {
+		return boardData{}, err
+	}
+	d := boardData{shell: sh, Date: ukDate(now)}
 	if openID != 0 {
 		t, err := s.store.Task(openID)
 		if err == nil {
@@ -60,22 +59,6 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 			}
 			d.Open = &row
 		}
-	}
-
-	projects, err := s.store.Projects()
-	if err != nil {
-		return d, err
-	}
-	counts, err := s.store.ProjectCounts()
-	if err != nil {
-		return d, err
-	}
-	for _, p := range projects {
-		if !p.OnBoard {
-			d.HiddenCount++
-			continue
-		}
-		d.Projects = append(d.Projects, projectItem{p, counts[p.ID]})
 	}
 
 	load := func(ts []store.Task, err error) ([]taskRow, error) {

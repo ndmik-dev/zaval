@@ -1,0 +1,66 @@
+{{define "content"}}
+<header class="head">
+  <h1>Журнал <span class="dim">· {{.WeekLabel}}</span></h1>
+  <nav class="weeknav">
+    <a class="kbd" href="/journal?w={{.PrevWeek}}{{if .Filter}}&p={{.Filter}}{{end}}" aria-label="Попередній тиждень">&larr;</a>
+    {{if not .IsCurrent}}<a class="kbd" href="/journal?w={{.NextWeek}}{{if .Filter}}&p={{.Filter}}{{end}}" aria-label="Наступний тиждень">&rarr;</a>{{end}}
+  </nav>
+  <nav class="filters">
+    <a{{if eq .Filter ""}} class="active"{{end}} href="/journal">Усі</a>
+    {{range .Projects}}{{if eq .Kind "work"}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}">{{.Name}}</a>{{end}}{{end}}
+    <a{{if eq .Filter "pet"}} class="active"{{end}} href="/journal?p=pet">Своє</a>
+  </nav>
+</header>
+
+<div class="journal">
+  <div class="journal-days">
+    {{range .Days}}
+    <section class="sec">
+      <div class="sec-head"><span class="day-label">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span>{{if .Today}}<span class="n">· сьогодні</span>{{end}}<span class="rule"></span></div>
+      <div class="list">
+        {{range .Tasks}}
+        <div class="task log" style="--project:{{.Project.Color}}">
+          <span class="dot" style="background:{{.Project.Color}}"></span>
+          <a class="title" href="/?t={{.ID}}">{{.Title}}</a>
+          {{if eq .Project.Kind "pet"}}<span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>{{end}}
+          {{if .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
+          <span class="mono when">{{slice .DoneAt.String 11 16}}</span>
+        </div>
+        {{end}}
+      </div>
+    </section>
+    {{else}}
+    <div class="empty">Цього тижня нічого не закрито.</div>
+    {{end}}
+  </div>
+
+  <aside class="journal-side">
+    <section class="sec">
+      <div class="sec-head"><span class="up">Цього тижня</span><span class="rule"></span></div>
+      <div class="card counts">
+        {{range .Counts}}<div class="row"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="mono">{{.N}}</span></div>{{end}}
+        <div class="row total"><span class="grow dim">Разом</span><span class="mono"><b>{{.Total}}</b></span></div>
+      </div>
+    </section>
+
+    {{with .Daily}}{{if .Project}}
+    <section class="sec">
+      <div class="sec-head"><span class="up">Для дейлі</span><span class="rule"></span></div>
+      <div class="card">
+        <div class="daily-pick">
+          {{range $.Projects}}{{if eq .Kind "work"}}<a class="pill{{if eq .ID $.Daily.Project.ID}} on{{end}}" href="/journal?d={{.Slug}}&scope={{$.Daily.Scope}}{{if $.Filter}}&p={{$.Filter}}{{end}}{{if not $.IsCurrent}}&w={{$.PrevWeek}}{{end}}">{{.Name}}</a>{{end}}{{end}}
+          <span class="grow"></span>
+          <a class="pill{{if eq .Scope "day"}} on{{end}}" href="/journal?d={{.Project.Slug}}&scope=day{{if $.Filter}}&p={{$.Filter}}{{end}}">вчора</a>
+          <a class="pill{{if eq .Scope "week"}} on{{end}}" href="/journal?d={{.Project.Slug}}&scope=week{{if $.Filter}}&p={{$.Filter}}{{end}}">тиждень</a>
+        </div>
+        <pre class="daily-text mono" id="daily-text">{{.Text}}</pre>
+        <div class="daily-foot">
+          <button type="button" class="btn primary" data-copy="#daily-text">Скопіювати</button>
+          {{if .Yesterday}}<span class="dim">останній закритий день — {{.Yesterday}}</span>{{end}}
+        </div>
+      </div>
+    </section>
+    {{end}}{{end}}
+  </aside>
+</div>
+{{end}}
