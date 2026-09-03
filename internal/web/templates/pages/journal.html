@@ -43,24 +43,6 @@
       </div>
     </section>
 
-    {{with .Daily}}{{if .Project}}
-    <section class="sec">
-      <div class="sec-head"><span class="up">Для дейлі</span><span class="rule"></span></div>
-      <div class="card">
-        <div class="daily-pick">
-          {{range $.Projects}}{{if eq .Kind "work"}}<a class="pill{{if eq .ID $.Daily.Project.ID}} on{{end}}" href="/journal?d={{.Slug}}&scope={{$.Daily.Scope}}{{if $.Filter}}&p={{$.Filter}}{{end}}{{if not $.IsCurrent}}&w={{$.PrevWeek}}{{end}}">{{.Name}}</a>{{end}}{{end}}
-          <span class="grow"></span>
-          <a class="pill{{if eq .Scope "day"}} on{{end}}" href="/journal?d={{.Project.Slug}}&scope=day{{if $.Filter}}&p={{$.Filter}}{{end}}">вчора</a>
-          <a class="pill{{if eq .Scope "week"}} on{{end}}" href="/journal?d={{.Project.Slug}}&scope=week{{if $.Filter}}&p={{$.Filter}}{{end}}">тиждень</a>
-        </div>
-        <pre class="daily-text mono" id="daily-text">{{.Text}}</pre>
-        <div class="daily-foot">
-          <button type="button" class="btn primary" data-copy="#daily-text">Скопіювати</button>
-          {{if .Yesterday}}<span class="dim">останній закритий день — {{.Yesterday}}</span>{{end}}
-        </div>
-      </div>
-    </section>
-    {{end}}{{end}}
   </aside>
 </div>
 {{end}}

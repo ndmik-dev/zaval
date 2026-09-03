@@ -463,3 +463,6 @@ h1{font-size:23px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .btn.primary.danger{background:var(--attention);border-color:var(--attention)}
 .prow.hl{background:#EDEFE8;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .prow.primary:not(.hl){background:none}
+.filter-chip{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);background:var(--card-2);border:1px solid var(--line);border-radius:20px;padding:3px 10px 4px;white-space:nowrap}
+.filter-chip .x-in{color:var(--faint);font-size:12px}
+.filter-chip:hover .x-in{color:var(--attention)}

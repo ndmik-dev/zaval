@@ -41,19 +41,10 @@
     <svg width="15" height="15" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6.2" cy="6.2" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9.4 9.4 12.4 12.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     <input id="q" name="q" type="search" value="{{.Query}}" placeholder="Пошук по задачах" autocomplete="off"
            hx-get="/" hx-trigger="input changed delay:200ms" hx-include="#filter-p" hx-push-url="true">
+    {{if .FilterProject}}<a class="filter-chip" href="/" hx-get="/" hx-include="#q" hx-push-url="true"><span class="dot" style="background:{{.FilterProject.Color}}"></span>{{.FilterProject.Name}} <span class="x-in">✕</span></a>{{end}}
     <button type="button" class="kbd" data-open-palette title="Додати задачу">⌘K</button>
   </label>
-  <div class="dd" data-dd hx-get="/" hx-trigger="change" hx-include="#filter-p, #q" hx-push-url="true">
-    <input type="hidden" name="p" value="{{.Filter}}" id="filter-p">
-    <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">
-      {{if .FilterProject}}<span class="dot" style="background:{{.FilterProject.Color}}"></span><span class="dd-label">{{.FilterProject.Name}}</span>{{else}}<span class="dd-label">Усі проєкти</span>{{end}}
-      <svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <div class="dd-menu" role="listbox" hidden>
-      <button type="button" role="option" data-value=""{{if not .Filter}} aria-selected="true"{{end}}>Усі проєкти</button>
-      {{range .Projects}}<button type="button" role="option" data-value="{{.Slug}}" data-color="{{.Color}}"{{if eq .Slug $.Filter}} aria-selected="true"{{end}}><span class="dot" style="background:{{.Color}}"></span>{{.Name}}</button>{{end}}
-    </div>
-  </div>
+  <input type="hidden" name="p" value="{{.Filter}}" id="filter-p">
 </div>
 
 {{with .Release}}

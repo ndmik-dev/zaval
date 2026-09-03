@@ -29,7 +29,6 @@ type journalData struct {
 	Days      []journalDay
 	Counts    []projectCount
 	Total     int
-	Daily     dailyData
 }
 
 type dailyData struct {
@@ -90,11 +89,6 @@ func (s *Server) journal(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	d.Daily, err = s.daily(sh, q.Get("d"), q.Get("scope"), now)
-	if err != nil {
-		s.fail(w, "daily", err)
-		return
-	}
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "journal", "app", d)
 		return
