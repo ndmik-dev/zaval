@@ -517,3 +517,55 @@ h1 .filter-chip{font-size:13px;vertical-align:middle;margin-left:10px;letter-spa
 #item-drawer .seg input{position:absolute;opacity:0;width:0;height:0}
 #item-drawer .seg span{padding:4px 11px 5px;font-size:12px;font-weight:600;color:var(--muted)}
 #item-drawer .seg input:checked + span{background:var(--ink);color:var(--card)}
+
+/* ---------- motion & polish ---------- */
+:root{--ease:cubic-bezier(.2,.7,.2,1)}
+.task,.ritem,.pcard,.btn,.chip,.nav,.proj,.dd-btn,.tick,.box,.pill,.kbd,.plabel{transition:background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease),transform .15s var(--ease),color .15s var(--ease),opacity .15s var(--ease)}
+.task:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(23,32,28,.07)}
+.task.done:hover{transform:none;box-shadow:none}
+.tick:hover,.box:hover{transform:scale(1.08)}
+.task.done .tick{animation:pop .22s var(--ease)}
+@keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.btn:hover{border-color:#B9BDB5}
+.btn.primary:hover{background:#274E43;border-color:#274E43}
+.btn.primary.danger:hover{background:#8F372F;border-color:#8F372F}
+.btn:active{transform:translateY(1px)}
+.nav:not(.active):hover,.proj:not(.active):hover{background:rgba(252,252,250,.6)}
+.nav:not(.active):hover{color:var(--ink)}
+
+/* drawers slide in */
+.drawer{animation:slide-in .22s var(--ease)}
+@keyframes slide-in{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+
+/* dialogs */
+dialog[open]{animation:dialog-in .16s var(--ease)}
+dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
+@keyframes dialog-in{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+
+/* menus and cards appear */
+.dd-menu,.picker-list{animation:menu-in .14s var(--ease);transform-origin:top}
+@keyframes menu-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.daily-card,.notice,.empty.drop{animation:fade-in .2s var(--ease)}
+
+/* week strip grows on load */
+.week-bar span{transition:height .5s var(--ease)}
+
+/* in-flight requests: keep the page calm, just soften the element */
+.htmx-request{opacity:.7;transition:opacity .15s}
+
+/* focus rings, one style everywhere */
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,.dd-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+.add-input input:focus-visible,.drawer-title:focus-visible,.drawer-notes:focus-visible,.inline-add input:focus-visible,.picker input:focus-visible,.field input:focus-visible,.pname:focus-visible{outline:0}
+
+/* details */
+.sec-head .up{letter-spacing:.09em}
+.head-actions .btn{padding:6px 13px 7px}
+.empty{color:var(--faint)}
+.filter-chip{transition:background-color .15s}
+.filter-chip:hover{background:var(--card)}
+.history summary:hover{color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
