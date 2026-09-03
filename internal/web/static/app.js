@@ -191,7 +191,7 @@ document.addEventListener('keydown', (e) => {
   const act = (sel) => { const b = row && row.querySelector(sel); if (b) b.click(); };
   switch (e.key) {
     case '?': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
-    case '/': e.preventDefault(); document.getElementById('q')?.focus(); break;
+    case '/': e.preventDefault(); openPalette(); break;
     case 'j': moveFocus(1); break;
     case 'k': moveFocus(-1); break;
     case 'Enter': if (row) { e.preventDefault(); row.querySelector('a.title')?.click(); } break;

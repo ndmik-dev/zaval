@@ -28,6 +28,28 @@ var funcs = template.FuncMap{
 	"hostOf":    hostOf,
 	"add":       func(a, b int) int { return a + b },
 	"colors":    func() []string { return projectColors },
+	"closeURL":  closeURL,
+}
+
+// closeURL rebuilds the page URL the drawer sits on, without the task.
+func closeURL(ctx map[string]string) string {
+	path := "/"
+	switch ctx["page"] {
+	case "journal":
+		path = "/journal"
+	case "releases":
+		path = "/releases"
+	}
+	q := url.Values{}
+	for k, v := range ctx {
+		if k != "page" && v != "" {
+			q.Set(k, v)
+		}
+	}
+	if len(q) == 0 {
+		return path
+	}
+	return path + "?" + q.Encode()
 }
 
 // projectColors are the preset swatches offered in project settings.
@@ -105,6 +127,8 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("POST /checklist-items/{id}", s.updateChecklistItem)
 	s.mux.HandleFunc("POST /checklist-items/{id}/toggle", s.toggleChecklistItem)
 	s.mux.HandleFunc("DELETE /checklist-items/{id}", s.deleteChecklistItem)
+	s.mux.HandleFunc("POST /checklist-items/{id}/task", s.setChecklistItemTask)
+	s.mux.HandleFunc("GET /tasks/options", s.taskOptions)
 	s.mux.HandleFunc("GET /projects", s.projects)
 	s.mux.HandleFunc("POST /projects", s.createProject)
 	s.mux.HandleFunc("POST /projects/{id}", s.updateProject)

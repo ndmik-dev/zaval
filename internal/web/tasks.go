@@ -12,6 +12,22 @@ import (
 
 func (s *Server) setTaskState(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if r.FormValue("state") == "waiting" {
+		// "Чекаю" keeps now/backlog; only the note changes.
+		task, err := s.store.Task(id)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if task.Waiting == "" {
+			if err := s.store.SetWaiting(id, "чекаю"); err != nil {
+				s.fail(w, "waiting", err)
+				return
+			}
+		}
+		s.respondBoard(w, r)
+		return
+	}
 	if err := s.store.SetTaskState(id, r.FormValue("state")); err != nil {
 		if err == store.ErrNotFound {
 			http.NotFound(w, r)
@@ -33,8 +49,9 @@ func (s *Server) deleteTask(w http.ResponseWriter, r *http.Request) {
 	s.respondBoard(w, r)
 }
 
-// respondBoard re-renders the whole app shell after a mutation; htmx morphs it
-// in place. Plain form posts (no htmx) get a redirect back to the board.
+// respondBoard re-renders the page the request came from (the drawer carries
+// a "page" field), so a task edited from the journal stays on the journal.
+// Plain form posts (no htmx) get a redirect back to the board.
 func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	filter := r.FormValue("p")
@@ -43,7 +60,15 @@ func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, boardURL(filter, openID), http.StatusSeeOther)
 		return
 	}
-	data, err := s.boardData(filter, openID, r.FormValue("q"), r.FormValue("daily"))
+	switch r.FormValue("page") {
+	case "journal":
+		s.respondJournal(w, r)
+		return
+	case "releases":
+		s.respondReleases(w, r)
+		return
+	}
+	data, err := s.boardData(filter, openID, r.FormValue("daily"))
 	if err != nil {
 		s.fail(w, "board", err)
 		return

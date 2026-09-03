@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ndmik-dev/zaval/internal/store"
@@ -27,8 +26,6 @@ type boardData struct {
 	Waiting       []taskRow
 	Backlog       []taskRow
 	DoneToday     []taskRow
-	Release       *checklistView // a release in progress, for the banner
-	Query         string
 	FilterProject *store.Project
 	Week          []dayBar // closed per day, Monday to Sunday
 	WeekTotal     int
@@ -46,7 +43,7 @@ type dayBar struct {
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	openID, _ := strconv.ParseInt(q.Get("t"), 10, 64)
-	data, err := s.boardData(q.Get("p"), openID, q.Get("q"), q.Get("daily"))
+	data, err := s.boardData(q.Get("p"), openID, q.Get("daily"))
 	if err != nil {
 		log.Println("board:", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
@@ -59,29 +56,20 @@ func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "board", data)
 }
 
-func (s *Server) boardData(filter string, openID int64, query, daily string) (boardData, error) {
+func (s *Server) boardData(filter string, openID int64, daily string) (boardData, error) {
 	now := time.Now()
 	sh, err := s.shell("Дошка", "board", filter)
 	if err != nil {
 		return boardData{}, err
 	}
-	d := boardData{shell: sh, Date: ukDate(now), Query: strings.TrimSpace(query)}
+	d := boardData{shell: sh, Date: ukDate(now)}
+	d.Ctx = map[string]string{"page": "board", "p": filter, "daily": daily}
 	for i := range sh.Projects {
 		if sh.Projects[i].Slug == filter {
 			d.FilterProject = &sh.Projects[i].Project
 		}
 	}
-	needle := d.Query
-	if openID != 0 {
-		t, err := s.store.Task(openID)
-		if err == nil {
-			row := taskRow{Task: t}
-			if t.State == "now" && t.NowSince.Valid {
-				row.Age = ageDays(t.NowSince.String, now)
-			}
-			d.Open = &row
-		}
-	}
+	d.Open = s.openTask(openID, now)
 
 	load := func(ts []store.Task, err error) ([]taskRow, error) {
 		if err != nil {
@@ -90,9 +78,6 @@ func (s *Server) boardData(filter string, openID int64, query, daily string) (bo
 		var rows []taskRow
 		for _, t := range ts {
 			if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
-				continue
-			}
-			if needle != "" && !matchQuery(t.Title, needle) {
 				continue
 			}
 			if t.Waiting != "" && t.State != "done" {
@@ -119,7 +104,7 @@ func (s *Server) boardData(filter string, openID int64, query, daily string) (bo
 		return d, err
 	}
 	for _, t := range waiting {
-		if !t.Project.OnBoard || !matchesFilter(t.Project, filter) || (needle != "" && !matchQuery(t.Title, needle)) {
+		if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
 			continue
 		}
 		row := taskRow{Task: t}
@@ -164,21 +149,6 @@ func (s *Server) boardData(filter string, openID int64, query, daily string) (bo
 		}
 	}
 
-	// Banner: the filtered project's release, else the first project with a tick in its checklist.
-	progress, err := s.store.ChecklistProgress()
-	if err != nil {
-		return d, err
-	}
-	for _, p := range sh.Projects {
-		pr := progress[p.ID]
-		if pr.Done == 0 || (filter != "" && p.Slug != filter) {
-			continue
-		}
-		if d.Release, err = s.checklistView(p.Project, false, now); err != nil {
-			return d, err
-		}
-		break
-	}
 	return d, nil
 }
 

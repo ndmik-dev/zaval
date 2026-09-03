@@ -288,14 +288,19 @@ func TestChecklist(t *testing.T) {
 	a, _ := s.AddChecklistItem(atl.ID, "before", "Merge release branch")
 	b, _ := s.AddChecklistItem(atl.ID, "before", "Run migrate check")
 	s.AddChecklistItem(atl.ID, "after", "Check Sentry")
-	b.Command, b.Detail = "scripts/migrate-check.sh", "must print 0 pending"
-	if err := s.UpdateChecklistItem(b); err != nil {
+	if err := s.UpdateChecklistItem(b.ID, "Run migrate check", "scripts/migrate-check.sh"); err != nil {
 		t.Fatal(err)
 	}
+	task, _ := s.CreateTask(atl.ID, "Rotate keys", "backlog")
+	s.SetChecklistItemTask(b.ID, task.ID)
 	s.ToggleChecklistItem(a.ID)
 	items, _ := s.Checklist(atl.ID)
-	if len(items) != 3 || !items[0].Done || items[1].Command != "scripts/migrate-check.sh" {
+	if len(items) != 3 || !items[0].Done || items[1].Command != "scripts/migrate-check.sh" || items[1].TaskTitle.String != "Rotate keys" || items[1].TaskState.String != "backlog" {
 		t.Fatalf("items: %+v", items)
+	}
+	s.DeleteTask(task.ID)
+	if items, _ := s.Checklist(atl.ID); items[1].TaskID.Valid {
+		t.Error("deleted task must unlink from the checklist")
 	}
 	if pid, _ := s.ChecklistItemProject(a.ID); pid != atl.ID {
 		t.Error("ChecklistItemProject wrong")

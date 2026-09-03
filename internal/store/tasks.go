@@ -185,10 +185,10 @@ func (s *Store) SetTaskState(id int64, state string) error {
 	var q string
 	switch state {
 	case "now":
-		q = `update tasks set state = 'now', now_since = coalesce(now_since, ?), done_at = null,
+		q = `update tasks set state = 'now', now_since = coalesce(now_since, ?), done_at = null, waiting = '', waiting_since = null,
 			position = coalesce((select max(position) from tasks where state = 'now'), 0) + 1 where id = ?`
 	case "backlog":
-		q = `update tasks set state = 'backlog', now_since = null, done_at = null,
+		q = `update tasks set state = 'backlog', now_since = null, done_at = null, waiting = '', waiting_since = null,
 			position = coalesce((select max(position) from tasks where state = 'backlog'), 0) + 1 where id = ?`
 	case "done":
 		q = `update tasks set state = 'done', done_at = ?, position = 0, waiting = '', waiting_since = null where id = ?`

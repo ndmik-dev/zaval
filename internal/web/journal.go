@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,19 +40,31 @@ type dailyData struct {
 }
 
 func (s *Server) journal(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
+	s.respondJournal(w, r)
+}
+
+// respondJournal reads its parameters from the query or the posted form, so
+// drawer actions on the journal land back on the same week and filter.
+func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
 	now := time.Now()
 	week := weekStart(now)
-	if v, err := time.ParseInLocation("2006-01-02", q.Get("w"), now.Location()); err == nil {
+	weekParam := r.FormValue("w")
+	if v, err := time.ParseInLocation("2006-01-02", weekParam, now.Location()); err == nil {
 		week = weekStart(v)
+	} else {
+		weekParam = ""
 	}
-	filter := q.Get("p")
+	filter := r.FormValue("p")
+	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
 
 	sh, err := s.shell("Журнал", "journal", filter)
 	if err != nil {
 		s.fail(w, "journal", err)
 		return
 	}
+	sh.Ctx = map[string]string{"page": "journal", "w": weekParam, "p": filter}
+	sh.Open = s.openTask(openID, now)
 	d := journalData{
 		shell:     sh,
 		WeekLabel: weekLabel(week),

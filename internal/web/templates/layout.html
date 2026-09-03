@@ -21,7 +21,7 @@
 </body>
 </html>{{end}}
 
-{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#q, #daily-state">
+{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#daily-state">
   {{template "rail" .}}
   <main class="main">{{template "content" .}}</main>
   {{if .Open}}{{template "drawer" .}}{{end}}

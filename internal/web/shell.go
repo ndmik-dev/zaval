@@ -1,5 +1,7 @@
 package web
 
+import "time"
+
 // shell is what the layout and rail need on every page.
 type shell struct {
 	Title       string
@@ -7,7 +9,8 @@ type shell struct {
 	Filter      string
 	Projects    []projectItem
 	HiddenCount int
-	Open        *taskRow
+	Open        *taskRow          // task shown in the drawer, if any
+	Ctx         map[string]string // hidden fields every drawer request carries back (page, filters)
 	AuthOn      bool
 }
 
@@ -39,4 +42,20 @@ func (sh shell) work() []projectItem {
 		}
 	}
 	return out
+}
+
+// openTask loads the task for the drawer; a missing id just leaves it closed.
+func (s *Server) openTask(id int64, now time.Time) *taskRow {
+	if id == 0 {
+		return nil
+	}
+	t, err := s.store.Task(id)
+	if err != nil {
+		return nil
+	}
+	row := taskRow{Task: t}
+	if t.State == "now" && t.NowSince.Valid {
+		row.Age = ageDays(t.NowSince.String, now)
+	}
+	return &row
 }

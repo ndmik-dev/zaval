@@ -27,18 +27,13 @@ func (s *Server) palette(w http.ResponseWriter, r *http.Request) {
 		d.Parsed.Project = s.defaultProject(projects, r.URL.Query().Get("p"))
 	}
 	if len([]rune(d.Parsed.Title)) >= 2 {
-		all, err := s.store.SearchTasks()
+		found, err := s.searchTasks(d.Parsed.Title, 6)
 		if err != nil {
 			s.fail(w, "search", err)
 			return
 		}
-		for _, t := range all {
-			if matchQuery(t.Title, d.Parsed.Title) {
-				d.Matches = append(d.Matches, taskRow{Task: t})
-				if len(d.Matches) == 6 {
-					break
-				}
-			}
+		for _, t := range found {
+			d.Matches = append(d.Matches, taskRow{Task: t})
 		}
 	}
 	if now, err := s.store.TasksByState("now"); err == nil {
@@ -104,4 +99,22 @@ func (s *Server) defaultProject(projects []store.Project, filter string) *store.
 		return &projects[0]
 	}
 	return nil
+}
+
+// searchTasks matches open and recently closed tasks against q, open ones first.
+func (s *Server) searchTasks(q string, limit int) ([]store.Task, error) {
+	all, err := s.store.SearchTasks()
+	if err != nil {
+		return nil, err
+	}
+	var out []store.Task
+	for _, t := range all {
+		if matchQuery(t.Title, q) {
+			out = append(out, t)
+			if len(out) == limit {
+				break
+			}
+		}
+	}
+	return out, nil
 }

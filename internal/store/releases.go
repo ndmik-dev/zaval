@@ -14,6 +14,9 @@ type ChecklistItem struct {
 	Command   string
 	Done      bool
 	Position  int
+	TaskID    sql.NullInt64
+	TaskTitle sql.NullString
+	TaskState sql.NullString
 }
 
 type ReleaseRecord struct {
@@ -25,8 +28,8 @@ type ReleaseRecord struct {
 type Progress struct{ Done, Total int }
 
 func (s *Store) Checklist(projectID int64) ([]ChecklistItem, error) {
-	rows, err := s.db.Query(`select id, project_id, phase, title, detail, url, command, done, position
-		from release_templates where project_id = ? order by position, id`, projectID)
+	rows, err := s.db.Query(`select c.id, c.project_id, c.phase, c.title, c.detail, c.url, c.command, c.done, c.position, c.task_id, t.title, t.state
+		from release_templates c left join tasks t on t.id = c.task_id where c.project_id = ? order by c.position, c.id`, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +37,7 @@ func (s *Store) Checklist(projectID int64) ([]ChecklistItem, error) {
 	var out []ChecklistItem
 	for rows.Next() {
 		var it ChecklistItem
-		if err := rows.Scan(&it.ID, &it.ProjectID, &it.Phase, &it.Title, &it.Detail, &it.URL, &it.Command, &it.Done, &it.Position); err != nil {
+		if err := rows.Scan(&it.ID, &it.ProjectID, &it.Phase, &it.Title, &it.Detail, &it.URL, &it.Command, &it.Done, &it.Position, &it.TaskID, &it.TaskTitle, &it.TaskState); err != nil {
 			return nil, err
 		}
 		out = append(out, it)
@@ -72,9 +75,18 @@ func (s *Store) AddChecklistItem(projectID int64, phase, title string) (Checklis
 	return ChecklistItem{ID: id, ProjectID: projectID, Phase: phase, Title: title}, nil
 }
 
-func (s *Store) UpdateChecklistItem(it ChecklistItem) error {
-	_, err := s.db.Exec(`update release_templates set phase = ?, title = ?, detail = ?, url = ?, command = ? where id = ?`,
-		it.Phase, it.Title, it.Detail, it.URL, it.Command, it.ID)
+func (s *Store) UpdateChecklistItem(id int64, title, command string) error {
+	_, err := s.db.Exec(`update release_templates set title = ?, command = ? where id = ?`, title, command, id)
+	return err
+}
+
+// SetChecklistItemTask points a line at a task; 0 clears it.
+func (s *Store) SetChecklistItemTask(id, taskID int64) error {
+	var v any
+	if taskID != 0 {
+		v = taskID
+	}
+	_, err := s.db.Exec(`update release_templates set task_id = ? where id = ?`, v, id)
 	return err
 }
 

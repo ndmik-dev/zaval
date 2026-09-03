@@ -1,9 +1,10 @@
 {{define "content"}}
 <button type="button" class="fab" data-open-palette aria-label="Додати задачу"><svg width="22" height="22" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
 <input type="hidden" id="daily-state" name="daily" value="{{.DailySlug}}">
+<input type="hidden" id="filter-p" name="p" value="{{.Filter}}">
 <header class="head board-head">
   <div>
-    <h1>{{.Date}}</h1>
+    <h1>{{.Date}}{{if .FilterProject}} <a class="filter-chip" href="/" hx-get="/" hx-push-url="true"><span class="dot" style="background:{{.FilterProject.Color}}"></span>{{.FilterProject.Name}} <span class="x-in">✕</span></a>{{end}}</h1>
     <div class="week">
       <div class="week-bars">
         {{range .Week}}<div class="week-day{{if .Today}} today{{end}}" title="{{.N}}"><div class="week-bar"><span style="height:{{.Pct}}%"></span></div><span class="mono week-label">{{.Label}}</span></div>{{end}}
@@ -13,9 +14,9 @@
   </div>
   <div class="head-actions">
     {{if .Daily}}
-    <button type="button" class="btn on" hx-get="/" hx-include="#q, #filter-p" hx-vals='{"daily":""}' hx-push-url="true">Дейлі</button>
+    <button type="button" class="btn on" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":""}' hx-push-url="true">Дейлі</button>
     {{else}}
-    <button type="button" class="btn" hx-get="/" hx-include="#q, #filter-p" hx-vals='{"daily":"{{if .FilterProject}}{{if eq .FilterProject.Kind "work"}}{{.FilterProject.Slug}}{{else}}-{{end}}{{else}}-{{end}}"}' hx-push-url="true">Дейлі</button>
+    <button type="button" class="btn" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":"{{if .FilterProject}}{{if eq .FilterProject.Kind "work"}}{{.FilterProject.Slug}}{{else}}-{{end}}{{else}}-{{end}}"}' hx-push-url="true">Дейлі</button>
     {{end}}
     <button type="button" class="kbd help" data-open-help title="Клавіатура">?</button>
   </div>
@@ -26,36 +27,16 @@
   <div class="daily-head">
     <span class="up">Для дейлі</span>
     <div class="daily-pick">
-      {{range $.Projects}}{{if eq .Kind "work"}}<button type="button" class="pill{{if eq .ID $.Daily.Project.ID}} on{{end}}" hx-get="/" hx-include="#q, #filter-p" hx-vals='{"daily":"{{.Slug}}"}' hx-push-url="true">{{.Name}}</button>{{end}}{{end}}
+      {{range $.Projects}}{{if eq .Kind "work"}}<button type="button" class="pill{{if eq .ID $.Daily.Project.ID}} on{{end}}" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":"{{.Slug}}"}' hx-push-url="true">{{.Name}}</button>{{end}}{{end}}
     </div>
     <span class="grow"></span>
     {{if .Yesterday}}<span class="dim">останній закритий день — {{.Yesterday}}</span>{{end}}
-    <button type="button" class="x" hx-get="/" hx-include="#q, #filter-p" hx-vals='{"daily":""}' hx-push-url="true" aria-label="Сховати">✕</button>
+    <button type="button" class="x" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":""}' hx-push-url="true" aria-label="Сховати">✕</button>
   </div>
   <pre class="daily-text mono">{{.Text}}</pre>
 </section>
 {{end}}
 
-<div class="topbar">
-  <label class="add-input">
-    <svg width="15" height="15" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6.2" cy="6.2" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9.4 9.4 12.4 12.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    <input id="q" name="q" type="search" value="{{.Query}}" placeholder="Пошук по задачах" autocomplete="off"
-           hx-get="/" hx-trigger="input changed delay:200ms" hx-include="#filter-p" hx-push-url="true">
-    {{if .FilterProject}}<a class="filter-chip" href="/" hx-get="/" hx-include="#q" hx-push-url="true"><span class="dot" style="background:{{.FilterProject.Color}}"></span>{{.FilterProject.Name}} <span class="x-in">✕</span></a>{{end}}
-    <button type="button" class="kbd" data-open-palette title="Додати задачу">⌘K</button>
-  </label>
-  <input type="hidden" name="p" value="{{.Filter}}" id="filter-p">
-</div>
-
-{{with .Release}}
-<a class="banner" style="--project:{{.Project.Color}}" href="/releases?p={{.Project.Slug}}">
-  <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" style="color:{{.Project.Color}}"><path d="M2 3.4h10M2 7h10M2 10.6h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M9.4 9.6l1.4 1.4 2.2-2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <b>Реліз {{.Project.Name}}</b>
-  <span class="mono dim">{{.Done}} / {{.Total}}</span>
-  {{if .NextItem}}<span class="dim grow next">далі: {{.NextItem}}</span>{{else}}<span class="grow"></span>{{end}}
-  <span class="banner-cta">Чекліст</span>
-</a>
-{{end}}
 
 {{/* Filled by app.js after a drag; the reorder event fires the request. */}}
 <form id="reorder" hx-post="/tasks/reorder" hx-trigger="reorder" hidden>
@@ -68,7 +49,7 @@
 <section class="sec">
   <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
   <div class="list sortable" id="now" data-state="now">
-    {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty">{{if .Query}}Нічого не знайдено.{{else}}Порожньо. Перетягни щось із беклогу або додай через ⌘K.{{end}}</div>{{end}}
+    {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty">Порожньо. Перетягни щось із беклогу або додай через ⌘K.</div>{{end}}
   </div>
 </section>
 
@@ -92,7 +73,7 @@
 <section class="sec">
   <div class="sec-head"><span class="up">Беклог</span><span class="mono n">{{len .Backlog}}</span><span class="rule"></span></div>
   <div class="list sortable" id="backlog" data-state="backlog">
-    {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty">{{if .Query}}Нічого не знайдено.{{else}}Беклог порожній.{{end}}</div>{{end}}
+    {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty">Беклог порожній.</div>{{end}}
   </div>
 </section>
 </div>

@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,16 +58,27 @@ func (s *Server) checklistView(p store.Project, edit bool, now time.Time) (*chec
 }
 
 func (s *Server) releases(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	s.respondReleases(w, r, q.Get("p"), q.Get("edit") != "")
+	s.respondReleases(w, r)
 }
 
-func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request, slug string, edit bool) {
+// respondReleases reads project, edit mode and the open task from the query
+// or the posted form, so every action lands back on the same view.
+func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	slug := r.FormValue("p")
+	edit := r.FormValue("edit") != ""
+	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
 	sh, err := s.shell("Релізи", "releases", "")
 	if err != nil {
 		s.fail(w, "releases", err)
 		return
 	}
+	editVal := ""
+	if edit {
+		editVal = "1"
+	}
+	sh.Ctx = map[string]string{"page": "releases", "p": slug, "edit": editVal}
+	sh.Open = s.openTask(openID, time.Now())
 	d := releasesData{shell: sh, Work: sh.work()}
 	var current *store.Project
 	for i := range d.Work {
@@ -99,7 +111,9 @@ func (s *Server) checklistAction(w http.ResponseWriter, r *http.Request, do func
 		s.fail(w, "checklist", err)
 		return
 	}
-	s.respondReleases(w, r, p.Slug, r.FormValue("edit") != "")
+	r.ParseForm()
+	r.Form.Set("p", p.Slug)
+	s.respondReleases(w, r)
 }
 
 func (s *Server) addChecklistItem(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +152,9 @@ func (s *Server) itemAction(w http.ResponseWriter, r *http.Request, do func(id i
 		s.fail(w, "project", err)
 		return
 	}
-	s.respondReleases(w, r, p.Slug, r.FormValue("edit") != "")
+	r.ParseForm()
+	r.Form.Set("p", p.Slug)
+	s.respondReleases(w, r)
 }
 
 func (s *Server) toggleChecklistItem(w http.ResponseWriter, r *http.Request) {
@@ -151,13 +167,30 @@ func (s *Server) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) updateChecklistItem(w http.ResponseWriter, r *http.Request) {
 	s.itemAction(w, r, func(id int64) error {
-		it := store.ChecklistItem{ID: id, Phase: phase(r), Title: strings.TrimSpace(r.FormValue("title")),
-			Detail: strings.TrimSpace(r.FormValue("detail")), URL: strings.TrimSpace(r.FormValue("url")), Command: strings.TrimSpace(r.FormValue("command"))}
-		if it.Title == "" {
-			it.Title = "—"
+		title := strings.TrimSpace(r.FormValue("title"))
+		if title == "" {
+			title = "—"
 		}
-		return s.store.UpdateChecklistItem(it)
+		return s.store.UpdateChecklistItem(id, title, strings.TrimSpace(r.FormValue("command")))
 	})
+}
+
+func (s *Server) setChecklistItemTask(w http.ResponseWriter, r *http.Request) {
+	taskID, _ := strconv.ParseInt(r.FormValue("task_id"), 10, 64)
+	s.itemAction(w, r, func(id int64) error { return s.store.SetChecklistItemTask(id, taskID) })
+}
+
+// taskOptions renders the picker under a checklist line: open tasks and
+// recently closed ones that match the typed text.
+func (s *Server) taskOptions(w http.ResponseWriter, r *http.Request) {
+	q := strings.TrimSpace(r.URL.Query().Get("text"))
+	itemID, _ := strconv.ParseInt(r.URL.Query().Get("item"), 10, 64)
+	found, err := s.searchTasks(q, 8)
+	if err != nil {
+		s.fail(w, "search", err)
+		return
+	}
+	s.renderPart(w, "releases", "task_options", map[string]any{"Tasks": found, "Item": itemID, "Query": q})
 }
 
 func phase(r *http.Request) string {

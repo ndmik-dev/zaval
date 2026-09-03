@@ -4,21 +4,22 @@
     <span class="dot" style="background:{{.Project.Color}}"></span>
     <span class="ptag" style="color:{{.Project.Color}}">{{.Project.Name}}</span>
     <span class="drawer-meta">створено {{slice .CreatedAt 8 10}}.{{slice .CreatedAt 5 7}}</span>
-    <a class="drawer-close" href="/{{if $.Filter}}?p={{$.Filter}}{{end}}" hx-get="/{{if $.Filter}}?p={{$.Filter}}{{end}}" hx-push-url="true" aria-label="Закрити">
+    <a class="drawer-close" href="{{closeURL $.Ctx}}" hx-get="{{closeURL $.Ctx}}" hx-push-url="true" aria-label="Закрити">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </a>
   </header>
 
   {{/* Every request below carries the open task, so the drawer stays open after a mutation.
        hx-include is inherited; hx-vals is not used for this because a child's own hx-vals would replace it. */}}
-  <div class="drawer-scope" hx-include:inherited="#drawer-ctx, #q, #daily-state">
-  <span id="drawer-ctx" hidden><input type="hidden" name="t" value="{{.ID}}"><input type="hidden" name="p" value="{{$.Filter}}"></span>
+  <div class="drawer-scope" hx-include:inherited="#drawer-ctx, #daily-state">
+  <span id="drawer-ctx" hidden><input type="hidden" name="t" value="{{.ID}}">{{range $k, $v := $.Ctx}}<input type="hidden" name="{{$k}}" value="{{$v}}">{{end}}</span>
   <form class="drawer-body" hx-post="/tasks/{{.ID}}" hx-trigger="submit, change">
     <input class="drawer-title" name="title" value="{{.Title}}" required>
     <div class="drawer-state">
       <div class="seg">
-        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}' class="{{if eq .State "now"}}on{{end}}">Зараз</button>
-        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}' class="{{if eq .State "backlog"}}on{{end}}">Беклог</button>
+        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}' class="{{if and (eq .State "now") (not .Waiting)}}on{{end}}">Зараз</button>
+        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"waiting"}' class="{{if .Waiting}}on{{end}}">Чекаю</button>
+        <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}' class="{{if and (eq .State "backlog") (not .Waiting)}}on{{end}}">Беклог</button>
       </div>
       {{if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}} у «Зараз»</span>{{end}}
       {{if eq .State "done"}}<span class="drawer-meta">закрито {{slice .DoneAt.String 8 10}}.{{slice .DoneAt.String 5 7}}</span>{{end}}

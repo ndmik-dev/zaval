@@ -475,3 +475,22 @@ h1{font-size:23px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .sw.custom input{position:absolute;inset:-4px;width:200%;height:200%;opacity:0;cursor:pointer}
 .empty.drop{padding:10px}
 #waiting .empty{background:transparent}
+
+/* project label on rows */
+.plabel{font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85;white-space:nowrap;padding-top:3px}
+.plabel:hover{opacity:1;text-decoration:underline}
+.task.log .plabel{padding-top:0}
+h1 .filter-chip{font-size:13px;vertical-align:middle;margin-left:10px;letter-spacing:0}
+.seg button.on{background:var(--ink);color:var(--card)}
+
+/* checklist task link */
+.t-task{margin-top:2px}
+.task-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);background:var(--card-2);border:1px solid var(--line-2);border-radius:6px;padding:4px 9px}
+.task-chip .x{padding:0 2px}
+.picker{position:relative}
+.picker input{width:100%;font:inherit;font-size:13px;color:var(--ink);background:none;border:1px dashed var(--line);border-radius:6px;padding:6px 10px;outline:0}
+.picker input:focus{border-style:solid;border-color:var(--ink)}
+.picker-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15}
+.picker-list{background:var(--card);border:1px solid #C7CBC2;border-radius:8px;box-shadow:0 10px 30px rgba(23,32,28,.16);padding:5px;display:flex;flex-direction:column;gap:1px}
+.picker-opt{display:flex;align-items:center;gap:9px;font:inherit;font-size:13.5px;color:var(--ink-2);text-align:left;background:none;border:0;border-radius:6px;padding:7px 10px;cursor:pointer}
+.picker-opt:hover{background:#EDEFE8;color:var(--ink)}

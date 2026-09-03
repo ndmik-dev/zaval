@@ -15,7 +15,7 @@
   {{if .LastAt}}<span class="dim">останній реліз — {{.LastAt}}</span>{{end}}
   <span class="grow"></span>
   {{if .Edit}}
-  <a class="btn" href="/releases?p={{.Project.Slug}}" hx-get="/releases?p={{.Project.Slug}}" hx-push-url="true">Готово з правками</a>
+  <a class="btn" href="/releases?p={{.Project.Slug}}" hx-get="/releases?p={{.Project.Slug}}" hx-push-url="true">Готово</a>
   {{else}}
   <a class="btn ghost" href="/releases?p={{.Project.Slug}}&edit=1" hx-get="/releases?p={{.Project.Slug}}&edit=1" hx-push-url="true">Правити список</a>
   {{if .Done}}<button type="button" class="btn" hx-post="/checklist/{{.Project.ID}}/reset" data-confirm="Зняти всі відмітки?" data-confirm-ok="Скинути">Скинути</button>{{end}}
@@ -42,15 +42,23 @@
     {{range .Items}}
     {{if $.View.Edit}}
     <form class="titem" hx-post="/checklist-items/{{.ID}}" hx-trigger="change" hx-vals='{"edit":"1"}'>
-      <input type="hidden" name="phase" value="{{.Phase}}">
       <div class="t-row">
         <input class="t-title" name="title" value="{{.Title}}" placeholder="Що зробити" required>
         <button type="button" class="x" hx-delete="/checklist-items/{{.ID}}" hx-vals='{"edit":"1"}' aria-label="Прибрати">✕</button>
       </div>
-      <input class="t-detail" name="detail" value="{{.Detail}}" placeholder="Деталь: на що дивитись (необовʼязково)">
       <div class="t-row">
-        <span class="field"><span class="dim mono">$</span><input class="mono" name="command" value="{{.Command}}" placeholder="команда, яку треба прогнати"></span>
-        <span class="field"><input name="url" value="{{.URL}}" placeholder="лінк, куди йти"></span>
+        <span class="field"><span class="dim mono">$</span><input class="mono" name="command" value="{{.Command}}" placeholder="команда (необовʼязково)"></span>
+      </div>
+      <div class="t-task">
+        {{if .TaskID.Valid}}
+        <span class="task-chip"><span class="dim">задача:</span> {{.TaskTitle.String}} <button type="button" class="x" hx-post="/checklist-items/{{.ID}}/task" hx-vals='{"task_id":"0","edit":"1"}' aria-label="Відвʼязати">✕</button></span>
+        {{else}}
+        <div class="picker">
+          <input type="search" placeholder="Привʼязати задачу з беклогу чи журналу…" autocomplete="off"
+                 hx-get="/tasks/options?item={{.ID}}" hx-trigger="input changed delay:150ms, focus" hx-target="next .picker-menu" hx-swap="innerHTML" name="text">
+          <div class="picker-menu"></div>
+        </div>
+        {{end}}
       </div>
     </form>
     {{else}}
@@ -58,10 +66,9 @@
       <button type="button" class="box" hx-post="/checklist-items/{{.ID}}/toggle" aria-label="Перемкнути"></button>
       <div class="body">
         <div class="ritem-title">{{.Title}}</div>
-        {{if .Detail}}<div class="ritem-detail">{{.Detail}}</div>{{end}}
         {{if .Command}}<div class="ritem-cmd"><code id="cmd-{{.ID}}">{{.Command}}</code><button type="button" class="btn small" data-copy="#cmd-{{.ID}}">скопіювати</button></div>{{end}}
+        {{if .TaskID.Valid}}<a class="task-chip" href="/releases?p={{$.View.Project.Slug}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{$.View.Project.Slug}}&t={{.TaskID.Int64}}" hx-push-url="true"><span class="dim">задача:</span> {{.TaskTitle.String}}{{if eq .TaskState.String "done"}} <span class="dim">· готово</span>{{end}}</a>{{end}}
       </div>
-      {{if .URL}}<a class="chip" href="{{.URL}}" target="_blank" rel="noopener">{{hostOf .URL}}</a>{{end}}
     </div>
     {{end}}
     {{end}}
@@ -73,4 +80,12 @@
     {{end}}
   </div>
 </section>
+{{end}}
+
+{{define "task_options"}}
+{{if .Tasks}}
+<div class="picker-list">
+  {{range .Tasks}}<button type="button" class="picker-opt" hx-post="/checklist-items/{{$.Item}}/task" hx-vals='{"task_id":"{{.ID}}","edit":"1"}'><span class="dot" style="background:{{.Project.Color}}"></span><span class="grow">{{.Title}}</span><span class="dim">{{if eq .State "now"}}Зараз{{else if eq .State "backlog"}}беклог{{else}}готово{{end}}</span></button>{{end}}
+</div>
+{{else if .Query}}<div class="picker-list"><div class="dim" style="padding:8px 11px">Нічого не знайдено</div></div>{{end}}
 {{end}}
