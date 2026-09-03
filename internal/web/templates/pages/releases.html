@@ -18,23 +18,45 @@
 </div>
 
 <div class="check-body">
-  {{template "check_phase" (dict "Label" "Перед релізом" "Phase" "before" "Items" .Before "View" . "Ctx" $.Ctx)}}
-  {{template "check_phase" (dict "Label" "Після релізу" "Phase" "after" "Items" .After "View" . "Ctx" $.Ctx)}}
-</div>
-
-{{if .History}}
-<details class="history">
-  <summary><span class="up">Історія</span><span class="mono n">{{len .History}}</span></summary>
-  <div class="history-list">
-    {{range .History}}
-    <div class="history-rel">
-      <div class="history-when">{{.When}}<span class="dim mono"> · {{len .Items}}</span></div>
-      <div class="history-items">{{range .Items}}<span class="history-item{{if .Done}} done{{end}}">{{.Title}}{{if .TaskTitle.Valid}} <span class="dim">→ {{.TaskTitle.String}}</span>{{end}}</span>{{end}}</div>
+  <section class="sec check-list">
+    <div class="sec-head"><span class="up">Цей реліз</span><span class="mono n">{{.Done}} / {{.Total}}</span><span class="rule"></span></div>
+    <div class="list">
+      {{range .Items}}
+      <div class="ritem{{if .Done}} done{{end}}{{if eq (index $.Ctx "i") (printf "%d" .ID)}} open{{end}}" data-open-item>
+        <button type="button" class="box" hx-post="/checklist-items/{{.ID}}/toggle" aria-label="Перемкнути"></button>
+        <a class="body" href="/releases?p={{$.Current.Project.Slug}}&i={{.ID}}" hx-get="/releases?p={{$.Current.Project.Slug}}&i={{.ID}}" hx-push-url="true">
+          <span class="ritem-title">{{.Title}}</span>
+          {{if .TaskID.Valid}}<span class="ritem-task"><span class="dim">задача:</span> {{.TaskTitle.String}}{{if eq .TaskState.String "done"}} <span class="dim">· готово</span>{{end}}</span>{{end}}
+        </a>
+      </div>
+      {{end}}
+      <form class="inline-add" hx-post="/checklist/{{.Project.ID}}/items" hx-on:htmx:after:request="this.reset()">
+        <input name="title" placeholder="Що треба зробити чи перевірити" autocomplete="off" required>
+      </form>
     </div>
-    {{end}}
-  </div>
-</details>
-{{end}}
+  </section>
+
+  <section class="sec history">
+    <div class="sec-head"><span class="up">Історія</span><span class="mono n">{{len .History}}</span><span class="rule"></span></div>
+    {{if .History}}
+    <div class="history-list">
+      {{range $i, $h := .History}}
+      <details class="history-rel"{{if eq $i 0}} open{{end}}>
+        <summary>
+          <span class="history-when">{{$h.When}}</span>
+          <span class="mono dim">{{doneHistory $h.Items}} / {{len $h.Items}}</span>
+          <span class="grow"></span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <div class="history-items">
+          {{range $h.Items}}<div class="history-item{{if .Done}} done{{end}}"><span class="mark">{{if .Done}}✓{{else}}○{{end}}</span><span class="grow">{{.Title}}</span>{{if .TaskTitle.Valid}}<span class="dim">{{.TaskTitle.String}}</span>{{end}}</div>{{end}}
+        </div>
+      </details>
+      {{end}}
+    </div>
+    {{else}}<div class="empty">Ще жодного релізу.</div>{{end}}
+  </section>
+</div>
 {{else}}
 <div class="empty">Нема робочих проєктів — додай у «Проєктах».</div>
 {{end}}
@@ -52,12 +74,6 @@
   <span id="item-ctx" hidden>{{range $k, $v := $.Ctx}}<input type="hidden" name="{{$k}}" value="{{$v}}">{{end}}</span>
   <form class="drawer-body" hx-post="/checklist-items/{{.ID}}" hx-trigger="submit, change">
     <input class="drawer-title" name="title" value="{{.Title}}" required>
-    <div class="drawer-state">
-      <div class="seg">
-        <label><input type="radio" name="phase" value="before"{{if ne .Phase "after"}} checked{{end}}><span>Перед</span></label>
-        <label><input type="radio" name="phase" value="after"{{if eq .Phase "after"}} checked{{end}}><span>Після</span></label>
-      </div>
-    </div>
   </form>
   <section class="drawer-sec">
     <div class="sec-head"><span class="up">Задача</span><span class="rule"></span></div>
@@ -78,27 +94,6 @@
   </div>
 </aside>
 {{end}}
-{{end}}
-
-{{define "check_phase"}}
-<section class="sec check-phase">
-  <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{doneCount .Items}} / {{len .Items}}</span><span class="rule"></span></div>
-  <div class="list">
-    {{range .Items}}
-    <div class="ritem{{if .Done}} done{{end}}{{if eq (index $.Ctx "i") (printf "%d" .ID)}} open{{end}}" data-open-item>
-      <button type="button" class="box" hx-post="/checklist-items/{{.ID}}/toggle" aria-label="Перемкнути"></button>
-      <a class="body" href="/releases?p={{$.View.Project.Slug}}&i={{.ID}}" hx-get="/releases?p={{$.View.Project.Slug}}&i={{.ID}}" hx-push-url="true">
-        <span class="ritem-title">{{.Title}}</span>
-        {{if .TaskID.Valid}}<span class="ritem-task"><span class="dim">задача:</span> {{.TaskTitle.String}}{{if eq .TaskState.String "done"}} <span class="dim">· готово</span>{{end}}</span>{{end}}
-      </a>
-    </div>
-    {{end}}
-    <form class="inline-add" hx-post="/checklist/{{$.View.Project.ID}}/items" hx-on:htmx:after:request="this.reset()">
-      <input type="hidden" name="phase" value="{{.Phase}}">
-      <input name="title" placeholder="{{if eq .Phase "after"}}Що перевірити після{{else}}Що зробити перед релізом{{end}}" autocomplete="off" required>
-    </form>
-  </div>
-</section>
 {{end}}
 
 {{define "task_options"}}

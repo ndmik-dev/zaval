@@ -30,6 +30,15 @@ var funcs = template.FuncMap{
 	"colors":    func() []string { return projectColors },
 	"closeURL":  closeURL,
 	"without":   without,
+	"doneHistory": func(items []store.HistoryItem) int {
+		n := 0
+		for _, it := range items {
+			if it.Done {
+				n++
+			}
+		}
+		return n
+	},
 }
 
 // without copies a context map minus the given keys.

@@ -13,8 +13,7 @@ import (
 // no versions or dates. «Зарелізено» archives the lines and empties the list.
 type checklistView struct {
 	Project store.Project
-	Before  []store.ChecklistItem
-	After   []store.ChecklistItem
+	Items   []store.ChecklistItem
 	Done    int
 	Total   int
 	History []historyView
@@ -37,13 +36,8 @@ func (s *Server) checklistView(p store.Project, now time.Time) (*checklistView, 
 	if err != nil {
 		return nil, err
 	}
-	v := &checklistView{Project: p, Total: len(items)}
+	v := &checklistView{Project: p, Items: items, Total: len(items)}
 	for _, it := range items {
-		if it.Phase == "after" {
-			v.After = append(v.After, it)
-		} else {
-			v.Before = append(v.Before, it)
-		}
 		if it.Done {
 			v.Done++
 		}
@@ -136,7 +130,7 @@ func (s *Server) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 		if title == "" {
 			return nil
 		}
-		_, err := s.store.AddChecklistItem(p.ID, phase(r), title)
+		_, err := s.store.AddChecklistItem(p.ID, "before", title)
 		return err
 	})
 }
@@ -185,7 +179,7 @@ func (s *Server) updateChecklistItem(w http.ResponseWriter, r *http.Request) {
 		if title == "" {
 			title = "—"
 		}
-		return s.store.UpdateChecklistItem(id, title, phase(r))
+		return s.store.UpdateChecklistItem(id, title, "before")
 	})
 }
 
@@ -205,11 +199,4 @@ func (s *Server) taskOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderPart(w, "releases", "task_options", map[string]any{"Tasks": found, "Item": itemID, "Query": q})
-}
-
-func phase(r *http.Request) string {
-	if r.FormValue("phase") == "after" {
-		return "after"
-	}
-	return "before"
 }

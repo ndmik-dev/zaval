@@ -10,13 +10,13 @@
     </div>
     {{if and (ne .State "backlog") .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
   </div>
-  <a class="plabel" href="/?p={{.Project.Slug}}" hx-get="/?p={{.Project.Slug}}" hx-push-url="true" style="color:{{.Project.Color}}" title="Показати тільки {{.Project.Name}}">{{.Project.Name}}</a>
   {{if ne .State "done"}}
   <div class="acts">
     {{if eq .State "backlog"}}<button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}'>У Зараз</button>{{else}}<button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}'>У беклог</button>{{end}}
     <button type="button" class="del" hx-delete="/tasks/{{.ID}}" data-confirm="Видалити задачу?" data-confirm-ok="Видалити" data-confirm-danger aria-label="Видалити">✕</button>
   </div>
   {{end}}
+  <a class="plabel" href="/?p={{.Project.Slug}}" hx-get="/?p={{.Project.Slug}}" hx-push-url="true" style="color:{{.Project.Color}}" title="Показати тільки {{.Project.Name}}">{{.Project.Name}}</a>
 </div>
 {{end}}
 
