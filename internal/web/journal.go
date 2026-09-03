@@ -110,7 +110,7 @@ func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, 
 		d.Scope = "week"
 	}
 	for i := range sh.Projects {
-		if sh.Projects[i].Slug == slug || (slug == "" && sh.Projects[i].Kind == "work") {
+		if sh.Projects[i].Slug == slug || ((slug == "" || slug == "-") && sh.Projects[i].Kind == "work") {
 			d.Project = &sh.Projects[i].Project
 			break
 		}

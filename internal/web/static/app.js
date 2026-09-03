@@ -143,3 +143,49 @@ document.addEventListener('click', (e) => {
   const title = row.querySelector('a.title');
   if (title) title.click();
 });
+
+// Keyboard: j/k walk the rows, the rest act on the focused row. Off while typing.
+const help = document.getElementById('help');
+function typing(e) { return e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]'); }
+function rows() { return [...document.querySelectorAll('.task[data-open]')]; }
+function focusedRow() { return document.querySelector('.task.focused'); }
+function focusRow(row) {
+  rows().forEach((r) => r.classList.remove('focused'));
+  if (!row) return;
+  row.classList.add('focused');
+  row.scrollIntoView({ block: 'nearest' });
+}
+function moveFocus(step) {
+  const all = rows();
+  if (!all.length) return;
+  const i = all.indexOf(focusedRow());
+  focusRow(all[Math.min(all.length - 1, Math.max(0, i + step))]);
+}
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-open-help]')) help?.showModal();
+  if (e.target.closest('[data-close-help]') || e.target === help) help?.close();
+});
+document.addEventListener('keydown', (e) => {
+  if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (document.querySelector('dialog[open]') && e.key !== 'Escape' && e.key !== '?') return;
+  const row = focusedRow();
+  const act = (sel) => { const b = row && row.querySelector(sel); if (b) b.click(); };
+  switch (e.key) {
+    case '?': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
+    case '/': e.preventDefault(); document.getElementById('q')?.focus(); break;
+    case 'j': moveFocus(1); break;
+    case 'k': moveFocus(-1); break;
+    case 'Enter': if (row) { e.preventDefault(); row.querySelector('a.title')?.click(); } break;
+    case 'x': act('.tick'); break;
+    case 'f': act('.acts button:not(.del)'); break;
+    case 'w': if (row) { row.querySelector('a.title')?.click(); setTimeout(() => document.querySelector('.drawer-wait input')?.focus(), 500); } break;
+    case 'l': if (row) { row.querySelector('a.title')?.click(); setTimeout(() => document.querySelector('.inline-add input[name=url]')?.focus(), 500); } break;
+    case 'd': document.querySelector('.head-actions .btn')?.click(); break;
+    case '1': location.href = '/'; break;
+    case '2': location.href = '/releases'; break;
+    case '3': location.href = '/journal'; break;
+  }
+});
+// Keep the focus ring on the same task after a morph.
+document.addEventListener('htmx:before:swap', () => { const r = focusedRow(); if (r) window.__focusedTask = r.id; });
+document.addEventListener('htmx:after:swap', () => { if (window.__focusedTask) { const r = document.getElementById(window.__focusedTask); if (r && !r.classList.contains('focused')) focusRow(r); } });

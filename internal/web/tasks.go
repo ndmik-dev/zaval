@@ -43,7 +43,7 @@ func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, boardURL(filter, openID), http.StatusSeeOther)
 		return
 	}
-	data, err := s.boardData(filter, openID, r.FormValue("q"))
+	data, err := s.boardData(filter, openID, r.FormValue("q"), r.FormValue("daily"))
 	if err != nil {
 		s.fail(w, "board", err)
 		return

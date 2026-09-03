@@ -30,12 +30,23 @@ type boardData struct {
 	Release       *checklistView // a release in progress, for the banner
 	Query         string
 	FilterProject *store.Project
+	Week          []dayBar // closed per day, Monday to Sunday
+	WeekTotal     int
+	Daily         *dailyData // shown only when asked for (?daily=slug)
+	DailySlug     string
+}
+
+type dayBar struct {
+	Label string
+	N     int
+	Pct   int // bar height, percent of the busiest day
+	Today bool
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	openID, _ := strconv.ParseInt(q.Get("t"), 10, 64)
-	data, err := s.boardData(q.Get("p"), openID, q.Get("q"))
+	data, err := s.boardData(q.Get("p"), openID, q.Get("q"), q.Get("daily"))
 	if err != nil {
 		log.Println("board:", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
@@ -48,7 +59,7 @@ func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "board", data)
 }
 
-func (s *Server) boardData(filter string, openID int64, query string) (boardData, error) {
+func (s *Server) boardData(filter string, openID int64, query, daily string) (boardData, error) {
 	now := time.Now()
 	sh, err := s.shell("Дошка", "board", filter)
 	if err != nil {
@@ -120,6 +131,37 @@ func (s *Server) boardData(filter string, openID int64, query string) (boardData
 	doneToday, err := s.store.DoneToday()
 	if d.DoneToday, err = load(doneToday, err); err != nil {
 		return d, err
+	}
+
+	// Week strip: closed per day, Monday to Sunday.
+	monday := weekStart(now)
+	counts, err := s.store.DoneByDay(utc(monday), utc(monday.AddDate(0, 0, 7)))
+	if err != nil {
+		return d, err
+	}
+	max := 1
+	for _, n := range counts {
+		if n > max {
+			max = n
+		}
+	}
+	for i := 0; i < 7; i++ {
+		day := monday.AddDate(0, 0, i)
+		n := counts[day.Format("2006-01-02")]
+		d.WeekTotal += n
+		d.Week = append(d.Week, dayBar{Label: ukWeekdaysShort[day.Weekday()], N: n, Pct: n * 100 / max, Today: sameDay(day, now)})
+	}
+
+	// Daily text, only when asked for.
+	if daily != "" {
+		dd, err := s.daily(sh, daily, "day", now)
+		if err != nil {
+			return d, err
+		}
+		if dd.Project != nil {
+			d.Daily = &dd
+			d.DailySlug = dd.Project.Slug
+		}
 	}
 
 	// Banner: the filtered project's release, else the first project with a tick in its checklist.

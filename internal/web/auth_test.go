@@ -61,7 +61,11 @@ func TestAuth(t *testing.T) {
 		t.Fatalf("login: %d cookies=%d", w.Code, len(cookies))
 	}
 	if w := get(s, "/", cookies[0]); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "Беклог") {
-		t.Errorf("board with session: %d", w.Code)
+		body := w.Body.String()
+		if len(body) > 300 {
+			body = body[len(body)-300:]
+		}
+		t.Errorf("board with session: %d ...%s", w.Code, body)
 	}
 	forged := &http.Cookie{Name: sessionCookie, Value: "nope"}
 	if w := get(s, "/", forged); w.Code != http.StatusSeeOther {

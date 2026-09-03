@@ -11,7 +11,7 @@
 
   {{/* Every request below carries the open task, so the drawer stays open after a mutation.
        hx-include is inherited; hx-vals is not used for this because a child's own hx-vals would replace it. */}}
-  <div class="drawer-scope" hx-include:inherited="#drawer-ctx, #q">
+  <div class="drawer-scope" hx-include:inherited="#drawer-ctx, #q, #daily-state">
   <span id="drawer-ctx" hidden><input type="hidden" name="t" value="{{.ID}}"><input type="hidden" name="p" value="{{$.Filter}}"></span>
   <form class="drawer-body" hx-post="/tasks/{{.ID}}" hx-trigger="submit, change">
     <input class="drawer-title" name="title" value="{{.Title}}" required>
