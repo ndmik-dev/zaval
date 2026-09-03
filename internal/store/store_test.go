@@ -240,3 +240,34 @@ func TestDoneBetween(t *testing.T) {
 		t.Fatalf("order: %+v", got)
 	}
 }
+
+func TestProjectsCRUD(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	p, err := s.CreateProject("newpet", "newpet", "pet", "#8A6A30")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.JiraKey, p.Repos, p.OnBoard = "NP", "ndmik/newpet", false
+	if err := s.UpdateProject(p); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := s.Project(p.ID)
+	if got.JiraKey != "NP" || got.Repos != "ndmik/newpet" || got.OnBoard {
+		t.Fatalf("after update: %+v", got)
+	}
+	s.SetProjectOnBoard(p.ID, true)
+	if got, _ := s.Project(p.ID); !got.OnBoard {
+		t.Error("on_board not set")
+	}
+	s.CreateTask(p.ID, "x", "backlog")
+	if err := s.DeleteProject(p.ID); err != ErrHasTasks {
+		t.Errorf("delete with tasks: %v", err)
+	}
+	if _, err := s.CreateProject("Atlas", "dup", "work", "#000"); err == nil {
+		t.Error("duplicate name accepted")
+	}
+	if err := s.UpdateProject(Project{ID: 999}); err != ErrNotFound {
+		t.Errorf("missing: %v", err)
+	}
+}

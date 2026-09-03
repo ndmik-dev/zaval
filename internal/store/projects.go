@@ -1,6 +1,9 @@
 package store
 
-import "database/sql"
+import (
+	"database/sql"
+	"errors"
+)
 
 type Project struct {
 	ID       int64
@@ -83,3 +86,45 @@ func (s *Store) Seed() error {
 }
 
 var ErrNotFound = sql.ErrNoRows
+
+func (s *Store) CreateProject(name, slug, kind, color string) (Project, error) {
+	res, err := s.db.Exec(`insert into projects (name, slug, kind, color, position)
+		values (?, ?, ?, ?, coalesce((select max(position) from projects), 0) + 1)`, name, slug, kind, color)
+	if err != nil {
+		return Project{}, err
+	}
+	id, _ := res.LastInsertId()
+	return s.Project(id)
+}
+
+func (s *Store) UpdateProject(p Project) error {
+	res, err := s.db.Exec(`update projects set name = ?, slug = ?, color = ?, kind = ?, jira_key = ?, jira_host = ?, repos = ?, channels = ?, on_board = ? where id = ?`,
+		p.Name, p.Slug, p.Color, p.Kind, p.JiraKey, p.JiraHost, p.Repos, p.Channels, p.OnBoard, p.ID)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Store) SetProjectOnBoard(id int64, on bool) error {
+	_, err := s.db.Exec(`update projects set on_board = ? where id = ?`, on, id)
+	return err
+}
+
+// DeleteProject removes a project that has no tasks; ErrHasTasks otherwise.
+func (s *Store) DeleteProject(id int64) error {
+	var n int
+	if err := s.db.QueryRow(`select count(*) from tasks where project_id = ?`, id).Scan(&n); err != nil {
+		return err
+	}
+	if n > 0 {
+		return ErrHasTasks
+	}
+	_, err := s.db.Exec(`delete from projects where id = ?`, id)
+	return err
+}
+
+var ErrHasTasks = errors.New("project has tasks")

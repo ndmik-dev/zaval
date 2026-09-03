@@ -1,0 +1,55 @@
+{{define "content"}}
+<header class="head">
+  <h1>Проєкти</h1>
+</header>
+
+{{if .Error}}<div class="notice">{{.Error}}</div>{{end}}
+
+<div class="projects">
+  {{range .All}}
+  {{if eq .ID $.Expanded}}
+  <form class="pcard open" style="--project:{{.Color}}" hx-post="/projects/{{.ID}}">
+    <div class="pcard-head">
+      <input type="color" name="color" value="{{.Color}}" class="swatch" aria-label="Колір">
+      <input class="pname" name="name" value="{{.Name}}" required>
+      <select name="kind" class="add-project">
+        <option value="work"{{if eq .Kind "work"}} selected{{end}}>робота</option>
+        <option value="pet"{{if eq .Kind "pet"}} selected{{end}}>своє</option>
+      </select>
+      <span class="grow"></span>
+      <span class="mono dim">{{.Now}} у Зараз · {{.Backlog}} у беклозі</span>
+    </div>
+    <div class="pgrid">
+      <label><span class="up">Тег для ⌘K</span><span class="field"><span class="dim">#</span><input name="slug" value="{{.Slug}}"></span></label>
+      <label><span class="up">Jira</span><span class="field"><input name="jira_key" value="{{.JiraKey}}" placeholder="ATL" style="width:70px"><input name="jira_host" value="{{.JiraHost}}" placeholder="atlas.atlassian.net"></span></label>
+      <label><span class="up">Репозиторії</span><span class="field"><input name="repos" value="{{.Repos}}" placeholder="owner/repo, gitlab.com/group/repo"></span></label>
+      <label><span class="up">Канали Slack</span><span class="field"><input name="channels" value="{{.Channels}}" placeholder="#atlas-eng, #atlas-releases"></span></label>
+    </div>
+    <div class="pcard-foot">
+      <label class="toggle"><input type="checkbox" name="on_board" value="1"{{if .OnBoard}} checked{{end}}><span></span>показувати на дошці</label>
+      <span class="grow"></span>
+      <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" hx-confirm="Видалити проєкт {{.Name}}?">Видалити</button>
+      <a class="btn" href="/projects">Закрити</a>
+      <button type="submit" class="btn primary">Зберегти</button>
+    </div>
+  </form>
+  {{else}}
+  <a class="pcard{{if not .OnBoard}} hidden-p{{end}}" style="--project:{{.Color}}" href="/projects?e={{.Slug}}">
+    <span class="dot big" style="background:{{.Color}}"></span>
+    <span class="pname-static">{{.Name}}</span>
+    <span class="dim">{{if eq .Kind "work"}}робота{{else}}своє{{end}}{{if not .OnBoard}} · приховано з дошки{{end}}</span>
+    <span class="grow"></span>
+    <span class="dim">{{if .JiraKey}}{{.JiraKey}} · {{end}}{{.Repos}}{{if .Channels}} · {{.Channels}}{{end}}</span>
+    <span class="mono dim">{{.Now}} · {{.Backlog}}</span>
+  </a>
+  {{end}}
+  {{end}}
+
+  <form class="pcard new" hx-post="/projects" hx-on:htmx:after:request="this.reset()">
+    <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.6v8.8M2.6 7h8.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <input name="name" placeholder="Новий проєкт" autocomplete="off" required>
+    <select name="kind" class="add-project"><option value="pet">своє</option><option value="work">робота</option></select>
+    <button type="submit" class="btn">Додати</button>
+  </form>
+</div>
+{{end}}
