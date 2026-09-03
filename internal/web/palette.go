@@ -16,7 +16,7 @@ type paletteData struct {
 
 // palette renders the live preview under the ⌘K input.
 func (s *Server) palette(w http.ResponseWriter, r *http.Request) {
-	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	q := strings.TrimSpace(r.URL.Query().Get("text"))
 	projects, err := s.store.Projects()
 	if err != nil {
 		s.fail(w, "palette", err)
@@ -49,7 +49,7 @@ func (s *Server) createQuick(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "palette", err)
 		return
 	}
-	q := parseQuick(strings.TrimSpace(r.FormValue("q")), projects)
+	q := parseQuick(strings.TrimSpace(r.FormValue("text")), projects)
 	if q.Title == "" {
 		s.respondBoard(w, r)
 		return
@@ -71,6 +71,12 @@ func (s *Server) createQuick(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, "add link", err)
 			return
 		}
+	}
+	// Created from another page: send the browser to the board instead of morphing it in place.
+	if from := r.FormValue("from"); from != "" && from != "board" {
+		w.Header().Set("HX-Redirect", "/")
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
 	r.Form.Del("t")
 	s.respondBoard(w, r)

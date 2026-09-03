@@ -2,10 +2,11 @@
 <dialog id="palette" class="palette">
   <form method="dialog" class="palette-form" hx-post="/palette">
     <input type="hidden" name="p" value="{{.Filter}}" id="palette-p">
+    <input type="hidden" name="from" value="{{.Nav}}">
     <input type="hidden" name="force_now" value="">
     <label class="palette-input">
       <svg width="17" height="17" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <input name="q" type="text" autocomplete="off" placeholder="Додати або знайти…"
+      <input name="text" type="text" autocomplete="off" placeholder="Додати або знайти…"
              hx-get="/palette" hx-include="#palette-p" hx-trigger="input changed delay:120ms, focus"
              hx-target="#palette-results" hx-swap="innerHTML">
     </label>

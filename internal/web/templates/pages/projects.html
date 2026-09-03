@@ -26,7 +26,7 @@
     <div class="pcard-foot">
       <label class="toggle"><input type="checkbox" name="on_board" value="1"{{if .OnBoard}} checked{{end}}><span></span>показувати на дошці</label>
       <span class="grow"></span>
-      <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" hx-confirm="Видалити проєкт {{.Name}}?">Видалити</button>
+      <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" data-confirm="Видалити проєкт {{.Name}}?" data-confirm-ok="Видалити" data-confirm-danger>Видалити</button>
       <a class="btn" href="/projects">Закрити</a>
       <button type="submit" class="btn primary">Зберегти</button>
     </div>

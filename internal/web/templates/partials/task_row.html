@@ -15,7 +15,7 @@
   {{if ne .State "done"}}
   <div class="acts">
     {{if eq .State "backlog"}}<button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}'>У Зараз</button>{{else}}<button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}'>У беклог</button>{{end}}
-    <button type="button" class="del" hx-delete="/tasks/{{.ID}}" hx-confirm="Видалити задачу?" aria-label="Видалити">✕</button>
+    <button type="button" class="del" hx-delete="/tasks/{{.ID}}" data-confirm="Видалити задачу?" data-confirm-ok="Видалити" data-confirm-danger aria-label="Видалити">✕</button>
   </div>
   {{end}}
 </div>

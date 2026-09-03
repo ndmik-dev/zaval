@@ -454,3 +454,12 @@ h1{font-size:23px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 .help-head{display:flex;align-items:center;margin-bottom:12px}
 .help-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px;color:var(--ink-2);align-items:center}
 .help-grid kbd{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 7px 2px;text-align:center;background:var(--card-2)}
+
+/* confirm */
+.confirm-dialog{width:380px;max-width:calc(100vw - 32px);padding:18px 20px 16px;background:var(--card);border:1px solid #C7CBC2;border-radius:11px;color:var(--ink);box-shadow:0 24px 60px rgba(23,32,28,.28)}
+.confirm-dialog::backdrop{background:rgba(23,32,28,.42)}
+.confirm-text{margin:0 0 16px;font-size:15px;line-height:1.45}
+.confirm-actions{display:flex;justify-content:flex-end;gap:8px}
+.btn.primary.danger{background:var(--attention);border-color:var(--attention)}
+.prow.hl{background:#EDEFE8;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.prow.primary:not(.hl){background:none}

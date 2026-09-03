@@ -27,4 +27,11 @@
   {{if .Open}}{{template "drawer" .}}{{end}}
   {{template "palette" .}}
   {{template "help" .}}
+  <dialog id="confirm" class="confirm-dialog">
+    <p class="confirm-text"></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn" data-confirm-cancel>Скасувати</button>
+      <button type="button" class="btn primary" data-confirm-accept>OK</button>
+    </div>
+  </dialog>
 </div>{{end}}

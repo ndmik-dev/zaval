@@ -18,8 +18,8 @@
   <a class="btn" href="/releases?p={{.Project.Slug}}" hx-get="/releases?p={{.Project.Slug}}" hx-push-url="true">Готово з правками</a>
   {{else}}
   <a class="btn ghost" href="/releases?p={{.Project.Slug}}&edit=1" hx-get="/releases?p={{.Project.Slug}}&edit=1" hx-push-url="true">Правити список</a>
-  {{if .Done}}<button type="button" class="btn" hx-post="/checklist/{{.Project.ID}}/reset" hx-confirm="Зняти всі відмітки?">Скинути</button>{{end}}
-  <button type="button" class="btn primary" hx-post="/checklist/{{.Project.ID}}/released"{{if lt .Done .Total}} hx-confirm="Відмічено {{.Done}} з {{.Total}}. Позначити зарелізеним і скинути список?"{{end}}>Зарелізено</button>
+  {{if .Done}}<button type="button" class="btn" hx-post="/checklist/{{.Project.ID}}/reset" data-confirm="Зняти всі відмітки?" data-confirm-ok="Скинути">Скинути</button>{{end}}
+  <button type="button" class="btn primary" hx-post="/checklist/{{.Project.ID}}/released"{{if lt .Done .Total}} data-confirm="Відмічено {{.Done}} з {{.Total}}. Позначити зарелізеним і скинути список?" data-confirm-ok="Зарелізено"{{end}}>Зарелізено</button>
   {{end}}
 </div>
 

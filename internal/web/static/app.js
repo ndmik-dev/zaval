@@ -11,7 +11,7 @@ const palette = document.getElementById('palette');
 function openPalette() {
   if (!palette || palette.open) return;
   palette.showModal();
-  palette.querySelector('input[name=q]').focus();
+  palette.querySelector('input[name=text]').focus();
 }
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -23,13 +23,32 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-open-palette]')) openPalette();
   if (e.target === palette) palette.close();
 });
+// ↑/↓ move between the create row and the matches; Enter activates the highlighted one.
+function paletteRows() { return [...palette.querySelectorAll('.prow')]; }
+function highlight(i) {
+  const all = paletteRows();
+  all.forEach((r, k) => r.classList.toggle('hl', k === i));
+}
 palette?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
     e.preventDefault();
     palette.querySelector('input[name=force_now]').value = '1';
     palette.querySelector('form').requestSubmit();
+    return;
+  }
+  const all = paletteRows();
+  const cur = all.findIndex((r) => r.classList.contains('hl'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!all.length) return;
+    highlight(Math.min(all.length - 1, Math.max(0, cur + (e.key === 'ArrowDown' ? 1 : -1))));
+  } else if (e.key === 'Enter' && cur > 0) {
+    e.preventDefault();
+    all[cur].click();
+    palette.close();
   }
 });
+palette?.addEventListener('htmx:after:swap', () => { if (paletteRows().length) highlight(0); });
 palette?.addEventListener('close', () => {
   palette.querySelector('input[name=force_now]').value = '';
 });
@@ -189,3 +208,34 @@ document.addEventListener('keydown', (e) => {
 // Keep the focus ring on the same task after a morph.
 document.addEventListener('htmx:before:swap', () => { const r = focusedRow(); if (r) window.__focusedTask = r.id; });
 document.addEventListener('htmx:after:swap', () => { if (window.__focusedTask) { const r = document.getElementById(window.__focusedTask); if (r && !r.classList.contains('focused')) focusRow(r); } });
+
+// Confirmation modal for [data-confirm]: the first click is held back and shown
+// in a dialog; accepting re-clicks the element with a one-shot pass flag.
+const confirmDialog = document.getElementById('confirm');
+let confirmTarget = null;
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-confirm]');
+  if (!el || !confirmDialog || el.dataset.confirmPass) return;
+  e.stopPropagation();
+  e.preventDefault();
+  confirmTarget = el;
+  confirmDialog.querySelector('.confirm-text').textContent = el.dataset.confirm;
+  const ok = confirmDialog.querySelector('[data-confirm-accept]');
+  ok.textContent = el.dataset.confirmOk || 'OK';
+  ok.classList.toggle('danger', el.hasAttribute('data-confirm-danger'));
+  confirmDialog.showModal();
+  ok.focus();
+}, true);
+confirmDialog?.addEventListener('click', (e) => {
+  if (e.target.closest('[data-confirm-accept]')) {
+    const el = confirmTarget;
+    confirmDialog.close();
+    if (!el) return;
+    el.dataset.confirmPass = '1';
+    el.click();
+    delete el.dataset.confirmPass;
+  } else if (e.target.closest('[data-confirm-cancel]') || e.target === confirmDialog) {
+    confirmDialog.close();
+  }
+});
+confirmDialog?.addEventListener('close', () => { confirmTarget = null; });
