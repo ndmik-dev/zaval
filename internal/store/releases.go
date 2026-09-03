@@ -23,6 +23,14 @@ type ReleaseRecord struct {
 	ID         int64
 	ProjectID  int64
 	ReleasedAt string
+	Items      []HistoryItem
+}
+
+type HistoryItem struct {
+	Phase     string
+	Title     string
+	Done      bool
+	TaskTitle sql.NullString
 }
 
 type Progress struct{ Done, Total int }
@@ -75,9 +83,26 @@ func (s *Store) AddChecklistItem(projectID int64, phase, title string) (Checklis
 	return ChecklistItem{ID: id, ProjectID: projectID, Phase: phase, Title: title}, nil
 }
 
-func (s *Store) UpdateChecklistItem(id int64, title, command string) error {
-	_, err := s.db.Exec(`update release_templates set title = ?, command = ? where id = ?`, title, command, id)
+func (s *Store) UpdateChecklistItem(id int64, title, phase string) error {
+	_, err := s.db.Exec(`update release_templates set title = ?, phase = ? where id = ?`, title, phase, id)
 	return err
+}
+
+func (s *Store) ChecklistItem(id int64) (ChecklistItem, error) {
+	var pid int64
+	if err := s.db.QueryRow(`select project_id from release_templates where id = ?`, id).Scan(&pid); err != nil {
+		return ChecklistItem{}, ErrNotFound
+	}
+	items, err := s.Checklist(pid)
+	if err != nil {
+		return ChecklistItem{}, err
+	}
+	for _, it := range items {
+		if it.ID == id {
+			return it, nil
+		}
+	}
+	return ChecklistItem{}, ErrNotFound
 }
 
 // SetChecklistItemTask points a line at a task; 0 clears it.
@@ -106,42 +131,61 @@ func (s *Store) ChecklistItemProject(id int64) (int64, error) {
 	return pid, err
 }
 
-func (s *Store) ResetChecklist(projectID int64) error {
-	_, err := s.db.Exec(`update release_templates set done = 0 where project_id = ?`, projectID)
-	return err
-}
-
-// MarkReleased records a release for the project and clears the checklist.
+// MarkReleased archives the current checklist as a release and empties it.
 func (s *Store) MarkReleased(projectID int64) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`insert into releases (project_id, name, released_at) values (?, '', ?)`, projectID, sqlNow); err != nil {
+	res, err := tx.Exec(`insert into releases (project_id, name, released_at) values (?, '', ?)`, projectID, sqlNow)
+	if err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`update release_templates set done = 0 where project_id = ?`, projectID); err != nil {
+	id, _ := res.LastInsertId()
+	if _, err := tx.Exec(`insert into release_items (release_id, phase, title, done, position, task_id)
+		select ?, phase, title, done, position, task_id from release_templates where project_id = ? order by position, id`, id, projectID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`delete from release_templates where project_id = ?`, projectID); err != nil {
 		return err
 	}
 	return tx.Commit()
 }
 
+// ReleaseHistory lists past releases, newest first, with their lines.
 func (s *Store) ReleaseHistory(projectID int64, limit int) ([]ReleaseRecord, error) {
-	rows, err := s.db.Query(`select id, project_id, released_at from releases where project_id = ? and released_at is not null order by released_at desc limit ?`, projectID, limit)
+	rows, err := s.db.Query(`select id, project_id, released_at from releases where project_id = ? and released_at is not null order by released_at desc, id desc limit ?`, projectID, limit)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	var out []ReleaseRecord
 	for rows.Next() {
 		var r ReleaseRecord
 		var at sql.NullString
 		if err := rows.Scan(&r.ID, &r.ProjectID, &at); err != nil {
+			rows.Close()
 			return nil, err
 		}
 		r.ReleasedAt = at.String
 		out = append(out, r)
 	}
-	return out, rows.Err()
+	rows.Close()
+	for i := range out {
+		irows, err := s.db.Query(`select i.phase, i.title, i.done, t.title from release_items i left join tasks t on t.id = i.task_id
+			where i.release_id = ? order by i.position, i.id`, out[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		for irows.Next() {
+			var it HistoryItem
+			if err := irows.Scan(&it.Phase, &it.Title, &it.Done, &it.TaskTitle); err != nil {
+				irows.Close()
+				return nil, err
+			}
+			out[i].Items = append(out[i].Items, it)
+		}
+		irows.Close()
+	}
+	return out, nil
 }

@@ -4,14 +4,13 @@ import "time"
 
 // shell is what the layout and rail need on every page.
 type shell struct {
-	Title       string
-	Nav         string
-	Filter      string
-	Projects    []projectItem
-	HiddenCount int
-	Open        *taskRow          // task shown in the drawer, if any
-	Ctx         map[string]string // hidden fields every drawer request carries back (page, filters)
-	AuthOn      bool
+	Title    string
+	Nav      string
+	Filter   string
+	Projects []projectItem
+	Open     *taskRow          // task shown in the drawer, if any
+	Ctx      map[string]string // hidden fields every drawer request carries back (page, filters)
+	AuthOn   bool
 }
 
 func (s *Server) shell(title, nav, filter string) (shell, error) {
@@ -25,10 +24,6 @@ func (s *Server) shell(title, nav, filter string) (shell, error) {
 		return sh, err
 	}
 	for _, p := range projects {
-		if !p.OnBoard {
-			sh.HiddenCount++
-			continue
-		}
 		sh.Projects = append(sh.Projects, projectItem{p, counts[p.ID]})
 	}
 	return sh, nil

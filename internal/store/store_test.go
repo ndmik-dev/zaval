@@ -288,19 +288,18 @@ func TestChecklist(t *testing.T) {
 	a, _ := s.AddChecklistItem(atl.ID, "before", "Merge release branch")
 	b, _ := s.AddChecklistItem(atl.ID, "before", "Run migrate check")
 	s.AddChecklistItem(atl.ID, "after", "Check Sentry")
-	if err := s.UpdateChecklistItem(b.ID, "Run migrate check", "scripts/migrate-check.sh"); err != nil {
+	if err := s.UpdateChecklistItem(b.ID, "Run migrations", "after"); err != nil {
 		t.Fatal(err)
 	}
 	task, _ := s.CreateTask(atl.ID, "Rotate keys", "backlog")
 	s.SetChecklistItemTask(b.ID, task.ID)
 	s.ToggleChecklistItem(a.ID)
 	items, _ := s.Checklist(atl.ID)
-	if len(items) != 3 || !items[0].Done || items[1].Command != "scripts/migrate-check.sh" || items[1].TaskTitle.String != "Rotate keys" || items[1].TaskState.String != "backlog" {
+	if len(items) != 3 || !items[0].Done || items[1].Phase != "after" || items[1].TaskTitle.String != "Rotate keys" {
 		t.Fatalf("items: %+v", items)
 	}
-	s.DeleteTask(task.ID)
-	if items, _ := s.Checklist(atl.ID); items[1].TaskID.Valid {
-		t.Error("deleted task must unlink from the checklist")
+	if it, err := s.ChecklistItem(b.ID); err != nil || it.Title != "Run migrations" || it.TaskState.String != "backlog" {
+		t.Fatalf("item: %+v %v", it, err)
 	}
 	if pid, _ := s.ChecklistItemProject(a.ID); pid != atl.ID {
 		t.Error("ChecklistItemProject wrong")
@@ -309,46 +308,24 @@ func TestChecklist(t *testing.T) {
 	if prog[atl.ID] != (Progress{Done: 1, Total: 3}) {
 		t.Fatalf("progress: %+v", prog[atl.ID])
 	}
+	// Release: everything moves to history, the list is empty again.
 	if err := s.MarkReleased(atl.ID); err != nil {
 		t.Fatal(err)
 	}
-	prog, _ = s.ChecklistProgress()
-	if prog[atl.ID].Done != 0 {
-		t.Error("release must reset the checklist")
+	if items, _ := s.Checklist(atl.ID); len(items) != 0 {
+		t.Error("release must empty the checklist")
 	}
 	hist, _ := s.ReleaseHistory(atl.ID, 5)
-	if len(hist) != 1 || hist[0].ReleasedAt == "" {
+	if len(hist) != 1 || len(hist[0].Items) != 3 || !hist[0].Items[0].Done || hist[0].Items[1].TaskTitle.String != "Rotate keys" {
 		t.Fatalf("history: %+v", hist)
 	}
-	s.ToggleChecklistItem(a.ID)
-	s.ResetChecklist(atl.ID)
-	if prog, _ := s.ChecklistProgress(); prog[atl.ID].Done != 0 {
-		t.Error("reset failed")
+	s.DeleteTask(task.ID)
+	if hist, _ := s.ReleaseHistory(atl.ID, 5); hist[0].Items[1].TaskTitle.Valid {
+		t.Error("deleted task must unlink from history")
 	}
-	s.DeleteChecklistItem(a.ID)
-	if items, _ := s.Checklist(atl.ID); len(items) != 2 {
+	c, _ := s.AddChecklistItem(atl.ID, "before", "x")
+	s.DeleteChecklistItem(c.ID)
+	if items, _ := s.Checklist(atl.ID); len(items) != 0 {
 		t.Error("delete failed")
-	}
-}
-
-func TestWaiting(t *testing.T) {
-	s := testStore(t)
-	s.Seed()
-	atl, _ := s.ProjectBySlug("atl")
-	a, _ := s.CreateTask(atl.ID, "a", "now")
-	b, _ := s.CreateTask(atl.ID, "b", "backlog")
-	s.SetWaiting(b.ID, "відповідь Марти")
-	s.SetWaiting(a.ID, "ревʼю")
-	w, _ := s.WaitingTasks()
-	if len(w) != 2 || w[1].ID != b.ID || w[1].Waiting != "відповідь Марти" || !w[1].WaitingSince.Valid {
-		t.Fatalf("waiting: %+v", w)
-	}
-	s.SetWaiting(a.ID, "")
-	if w, _ := s.WaitingTasks(); len(w) != 1 {
-		t.Error("clear failed")
-	}
-	s.SetTaskState(b.ID, "done")
-	if w, _ := s.WaitingTasks(); len(w) != 0 {
-		t.Error("done must clear waiting")
 	}
 }

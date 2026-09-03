@@ -77,7 +77,7 @@ func (s *Server) boardData(filter string, openID int64, daily string) (boardData
 		}
 		var rows []taskRow
 		for _, t := range ts {
-			if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
+			if !matchesFilter(t.Project, filter) {
 				continue
 			}
 			if t.Waiting != "" && t.State != "done" {
@@ -104,7 +104,7 @@ func (s *Server) boardData(filter string, openID int64, daily string) (boardData
 		return d, err
 	}
 	for _, t := range waiting {
-		if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
+		if !matchesFilter(t.Project, filter) {
 			continue
 		}
 		row := taskRow{Task: t}

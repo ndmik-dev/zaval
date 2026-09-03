@@ -22,7 +22,7 @@
         <div class="task log" style="--project:{{.Project.Color}}" data-open="1">
           <span class="dot" style="background:{{.Project.Color}}"></span>
           <a class="title" href="/journal?t={{.ID}}{{if $.Filter}}&p={{$.Filter}}{{end}}{{if not $.IsCurrent}}&w={{index $.Ctx "w"}}{{end}}" hx-get="/journal?t={{.ID}}{{if $.Filter}}&p={{$.Filter}}{{end}}{{if not $.IsCurrent}}&w={{index $.Ctx "w"}}{{end}}" hx-push-url="true">{{.Title}}</a>
-          <span class="plabel" style="color:{{.Project.Color}}">{{.Project.Name}}</span>
+          <span class="plabel" style="color:{{.Project.Color}}">{{.Project.Name}}</span><span class="grow"></span>
           {{if .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
           <span class="mono when">{{slice .DoneAt.String 11 16}}</span>
         </div>

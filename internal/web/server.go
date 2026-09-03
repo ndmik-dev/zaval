@@ -29,6 +29,19 @@ var funcs = template.FuncMap{
 	"add":       func(a, b int) int { return a + b },
 	"colors":    func() []string { return projectColors },
 	"closeURL":  closeURL,
+	"without":   without,
+}
+
+// without copies a context map minus the given keys.
+func without(m map[string]string, keys ...string) map[string]string {
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	for _, k := range keys {
+		delete(out, k)
+	}
+	return out
 }
 
 // closeURL rebuilds the page URL the drawer sits on, without the task.
@@ -123,7 +136,6 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("GET /releases", s.releases)
 	s.mux.HandleFunc("POST /checklist/{id}/items", s.addChecklistItem)
 	s.mux.HandleFunc("POST /checklist/{id}/released", s.markReleased)
-	s.mux.HandleFunc("POST /checklist/{id}/reset", s.resetChecklist)
 	s.mux.HandleFunc("POST /checklist-items/{id}", s.updateChecklistItem)
 	s.mux.HandleFunc("POST /checklist-items/{id}/toggle", s.toggleChecklistItem)
 	s.mux.HandleFunc("DELETE /checklist-items/{id}", s.deleteChecklistItem)

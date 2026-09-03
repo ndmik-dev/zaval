@@ -95,12 +95,12 @@ func (s *Server) updateProject(w http.ResponseWriter, r *http.Request) {
 	if v := r.FormValue("kind"); v == "work" || v == "pet" {
 		p.Kind = v
 	}
-	p.OnBoard = r.FormValue("on_board") != ""
+	p.OnBoard = true
 	if err := s.store.UpdateProject(p); err != nil {
 		s.respondProjects(w, r, p.Slug, "Не збереглося: назва або slug уже зайняті")
 		return
 	}
-	s.respondProjects(w, r, p.Slug, "")
+	s.respondProjects(w, r, "", "")
 }
 
 func (s *Server) deleteProject(w http.ResponseWriter, r *http.Request) {

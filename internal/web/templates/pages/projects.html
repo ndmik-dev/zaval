@@ -27,7 +27,6 @@
       </div>
     </div>
     <div class="pcard-foot">
-      <label class="toggle"><input type="checkbox" name="on_board" value="1"{{if .OnBoard}} checked{{end}}><span></span>показувати на дошці</label>
       <span class="grow"></span>
       <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" data-confirm="Видалити проєкт {{.Name}}?" data-confirm-ok="Видалити" data-confirm-danger>Видалити</button>
       <a class="btn" href="/projects">Закрити</a>
@@ -35,10 +34,10 @@
     </div>
   </form>
   {{else}}
-  <a class="pcard{{if not .OnBoard}} hidden-p{{end}}" style="--project:{{.Color}}" href="/projects?e={{.Slug}}">
+  <a class="pcard" style="--project:{{.Color}}" href="/projects?e={{.Slug}}">
     <span class="dot big" style="background:{{.Color}}"></span>
     <span class="pname-static">{{.Name}}</span>
-    <span class="dim">{{if eq .Kind "work"}}робота{{else}}своє{{end}}{{if not .OnBoard}} · приховано з дошки{{end}}</span>
+    <span class="dim">{{if eq .Kind "work"}}робота{{else}}своє{{end}}</span>
     <span class="grow"></span>
     <span class="mono dim">{{.Now}} · {{.Backlog}}</span>
   </a>

@@ -21,7 +21,6 @@
 
   {{template "rail_projects" (dict "Kind" "work" "Label" "Робота" "Projects" .Projects "Filter" .Filter)}}
   {{template "rail_projects" (dict "Kind" "pet" "Label" "Своє" "Projects" .Projects "Filter" .Filter)}}
-  {{if .HiddenCount}}<div class="rail-hint">ще {{.HiddenCount}} прихований</div>{{end}}
 
   <div class="nav-group rail-bottom">
     <a class="nav{{if eq .Nav "projects"}} active{{end}}" href="/projects">

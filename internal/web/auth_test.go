@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -85,4 +86,30 @@ func TestNoPassword(t *testing.T) {
 	if w := get(s, "/", nil); w.Code != http.StatusOK {
 		t.Fatalf("open mode: %d", w.Code)
 	}
+}
+
+// Every page must render for an anonymous-free server, with and without a drawer.
+func TestPagesRender(t *testing.T) {
+	s := testServer(t, "")
+	st := s.store
+	atl, _ := st.ProjectBySlug("atl")
+	task, _ := st.CreateTask(atl.ID, "x", "now")
+	item, _ := st.AddChecklistItem(atl.ID, "before", "line")
+	st.MarkReleased(atl.ID)
+	item, _ = st.AddChecklistItem(atl.ID, "before", "line 2")
+	for _, path := range []string{"/", "/?t=" + itoa(task.ID), "/?daily=atl", "/journal", "/journal?t=" + itoa(task.ID), "/releases", "/releases?p=atl&i=" + itoa(item.ID), "/releases?p=atl&t=" + itoa(task.ID), "/projects", "/projects?e=atl"} {
+		w := get(s, path, nil)
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "</html>") {
+			t.Errorf("%s: %d, body ends %q", path, w.Code, tail(w.Body.String()))
+		}
+	}
+}
+
+func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+func tail(s string) string {
+	if len(s) > 120 {
+		return s[len(s)-120:]
+	}
+	return s
 }

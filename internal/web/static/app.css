@@ -477,7 +477,7 @@ h1{font-size:23px;font-weight:600;letter-spacing:-.015em;margin:0 0 16px}
 #waiting .empty{background:transparent}
 
 /* project label on rows */
-.plabel{font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85;white-space:nowrap;padding-top:3px}
+.plabel{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.8;white-space:nowrap}
 .plabel:hover{opacity:1;text-decoration:underline}
 .task.log .plabel{padding-top:0}
 h1 .filter-chip{font-size:13px;vertical-align:middle;margin-left:10px;letter-spacing:0}
@@ -494,3 +494,26 @@ h1 .filter-chip{font-size:13px;vertical-align:middle;margin-left:10px;letter-spa
 .picker-list{background:var(--card);border:1px solid #C7CBC2;border-radius:8px;box-shadow:0 10px 30px rgba(23,32,28,.16);padding:5px;display:flex;flex-direction:column;gap:1px}
 .picker-opt{display:flex;align-items:center;gap:9px;font:inherit;font-size:13.5px;color:var(--ink-2);text-align:left;background:none;border:0;border-radius:6px;padding:7px 10px;cursor:pointer}
 .picker-opt:hover{background:#EDEFE8;color:var(--ink)}
+
+/* checklist lines are clickable like tasks */
+.ritem{cursor:pointer}
+.ritem:hover{border-color:#C3C7BE}
+.ritem.open{border-color:var(--ink)}
+.ritem .body{color:inherit;display:flex;flex-direction:column;gap:4px}
+.ritem-task{font-size:13px;color:var(--ink-2)}
+.task-chip.big{padding:8px 11px;font-size:14px}
+.task-chip.big .grow{color:var(--ink)}
+.task-chip.big .grow:hover{text-decoration:underline}
+.history{margin-top:26px}
+.history summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;color:var(--muted)}
+.history summary::-webkit-details-marker{display:none}
+.history summary::after{content:"";flex:1;height:1px;background:var(--line)}
+.history-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.history-rel{background:var(--card-2);border:1px solid var(--line-2);border-radius:8px;padding:10px 14px}
+.history-when{font-size:13.5px;font-weight:600;margin-bottom:6px}
+.history-items{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink-2)}
+.history-item.done{color:#8C9189;text-decoration:line-through;text-decoration-color:#C3C7BE}
+#item-drawer .drawer-state .seg label{display:flex;cursor:pointer}
+#item-drawer .seg input{position:absolute;opacity:0;width:0;height:0}
+#item-drawer .seg span{padding:4px 11px 5px;font-size:12px;font-weight:600;color:var(--muted)}
+#item-drawer .seg input:checked + span{background:var(--ink);color:var(--card)}
