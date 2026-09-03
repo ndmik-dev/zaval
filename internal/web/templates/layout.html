@@ -11,17 +11,17 @@
 <link rel="icon" href="/static/icon-192.png">
 <title>{{.Title}} — Day Board</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/app.css">
-<script src="/static/htmx.min.js" defer></script>
-<script src="/static/sortable.min.js" defer></script>
-<script src="/static/app.js" defer></script>
+<link rel="stylesheet" href="{{static "app.css"}}">
+<script src="{{static "htmx.min.js"}}" defer></script>
+<script src="{{static "sortable.min.js"}}" defer></script>
+<script src="{{static "app.js"}}" defer></script>
 </head>
 <body>
 {{template "app" .}}
 </body>
 </html>{{end}}
 
-{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph">
+{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#q">
   {{template "rail" .}}
   <main class="main">{{template "content" .}}</main>
   {{if .Open}}{{template "drawer" .}}{{end}}

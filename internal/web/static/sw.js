@@ -1,6 +1,6 @@
 // Network first for everything same-origin, cache as offline fallback.
 // Static files are not cache-first on purpose: a new build must show up on reload.
-const CACHE = 'dayboard-v1';
+const CACHE = 'dayboard-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {

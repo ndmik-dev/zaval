@@ -7,47 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ndmik-dev/zaval/internal/links"
 	"github.com/ndmik-dev/zaval/internal/store"
 )
-
-func (s *Server) createTask(w http.ResponseWriter, r *http.Request) {
-	title, found := links.Parse(strings.TrimSpace(r.FormValue("title")))
-	if title == "" {
-		s.respondBoard(w, r)
-		return
-	}
-	projectID, _ := strconv.ParseInt(r.FormValue("project_id"), 10, 64)
-	if projectID == 0 {
-		projects, err := s.store.Projects()
-		if err != nil {
-			s.fail(w, "projects", err)
-			return
-		}
-		if p := s.defaultProject(projects, r.FormValue("p")); p != nil {
-			projectID = p.ID
-		}
-	}
-	state := r.FormValue("state")
-	if state != "now" {
-		state = "backlog"
-	}
-	task, err := s.store.CreateTask(projectID, title, state)
-	if err != nil {
-		s.fail(w, "create task", err)
-		return
-	}
-	for _, l := range found {
-		if _, err := s.store.AddLink(task.ID, l.URL, l.Kind, l.Label, l.Meta); err != nil {
-			s.fail(w, "add link", err)
-			return
-		}
-	}
-	// Keep the chosen project selected in the add bar after the morph.
-	r.ParseForm()
-	r.Form.Set("add", task.Project.Slug)
-	s.respondBoard(w, r)
-}
 
 func (s *Server) setTaskState(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -82,13 +43,10 @@ func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, boardURL(filter, openID), http.StatusSeeOther)
 		return
 	}
-	data, err := s.boardData(filter, openID)
+	data, err := s.boardData(filter, openID, r.FormValue("q"))
 	if err != nil {
 		s.fail(w, "board", err)
 		return
-	}
-	if slug := r.FormValue("add"); slug != "" {
-		data.AddSlug = slug
 	}
 	s.renderPart(w, "board", "app", data)
 }
@@ -129,4 +87,13 @@ func ids(raw []string) []int64 {
 		}
 	}
 	return out
+}
+
+func (s *Server) setWaiting(w http.ResponseWriter, r *http.Request) {
+	id := pathID(r)
+	if err := s.store.SetWaiting(id, strings.TrimSpace(r.FormValue("waiting"))); err != nil {
+		s.fail(w, "waiting", err)
+		return
+	}
+	s.respondTask(w, r, id)
 }

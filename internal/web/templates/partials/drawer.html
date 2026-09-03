@@ -11,7 +11,7 @@
 
   {{/* Every request below carries the open task, so the drawer stays open after a mutation.
        hx-include is inherited; hx-vals is not used for this because a child's own hx-vals would replace it. */}}
-  <div class="drawer-scope" hx-include:inherited="#drawer-ctx">
+  <div class="drawer-scope" hx-include:inherited="#drawer-ctx, #q">
   <span id="drawer-ctx" hidden><input type="hidden" name="t" value="{{.ID}}"><input type="hidden" name="p" value="{{$.Filter}}"></span>
   <form class="drawer-body" hx-post="/tasks/{{.ID}}" hx-trigger="submit, change">
     <input class="drawer-title" name="title" value="{{.Title}}" required>
@@ -24,6 +24,11 @@
       {{if eq .State "done"}}<span class="drawer-meta">закрито {{slice .DoneAt.String 8 10}}.{{slice .DoneAt.String 5 7}}</span>{{end}}
     </div>
     <textarea class="drawer-notes" name="notes" rows="3" placeholder="Нотатки">{{.Notes}}</textarea>
+  </form>
+  <form class="drawer-wait{{if .Waiting}} on{{end}}" hx-post="/tasks/{{.ID}}/waiting" hx-trigger="submit, change">
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 4.2V7l1.9 1.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <input name="waiting" value="{{.Waiting}}" placeholder="Чекаю на… (відповідь, ревʼю, доступ)" autocomplete="off">
+    {{if .Waiting}}<button type="button" class="x" hx-post="/tasks/{{.ID}}/waiting" hx-vals='{"waiting":""}' aria-label="Більше не чекаю">✕</button>{{end}}
   </form>
 
   <section class="drawer-sec">

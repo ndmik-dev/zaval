@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ndmik-dev/zaval/internal/store"
@@ -21,18 +22,20 @@ type taskRow struct {
 
 type boardData struct {
 	shell
-	Date      string
-	Now       []taskRow
-	Backlog   []taskRow
-	DoneToday []taskRow
-	Release   *checklistView // a release in progress, for the banner
-	AddSlug   string         // project preselected in the add bar
+	Date          string
+	Now           []taskRow
+	Waiting       []taskRow
+	Backlog       []taskRow
+	DoneToday     []taskRow
+	Release       *checklistView // a release in progress, for the banner
+	Query         string
+	FilterProject *store.Project
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	openID, _ := strconv.ParseInt(q.Get("t"), 10, 64)
-	data, err := s.boardData(q.Get("p"), openID)
+	data, err := s.boardData(q.Get("p"), openID, q.Get("q"))
 	if err != nil {
 		log.Println("board:", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
@@ -45,18 +48,19 @@ func (s *Server) board(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "board", data)
 }
 
-func (s *Server) boardData(filter string, openID int64) (boardData, error) {
+func (s *Server) boardData(filter string, openID int64, query string) (boardData, error) {
 	now := time.Now()
 	sh, err := s.shell("Дошка", "board", filter)
 	if err != nil {
 		return boardData{}, err
 	}
-	d := boardData{shell: sh, Date: ukDate(now)}
-	for _, p := range sh.Projects {
-		if p.Slug == filter || d.AddSlug == "" {
-			d.AddSlug = p.Slug
+	d := boardData{shell: sh, Date: ukDate(now), Query: strings.TrimSpace(query)}
+	for i := range sh.Projects {
+		if sh.Projects[i].Slug == filter {
+			d.FilterProject = &sh.Projects[i].Project
 		}
 	}
+	needle := strings.ToLower(d.Query)
 	if openID != 0 {
 		t, err := s.store.Task(openID)
 		if err == nil {
@@ -68,15 +72,20 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 		}
 	}
 
-	// The filter narrows the backlog only: "Зараз" and "Готово" are short and always shown whole.
-	load := func(ts []store.Task, err error, filtered bool) ([]taskRow, error) {
+	load := func(ts []store.Task, err error) ([]taskRow, error) {
 		if err != nil {
 			return nil, err
 		}
 		var rows []taskRow
 		for _, t := range ts {
-			if !t.Project.OnBoard || (filtered && !matchesFilter(t.Project, filter)) {
+			if !t.Project.OnBoard || !matchesFilter(t.Project, filter) {
 				continue
+			}
+			if needle != "" && !strings.Contains(strings.ToLower(t.Title), needle) {
+				continue
+			}
+			if t.Waiting != "" && t.State != "done" {
+				continue // shown in its own section
 			}
 			row := taskRow{Task: t}
 			if t.State == "now" && t.NowSince.Valid {
@@ -87,15 +96,29 @@ func (s *Server) boardData(filter string, openID int64) (boardData, error) {
 		return rows, nil
 	}
 	nowTasks, err := s.store.TasksByState("now")
-	if d.Now, err = load(nowTasks, err, false); err != nil {
+	if d.Now, err = load(nowTasks, err); err != nil {
 		return d, err
 	}
 	backlog, err := s.store.TasksByState("backlog")
-	if d.Backlog, err = load(backlog, err, true); err != nil {
+	if d.Backlog, err = load(backlog, err); err != nil {
 		return d, err
 	}
+	waiting, err := s.store.WaitingTasks()
+	if err != nil {
+		return d, err
+	}
+	for _, t := range waiting {
+		if !t.Project.OnBoard || !matchesFilter(t.Project, filter) || (needle != "" && !strings.Contains(strings.ToLower(t.Title), needle)) {
+			continue
+		}
+		row := taskRow{Task: t}
+		if t.WaitingSince.Valid {
+			row.Age = ageDays(t.WaitingSince.String, now)
+		}
+		d.Waiting = append(d.Waiting, row)
+	}
 	doneToday, err := s.store.DoneToday()
-	if d.DoneToday, err = load(doneToday, err, false); err != nil {
+	if d.DoneToday, err = load(doneToday, err); err != nil {
 		return d, err
 	}
 

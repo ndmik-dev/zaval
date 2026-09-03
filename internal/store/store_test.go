@@ -316,3 +316,26 @@ func TestChecklist(t *testing.T) {
 		t.Error("delete failed")
 	}
 }
+
+func TestWaiting(t *testing.T) {
+	s := testStore(t)
+	s.Seed()
+	atl, _ := s.ProjectBySlug("atl")
+	a, _ := s.CreateTask(atl.ID, "a", "now")
+	b, _ := s.CreateTask(atl.ID, "b", "backlog")
+	s.SetWaiting(b.ID, "відповідь Марти")
+	s.SetWaiting(a.ID, "ревʼю")
+	s.db.Exec(`update tasks set waiting_since = '2026-01-01 00:00:00' where id = ?`, b.ID) // b waits longer
+	w, _ := s.WaitingTasks()
+	if len(w) != 2 || w[0].ID != b.ID || w[0].Waiting != "відповідь Марти" || !w[0].WaitingSince.Valid {
+		t.Fatalf("waiting: %+v", w)
+	}
+	s.SetWaiting(a.ID, "")
+	if w, _ := s.WaitingTasks(); len(w) != 1 {
+		t.Error("clear failed")
+	}
+	s.SetTaskState(b.ID, "done")
+	if w, _ := s.WaitingTasks(); len(w) != 0 {
+		t.Error("done must clear waiting")
+	}
+}

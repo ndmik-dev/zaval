@@ -2,11 +2,13 @@ package web
 
 import (
 	"embed"
+	"hash/fnv"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/ndmik-dev/zaval/internal/store"
@@ -46,6 +48,18 @@ func hostOf(raw string) string {
 }
 
 // dict lets a template pass several named values to a sub-template.
+func hashStatic() string {
+	h := fnv.New64a()
+	fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			b, _ := staticFS.ReadFile(path)
+			h.Write(b)
+		}
+		return nil
+	})
+	return strconv.FormatUint(h.Sum64(), 36)
+}
+
 func dict(kv ...any) map[string]any {
 	m := make(map[string]any, len(kv)/2)
 	for i := 0; i+1 < len(kv); i += 2 {
@@ -55,14 +69,16 @@ func dict(kv ...any) map[string]any {
 }
 
 type Server struct {
-	mux   *http.ServeMux
-	pages map[string]*template.Template
-	store *store.Store
-	auth  *auth
+	mux      *http.ServeMux
+	pages    map[string]*template.Template
+	store    *store.Store
+	auth     *auth
+	assetVer string // hash of the embedded static files; busts browser and service-worker caches
 }
 
 func New(st *store.Store, password string) *Server {
 	s := &Server{mux: http.NewServeMux(), pages: map[string]*template.Template{}, store: st, auth: newAuth(password)}
+	s.assetVer = hashStatic()
 	s.parseTemplates()
 
 	static, _ := fs.Sub(staticFS, "static")
@@ -89,11 +105,11 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("POST /projects", s.createProject)
 	s.mux.HandleFunc("POST /projects/{id}", s.updateProject)
 	s.mux.HandleFunc("DELETE /projects/{id}", s.deleteProject)
-	s.mux.HandleFunc("POST /tasks", s.createTask)
 	s.mux.HandleFunc("POST /tasks/reorder", s.reorderTasks)
 	s.mux.HandleFunc("GET /palette", s.palette)
 	s.mux.HandleFunc("POST /palette", s.createQuick)
 	s.mux.HandleFunc("POST /tasks/{id}/state", s.setTaskState)
+	s.mux.HandleFunc("POST /tasks/{id}/waiting", s.setWaiting)
 	s.mux.HandleFunc("DELETE /tasks/{id}", s.deleteTask)
 	s.mux.HandleFunc("POST /tasks/{id}", s.updateTask)
 	s.mux.HandleFunc("POST /tasks/{id}/links", s.addLink)
@@ -117,7 +133,8 @@ func (s *Server) parseTemplates() {
 	}
 	for _, p := range pages {
 		name := p[len("templates/pages/") : len(p)-len(".html")]
-		s.pages[name] = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS,
+		fm := template.FuncMap{"static": func(name string) string { return "/static/" + name + "?v=" + s.assetVer }}
+		s.pages[name] = template.Must(template.New("").Funcs(funcs).Funcs(fm).ParseFS(templateFS,
 			"templates/layout.html", "templates/partials/*.html", p))
 	}
 }

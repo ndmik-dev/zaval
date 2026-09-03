@@ -168,7 +168,7 @@ func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, 
 	b.WriteString("Сьогодні:\n")
 	n := 0
 	for _, t := range nowTasks {
-		if t.ProjectID == d.Project.ID {
+		if t.ProjectID == d.Project.ID && t.Waiting == "" {
 			b.WriteString("- " + taskLine(t) + "\n")
 			n++
 		}
@@ -176,8 +176,24 @@ func (s *Server) daily(sh shell, slug, scope string, now time.Time) (dailyData, 
 	if n == 0 {
 		b.WriteString("- —\n")
 	}
-	b.WriteString("Блокери: нема")
-	d.Text = b.String()
+	waiting, err := s.store.WaitingTasks()
+	if err != nil {
+		return d, err
+	}
+	blockers := 0
+	for _, t := range waiting {
+		if t.ProjectID == d.Project.ID {
+			if blockers == 0 {
+				b.WriteString("Блокери:\n")
+			}
+			b.WriteString("- " + taskLine(t) + " — чекаю: " + t.Waiting + "\n")
+			blockers++
+		}
+	}
+	if blockers == 0 {
+		b.WriteString("Блокери: нема")
+	}
+	d.Text = strings.TrimRight(b.String(), "\n")
 	return d, nil
 }
 

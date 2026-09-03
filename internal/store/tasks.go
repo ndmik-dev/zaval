@@ -7,15 +7,17 @@ import (
 )
 
 type Task struct {
-	ID        int64
-	ProjectID int64
-	Title     string
-	State     string
-	Notes     string
-	Position  int
-	CreatedAt string
-	NowSince  sql.NullString
-	DoneAt    sql.NullString
+	ID           int64
+	ProjectID    int64
+	Title        string
+	State        string
+	Notes        string
+	Position     int
+	CreatedAt    string
+	NowSince     sql.NullString
+	DoneAt       sql.NullString
+	Waiting      string // what the task waits for; empty = not waiting
+	WaitingSince sql.NullString
 
 	Project    Project
 	Links      []Link
@@ -39,7 +41,7 @@ type Counts struct{ Now, Backlog int }
 const TimeLayout = "2006-01-02 15:04:05"
 
 const taskSelect = `
-select t.id, t.project_id, t.title, t.state, t.notes, t.position, t.created_at, t.now_since, t.done_at,
+select t.id, t.project_id, t.title, t.state, t.notes, t.position, t.created_at, t.now_since, t.done_at, t.waiting, t.waiting_since,
        ` + projectColsPrefixed + `,
        (select count(*) from task_steps st where st.task_id = t.id and st.done = 1),
        (select count(*) from task_steps st where st.task_id = t.id)
@@ -50,7 +52,7 @@ const projectColsPrefixed = `p.id, p.name, p.slug, p.color, p.kind, p.jira_key, 
 func scanTask(rows *sql.Rows) (Task, error) {
 	var t Task
 	p := &t.Project
-	err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.State, &t.Notes, &t.Position, &t.CreatedAt, &t.NowSince, &t.DoneAt,
+	err := rows.Scan(&t.ID, &t.ProjectID, &t.Title, &t.State, &t.Notes, &t.Position, &t.CreatedAt, &t.NowSince, &t.DoneAt, &t.Waiting, &t.WaitingSince,
 		&p.ID, &p.Name, &p.Slug, &p.Color, &p.Kind, &p.JiraKey, &p.JiraHost, &p.Repos, &p.Channels, &p.OnBoard, &p.Position,
 		&t.StepsDone, &t.StepsTotal)
 	return t, err
@@ -189,7 +191,7 @@ func (s *Store) SetTaskState(id int64, state string) error {
 		q = `update tasks set state = 'backlog', now_since = null, done_at = null,
 			position = coalesce((select max(position) from tasks where state = 'backlog'), 0) + 1 where id = ?`
 	case "done":
-		q = `update tasks set state = 'done', done_at = ?, position = 0 where id = ?`
+		q = `update tasks set state = 'done', done_at = ?, position = 0, waiting = '', waiting_since = null where id = ?`
 	default:
 		return fmt.Errorf("bad state %q", state)
 	}
@@ -245,4 +247,19 @@ func (s *Store) Reorder(now, backlog []int64) error {
 		}
 	}
 	return tx.Commit()
+}
+
+// SetWaiting marks what the task waits for; an empty note clears it.
+func (s *Store) SetWaiting(id int64, note string) error {
+	if note == "" {
+		_, err := s.db.Exec(`update tasks set waiting = '', waiting_since = null where id = ?`, id)
+		return err
+	}
+	_, err := s.db.Exec(`update tasks set waiting = ?, waiting_since = coalesce(waiting_since, ?) where id = ?`, note, sqlNow, id)
+	return err
+}
+
+// WaitingTasks lists open tasks that wait on something, oldest wait first.
+func (s *Store) WaitingTasks() ([]Task, error) {
+	return s.queryTasks(`where t.state in ('now', 'backlog') and t.waiting != '' order by t.waiting_since, t.id`)
 }

@@ -53,12 +53,15 @@
 {{end}}
 
 {{define "kind_dropdown"}}
-<div class="dd" data-dd>
+<div class="dd right" data-dd>
   <input type="hidden" name="kind" value="{{.}}">
-  <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false"><span class="dd-label">{{if eq . "work"}}робота{{else}}своє{{end}}</span><svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">
+    <span class="dot" style="background:{{if eq . "work"}}#2F5D50{{else}}#8A6A30{{end}}"></span><span class="dd-label">{{if eq . "work"}}робота{{else}}своє{{end}}</span>
+    <svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
   <div class="dd-menu" role="listbox" hidden>
-    <button type="button" role="option" data-value="work"{{if eq . "work"}} aria-selected="true"{{end}}>робота</button>
-    <button type="button" role="option" data-value="pet"{{if eq . "pet"}} aria-selected="true"{{end}}>своє</button>
+    <button type="button" role="option" data-value="work" data-color="#2F5D50"{{if eq . "work"}} aria-selected="true"{{end}}><span class="dot" style="background:#2F5D50"></span>робота</button>
+    <button type="button" role="option" data-value="pet" data-color="#8A6A30"{{if eq . "pet"}} aria-selected="true"{{end}}><span class="dot" style="background:#8A6A30"></span>своє</button>
   </div>
 </div>
 {{end}}
