@@ -34,7 +34,7 @@
     </div>
 
     {{if .Total}}
-    <button type="button" class="btn wide" hx-post="/checklist/{{.Project.ID}}/released" data-confirm="{{if lt .Done .Total}}Відмічено {{.Done}} з {{.Total}}. {{end}}Записати реліз в історію і очистити список?" data-confirm-ok="Зарелізено">Зарелізено</button>
+    <button type="button" class="btn primary wide" hx-post="/checklist/{{.Project.ID}}/released" data-confirm="{{if lt .Done .Total}}Відмічено {{.Done}} з {{.Total}}. {{end}}Записати реліз в історію і очистити список?" data-confirm-ok="Зарелізено">Зарелізено</button>
     {{end}}
 
     <section class="sec history">

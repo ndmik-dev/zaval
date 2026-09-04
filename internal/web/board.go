@@ -37,7 +37,6 @@ type band struct {
 type boardData struct {
 	shell
 	Date      string
-	Sub       string // one line of context under the date
 	Group     string // "state" or "project"
 	Now       []taskRow
 	Waiting   []taskRow
@@ -130,17 +129,6 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 		d.Bands, d.Quiet = bands(sh.Projects, d.Now, d.Waiting, d.Backlog)
 	}
 
-	switch {
-	case len(d.Now) > 0:
-		d.Sub = "в роботі: " + d.Now[0].Title
-	case len(d.Waiting) > 0:
-		d.Sub = "нічого в роботі, " + plural(len(d.Waiting), "задача чекає", "задачі чекають", "задач чекають")
-	case len(d.DoneToday) > 0:
-		d.Sub = "сьогодні закрито " + strconv.Itoa(len(d.DoneToday))
-	default:
-		d.Sub = "порожній день"
-	}
-
 	// The detail pane shows the standup text whenever no task is selected.
 	if d.Open == nil {
 		dd, err := s.daily(sh, daily, now)
@@ -196,18 +184,6 @@ func bands(projects []projectItem, lists ...[]taskRow) ([]band, []store.Project)
 		}
 	}
 	return out, quiet
-}
-
-// plural picks the Ukrainian form for n.
-func plural(n int, one, few, many string) string {
-	word := many
-	switch {
-	case n%10 == 1 && n%100 != 11:
-		word = one
-	case n%10 >= 2 && n%10 <= 4 && (n%100 < 12 || n%100 > 14):
-		word = few
-	}
-	return strconv.Itoa(n) + " " + word
 }
 
 func matchesFilter(p store.Project, filter string) bool {

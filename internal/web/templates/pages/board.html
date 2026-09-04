@@ -5,10 +5,7 @@
 
   <section class="plist">
     <header class="plist-head">
-      <div class="plist-title">
-        <h1>{{.Date}}</h1>
-        {{if .Sub}}<p class="plist-sub">{{.Sub}}</p>{{end}}
-      </div>
+      <h1>{{.Date}}</h1>
       <span class="grow"></span>
       <button type="button" class="hint mono" data-open-palette title="Додати або знайти">⌘K</button>
       <button type="button" class="hint mono" data-open-help title="Клавіатура">?</button>
@@ -43,21 +40,21 @@
       <section class="sec">
         <div class="sec-head"><span class="up">Зараз</span><span class="mono n" id="n-now">{{len .Now}}</span></div>
         <div class="list sortable" id="now" data-state="now">
-          {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty drop">Тут буде те, що ти взяв у роботу. Перетягни з беклогу або додай через ⌘K.</div>{{end}}
+          {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty drop">Порожньо — візьми щось із беклогу або додай через ⌘K</div>{{end}}
         </div>
       </section>
 
       <section class="sec">
         <div class="sec-head"><span class="up">Чекаю</span><span class="mono n" id="n-waiting">{{len .Waiting}}</span></div>
         <div class="list sortable" id="waiting" data-state="waiting">
-          {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Нічого не висить на комусь. Перетягни сюди те, що чекає відповіді.</div>{{end}}
+          {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Нічого не чекає на когось</div>{{end}}
         </div>
       </section>
 
       <section class="sec">
         <div class="sec-head"><span class="up">Беклог</span><span class="mono n" id="n-backlog">{{len .Backlog}}</span></div>
         <div class="list sortable" id="backlog" data-state="backlog">
-          {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty drop">Беклог порожній — рідкісний день.</div>{{end}}
+          {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty drop">Беклог порожній — рідкісний день</div>{{end}}
         </div>
       </section>
     {{end}}

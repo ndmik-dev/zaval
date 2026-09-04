@@ -27,7 +27,7 @@ a{color:var(--atlas);text-decoration:none}
 .mono{font-family:var(--mono)}
 .grow{flex:1}
 .dim{color:var(--faint);font-weight:400}
-.up{font-size:10px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;color:var(--muted)}
+.up{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .rule{flex:1;height:1px;background:var(--line)}
 .warn{color:var(--attention)}
 
@@ -63,7 +63,7 @@ a{color:var(--atlas);text-decoration:none}
 .plist{
   width:var(--plist-w,420px);flex:none;border-right:1px solid var(--line);
   padding:0 16px 30px;height:100vh;overflow-y:auto;
-  display:flex;flex-direction:column;gap:20px;
+  display:flex;flex-direction:column;gap:16px;
 }
 .pdet{flex:1;min-width:0;background:var(--paper);height:100vh;display:flex;padding:16px 16px 16px 14px}
 /* Drag handle straddling the divider; the width lives on :root so it survives morphs. */
@@ -79,22 +79,18 @@ a{color:var(--atlas);text-decoration:none}
   background:var(--paper);padding:18px 0 10px;margin-bottom:-6px;
 }
 .plist.scrolled .plist-head{box-shadow:0 10px 12px -12px rgba(23,32,28,.5)}
-.plist-title{min-width:0;display:flex;flex-direction:column;gap:1px}
-.plist-sub{
-  margin:0;font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;
-}
-.plist-head h1{font-size:19px;font-weight:600;letter-spacing:-.015em;margin:0}
+.plist-head h1{font-size:21px;font-weight:600;letter-spacing:-.02em;margin:0}
 .plist > .sec:last-of-type{margin-bottom:0}
 
 /* ---------- list pane ---------- */
 .sec{display:flex;flex-direction:column;gap:7px}
 .sec-head{display:flex;align-items:center;gap:8px}
-.sec-head .n{font-size:12px;color:var(--faint);display:inline-block}
+.sec-head .n{font-size:12.5px;color:var(--faint);display:inline-block}
 .n.bumped{animation:bump .35s var(--ease)}
 @keyframes bump{0%{transform:translateY(-6px);opacity:0}60%{transform:translateY(1px);opacity:1}100%{transform:none}}
 .list{display:flex;flex-direction:column;gap:0}
-.empty{border:1px dashed #CDD0C8;border-radius:8px;padding:12px;color:var(--faint);font-size:13px;text-align:center}
-.empty.drop{padding:10px}
+.empty{border:1px dashed #CDD0C8;border-radius:8px;padding:9px 11px;color:var(--faint);font-size:12.5px;text-align:center}
+.empty.drop{padding:8px 10px}
 
 .seg{display:flex;background:var(--paper-2);border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:flex-start}
 .seg.group{align-self:stretch}
@@ -107,9 +103,11 @@ a{color:var(--atlas);text-decoration:none}
 
 /* One task is one line. Cards were pretty but fit five tasks where twenty fit. */
 .task{
-  display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;
-  background:transparent;border:0;font-size:14.5px;cursor:grab;min-height:35px;
+  display:flex;align-items:flex-start;gap:9px;padding:7px 9px;border-radius:8px;
+  background:transparent;border:0;font-size:15px;cursor:grab;min-height:34px;
 }
+.body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
 .task:active{cursor:grabbing}
 .task:hover{background:rgba(252,252,250,.8)}
 .task.now .title{font-weight:500}
@@ -117,10 +115,11 @@ a{color:var(--atlas);text-decoration:none}
 @supports (background:color-mix(in oklab,red,blue)){
   .task.sel{background:color-mix(in oklab,var(--project) 11%,var(--card))}
 }
+.done-block .task.done .chips{display:none}
 .task.done .title{color:#8C9189;text-decoration:line-through;text-decoration-color:#C3C7BE}
 .tick{
-  flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid #B9BDB5;background:transparent;
-  cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
+  flex:none;width:17px;height:17px;margin-top:1px;border-radius:50%;border:1.5px solid #B9BDB5;
+  background:transparent;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
 }
 .tick svg{width:11px;height:11px;fill:none;stroke:var(--card);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:0}
 .tick:hover{border-color:var(--ink)}
@@ -128,28 +127,25 @@ a{color:var(--atlas);text-decoration:none}
 .task.done .tick{background:#B9BDB5;border-color:#B9BDB5}
 .task.done .tick svg{opacity:1;stroke:var(--card);stroke-dasharray:12;animation:draw .3s var(--ease) both}
 @keyframes draw{from{stroke-dashoffset:12}to{stroke-dashoffset:0}}
-.task .sq{width:8px;height:8px;border-radius:2px;background:var(--project);flex:none}
+.task .sq{width:8px;height:8px;border-radius:2px;background:var(--project);flex:none;margin-top:6px}
 .band .task .sq{display:none}
-.title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;cursor:pointer}
+.title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;cursor:pointer}
 .title:hover{text-decoration:underline;text-decoration-color:#B9BDB5}
-.lnkn{flex:none;font-size:11px;color:var(--faint)}
-.enter{flex:none;width:11px;text-align:right;font-size:11px;color:var(--faint);opacity:0;transition:opacity .15s var(--ease)}
-.task:hover .enter,.task.focused .enter{opacity:.75}
 .statechip{
-  flex:none;font-size:10.5px;color:var(--muted);background:var(--card);
+  flex:none;margin-top:2px;font-size:10.5px;color:var(--muted);background:var(--card);
   border:1px solid var(--line);border-radius:5px;padding:1px 7px 2px;white-space:nowrap;
 }
 .statechip.now{background:var(--ink);color:var(--card);border-color:var(--ink)}
 .statechip.wait{color:var(--attention);background:var(--attention-bg);border-color:#E0CFCB}
 .wait{
-  flex:none;display:inline-flex;align-items:center;gap:4px;max-width:170px;font-size:11px;font-weight:500;
+  flex:none;margin-top:1px;display:inline-flex;align-items:center;gap:4px;max-width:170px;font-size:11px;font-weight:500;
   color:var(--attention);background:var(--attention-bg);border-radius:5px;padding:1px 7px 2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .wait svg{flex:none}
 .age{font-size:12px;font-weight:600;color:var(--attention);background:var(--attention-bg);border-radius:4px;padding:1px 7px 2px}
 .chip{
-  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);
+  display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);
   background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:1px 7px 2px;
 }
 .chip:hover{color:var(--ink);border-color:#B9BDB5}
@@ -162,7 +158,7 @@ a{color:var(--atlas);text-decoration:none}
 .quiet{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .quiet .chip{background:transparent}
 
-.done-block{border-top:1px solid var(--line);padding-top:12px}
+.done-block{border-top:1px solid var(--line-2);padding-top:8px}
 .done-block .list{margin-top:4px}
 .done-block summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none}
 .done-block summary::-webkit-details-marker{display:none}
@@ -192,8 +188,8 @@ a{color:var(--atlas);text-decoration:none}
   display:flex;align-items:center;gap:10px;padding:15px 22px;border-bottom:1px solid var(--line-2);
   flex:none;min-height:54px;
 }
-.det-h{font-size:17px;font-weight:600;letter-spacing:-.012em}
-.det-meta{font-size:11.5px;color:var(--faint)}
+.det-h{font-size:18px;font-weight:600;letter-spacing:-.014em}
+.det-meta{font-size:12px;color:var(--faint)}
 .ptag{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
 .det-back{display:none;color:var(--muted)}
 .det-close{color:var(--faint);display:flex;margin-left:4px}
@@ -206,17 +202,17 @@ a{color:var(--atlas);text-decoration:none}
 .det-scroll > .empty{margin:auto;max-width:400px;background:none}
 .det-body{display:flex;flex-direction:column;gap:12px}
 .det-title{
-  font:inherit;font-size:20px;font-weight:600;letter-spacing:-.015em;color:var(--ink);
+  font:inherit;font-size:23px;font-weight:600;letter-spacing:-.015em;color:var(--ink);
   background:none;border:0;border-bottom:1px solid transparent;outline:0;padding:0 0 3px;width:100%;
 }
 .det-title:focus{border-bottom-color:var(--line)}
 .det-state{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.det-state .seg{flex:1;min-width:max-content}
-.det-state .seg button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 12px 6px;cursor:pointer;flex:none}
+.det-state .seg{flex:none}
+.det-state .seg button{font:inherit;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 12px 6px;cursor:pointer;flex:none}
 .det-state .seg button.on{background:var(--ink);color:var(--card);box-shadow:none}
 .det-notes-form{flex:1 1 auto;display:flex;flex-direction:column;gap:9px;min-height:190px}
 .det-notes{
-  flex:1;font:inherit;font-size:14px;line-height:1.6;color:var(--ink-2);background:var(--card);
+  flex:1;font:inherit;font-size:15px;line-height:1.6;color:var(--ink-2);background:var(--card);
   border:1px solid var(--line-2);border-radius:8px;padding:11px 13px;resize:none;outline:0;
 }
 .det-notes:focus{border-color:var(--line)}
@@ -235,8 +231,8 @@ a{color:var(--atlas);text-decoration:none}
 .det-scroll .list{gap:6px}
 .link-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px 10px}
 .link-main{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;color:var(--ink)}
-.link-label{font-size:13.5px;font-weight:600}
-.link-meta{font-size:13.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-label{font-size:14px;font-weight:600}
+.link-meta{font-size:14px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .inline-add input{
   width:100%;font:inherit;font-size:13.5px;color:var(--ink);background:none;
@@ -413,7 +409,6 @@ dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 .dd-menu,.picker-list{animation:menu-in .14s var(--ease);transform-origin:top}
 @keyframes menu-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.htmx-request{opacity:.7;transition:opacity .15s}
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
 .det-title:focus-visible,.det-notes:focus-visible,.inline-add input:focus-visible,.picker input:focus-visible,
 .field input:focus-visible,.palette-input input:focus-visible,.det-wait input:focus-visible,.login input:focus-visible{outline:0}

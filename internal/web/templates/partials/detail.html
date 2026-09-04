@@ -25,14 +25,16 @@
     <form class="det-body" hx-post="/tasks/{{.ID}}" hx-trigger="submit, change">
       <input class="det-title" name="title" value="{{.Title}}" required>
       <div class="det-state">
+        {{if ne .State "done"}}
         <div class="seg">
           <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"now"}' class="{{if and (eq .State "now") (not .Waiting)}}on{{end}}">Зараз</button>
           <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"waiting"}' class="{{if .Waiting}}on{{end}}">Чекаю</button>
           <button type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"backlog"}' class="{{if and (eq .State "backlog") (not .Waiting)}}on{{end}}">Беклог</button>
         </div>
-        <span class="grow"></span>
+        {{end}}
         {{if eq .State "done"}}<span class="det-meta">закрито {{slice .DoneAt.String 8 10}}.{{slice .DoneAt.String 5 7}}</span>
         {{else if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}} у «Зараз»</span>{{end}}
+        <span class="grow"></span>
       </div>
     </form>
 
