@@ -23,14 +23,17 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 ## Product decisions (deliberate, do not reintroduce)
 - No dates, estimates, timers, WIP limits or task steps.
 - Task states: Зараз / Чекаю (with a note) / Беклог / Готово. Adding only via ⌘K.
+- A task in a list is one line, not a card: tick, project colour, title, waiting
+  note, link count, tag. Link chips live in the detail pane — the list is for
+  scanning, and cards fit five tasks where twenty fit.
 - The board groups by state or by project (`?g=`, remembered in a cookie). That
   toggle replaces project filtering — there is no separate filter control.
 - With no task selected the board's detail pane holds the daily standup, so the
   pane is never empty and «Дейлі» needs no button of its own.
 - Releases: one checklist per work project, lines optionally point at a task;
   «Зарелізено» archives the lines into history and empties the list.
-- Journal is days on the left (grouped by week, one project dropdown as the only
-  filter), that day on the right; opening a task there keeps you on the journal.
+- Journal is a feed: days are headings inside one scroll, no day list to click
+  through, one project dropdown as the only filter. Opening a task keeps you there.
 - Projects: name, kind, colour, ⌘K tag. No hidden projects, no integrations yet.
 
 ## Run

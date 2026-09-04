@@ -229,28 +229,13 @@ document.addEventListener('keydown', (e) => {
     case 'l': openThenFocus('.inline-add input[name=url]'); break;
     case 'd': document.querySelector('.det-close')?.click(); break;
     case 'g': document.querySelector('.seg.group a:not(.on)')?.click(); break;
-    case 'ArrowDown': e.preventDefault(); if (!stepDay(1)) moveFocus(1); break;
-    case 'ArrowUp': e.preventDefault(); if (!stepDay(-1)) moveFocus(-1); break;
-    default: {
-      if (!/^[1-9]$/.test(e.key)) break;
-      // On the journal the digits pick a day; elsewhere they are the pages.
-      const days = [...document.querySelectorAll('.days .dayrow')];
-      if (days.length) { days[Number(e.key) - 1]?.click(); break; }
-      const pages = ['/', '/releases', '/journal'];
-      if (pages[Number(e.key) - 1]) location.href = pages[Number(e.key) - 1];
-    }
+    case 'ArrowDown': e.preventDefault(); moveFocus(1); break;
+    case 'ArrowUp': e.preventDefault(); moveFocus(-1); break;
+    case '1': location.href = '/'; break;
+    case '2': location.href = '/releases'; break;
+    case '3': location.href = '/journal'; break;
   }
 });
-// Journal: step through the day list without leaving the keyboard.
-function stepDay(step) {
-  const days = [...document.querySelectorAll('.days .dayrow')];
-  if (!days.length) return false;
-  const i = days.findIndex((d) => d.classList.contains('sel'));
-  const next = days[Math.min(days.length - 1, Math.max(0, (i < 0 ? 0 : i) + step))];
-  if (next) next.click();
-  return true;
-}
-
 // Keep expanded sections (release history, "готово сьогодні") open across a morph.
 const KEEP_OPEN = 'details.history-rel, details.done-block';
 document.addEventListener('htmx:before:swap', () => {
@@ -259,7 +244,7 @@ document.addEventListener('htmx:before:swap', () => {
 document.addEventListener('htmx:after:swap', () => {
   const was = window.__openDetails;
   if (!was) return;
-  document.querySelectorAll(KEEP_OPEN).forEach((d, i) => { if (was[i]) d.open = true; });
+  document.querySelectorAll(KEEP_OPEN).forEach((d, i) => { if (was[i] !== undefined) d.open = was[i]; });
 });
 
 // Keep the focus ring on the same task after a morph.

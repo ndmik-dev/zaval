@@ -10,15 +10,12 @@ import (
 	"github.com/ndmik-dev/zaval/internal/store"
 )
 
-// journalDay is one row in the day list; the selected one fills the detail pane.
+// journalDay is one heading in the feed, with everything closed that day.
 type journalDay struct {
 	Key   string // YYYY-MM-DD
-	Label string // short form for the list, the week header carries the month
-	Full  string // full date for the detail pane
-	N     int
+	Label string
 	Today bool
-	Sel   bool
-	Href  string
+	Tasks []taskRow
 }
 
 type projectCount struct {
@@ -26,17 +23,9 @@ type projectCount struct {
 	N int
 }
 
-// journalWeek groups the day rows so a long list keeps some shape.
-type journalWeek struct {
-	Label string
-	Days  []journalDay
-}
-
 type journalData struct {
 	shell
-	Weeks   []journalWeek
-	Day     *journalDay
-	Tasks   []taskRow
+	Feed    []journalDay
 	Counts  []projectCount
 	Total   int
 	Current *store.Project // the project the filter is on, if any
@@ -51,7 +40,7 @@ type dailyData struct {
 	Blockers  []store.Task
 }
 
-// journalSpan is how far back the day list reaches.
+// journalSpan is how far back the feed reaches.
 const journalSpan = 45
 
 func (s *Server) journal(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +48,7 @@ func (s *Server) journal(w http.ResponseWriter, r *http.Request) {
 }
 
 // respondJournal reads its parameters from the query or the posted form, so
-// actions taken in the detail pane land back on the same day and filter.
+// actions taken in the detail pane land back on the same filter.
 func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	now := time.Now()
@@ -71,10 +60,15 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "journal", err)
 		return
 	}
-	sh.Ctx = map[string]string{"page": "journal", "p": filter, "d": r.FormValue("d")}
+	sh.Ctx = map[string]string{"page": "journal", "p": filter}
 	sh.Open = s.openTask(openID, now)
-	sh.Detail = openID != 0 || r.FormValue("d") != ""
+	sh.Detail = openID != 0
 	d := journalData{shell: sh}
+	for i := range sh.Projects {
+		if sh.Projects[i].Slug == filter {
+			d.Current = &sh.Projects[i].Project
+		}
+	}
 
 	from := dayStart(now).AddDate(0, 0, -journalSpan)
 	done, err := s.store.DoneBetween(utc(from), utc(dayStart(now).AddDate(0, 0, 1)))
@@ -82,60 +76,24 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "journal", err)
 		return
 	}
-	byDay := map[string][]store.Task{}
 	byProject := map[int64]int{}
-	for _, t := range done {
+	for _, t := range done { // newest first, so the feed is already in order
 		if !matchesFilter(t.Project, filter) {
 			continue
 		}
-		key := localDay(t.DoneAt.String, now.Location()).Format("2006-01-02")
-		byDay[key] = append(byDay[key], t)
 		byProject[t.ProjectID]++
 		d.Total++
-	}
-	for i := range sh.Projects {
-		if sh.Projects[i].Slug == filter {
-			d.Current = &sh.Projects[i].Project
-		}
-	}
-	var days []journalDay
-	want := r.FormValue("d")
-	for i := 0; i <= journalSpan; i++ {
-		day := dayStart(now).AddDate(0, 0, -i)
+		day := localDay(t.DoneAt.String, now.Location())
 		key := day.Format("2006-01-02")
-		tasks := byDay[key]
-		if len(tasks) == 0 && !sameDay(day, now) {
-			continue // quiet days are not worth a row
+		if len(d.Feed) == 0 || d.Feed[len(d.Feed)-1].Key != key {
+			d.Feed = append(d.Feed, journalDay{
+				Key:   key,
+				Label: fmt.Sprintf("%s, %d %s", ukWeekdays[day.Weekday()], day.Day(), ukMonths[day.Month()-1]),
+				Today: sameDay(day, now),
+			})
 		}
-		row := journalDay{
-			Key:   key,
-			Label: fmt.Sprintf("%s, %d", ukWeekdays[day.Weekday()], day.Day()),
-			Full:  fmt.Sprintf("%s, %d %s", ukWeekdays[day.Weekday()], day.Day(), ukMonths[day.Month()-1]),
-			N:     len(tasks),
-			Today: sameDay(day, now),
-			Href:  "/journal?" + journalQuery(filter, key, 0),
-		}
-		days = append(days, row)
-	}
-	// Selected day: the asked-for one, else the first with something in it.
-	for i := range days {
-		if days[i].Key == want || (want == "" && d.Day == nil && days[i].N > 0) {
-			days[i].Sel = true
-			d.Day = &days[i]
-		}
-	}
-	if d.Day == nil && len(days) > 0 {
-		days[0].Sel = true
-		d.Day = &days[0]
-	}
-	d.Weeks = groupWeeks(days, now)
-	if d.Day != nil {
-		sh.Ctx["d"] = d.Day.Key
-		d.Ctx = sh.Ctx
-		for _, t := range byDay[d.Day.Key] {
-			row := taskRow{Task: t, Href: "/journal?" + journalQuery(filter, d.Day.Key, t.ID), Sel: t.ID == openID, Tag: true}
-			d.Tasks = append(d.Tasks, row)
-		}
+		row := taskRow{Task: t, Href: "/journal?" + journalQuery(filter, t.ID), Sel: t.ID == openID, Tag: true}
+		d.Feed[len(d.Feed)-1].Tasks = append(d.Feed[len(d.Feed)-1].Tasks, row)
 	}
 	for _, p := range sh.Projects {
 		if n := byProject[p.ID]; n > 0 {
@@ -150,56 +108,10 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "journal", d)
 }
 
-// groupWeeks splits the day rows into weeks, newest first.
-func groupWeeks(days []journalDay, now time.Time) []journalWeek {
-	thisWeek := weekStart(now)
-	var out []journalWeek
-	var lastKey string
-	for _, day := range days {
-		t, err := time.ParseInLocation("2006-01-02", day.Key, now.Location())
-		if err != nil {
-			continue
-		}
-		ws := weekStart(t)
-		if key := ws.Format("2006-01-02"); key != lastKey {
-			out = append(out, journalWeek{Label: weekLabel(ws, thisWeek)})
-			lastKey = key
-		}
-		out[len(out)-1].Days = append(out[len(out)-1].Days, day)
-	}
-	return out
-}
-
-func weekStart(t time.Time) time.Time {
-	t = dayStart(t)
-	wd := int(t.Weekday())
-	if wd == 0 {
-		wd = 7 // Sunday closes the week here, it does not open it
-	}
-	return t.AddDate(0, 0, 1-wd)
-}
-
-func weekLabel(ws, thisWeek time.Time) string {
-	switch {
-	case ws.Equal(thisWeek):
-		return "Цей тиждень"
-	case ws.Equal(thisWeek.AddDate(0, 0, -7)):
-		return "Минулий тиждень"
-	}
-	end := ws.AddDate(0, 0, 6)
-	if ws.Month() == end.Month() {
-		return fmt.Sprintf("%d–%d %s", ws.Day(), end.Day(), ukMonths[ws.Month()-1])
-	}
-	return fmt.Sprintf("%d %s – %d %s", ws.Day(), ukMonths[ws.Month()-1], end.Day(), ukMonths[end.Month()-1])
-}
-
-func journalQuery(filter, day string, taskID int64) string {
+func journalQuery(filter string, taskID int64) string {
 	q := url.Values{}
 	if filter != "" {
 		q.Set("p", filter)
-	}
-	if day != "" {
-		q.Set("d", day)
 	}
 	if taskID != 0 {
 		q.Set("t", strconv.FormatInt(taskID, 10))

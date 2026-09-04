@@ -23,55 +23,40 @@
       </div>
     </div>
 
-    <div class="days">
-      {{range .Weeks}}
-      <section class="week">
-        <div class="sec-head"><span class="up">{{.Label}}</span><span class="rule"></span></div>
-        {{range .Days}}
-        <a class="dayrow{{if .Sel}} sel{{end}}{{if not .N}} quiet{{end}}" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true">
-          <span class="grow">{{.Label}}</span>
-          {{if .Today}}<span class="dim">сьогодні</span>{{end}}
-          <span class="mono n">{{.N}}</span>
-        </a>
-        {{end}}
-      </section>
-      {{else}}
-      <div class="empty">За останні 45 днів нічого не закрито.</div>
-      {{end}}
-    </div>
+    {{/* No day list: the days are headings inside one scroll. */}}
+    {{range .Feed}}
+    <section class="sec">
+      <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span><span class="rule"></span>{{if .Today}}<span class="mono n">сьогодні</span>{{end}}</div>
+      <div class="list">{{range .Tasks}}{{template "task_row" .}}{{end}}</div>
+    </section>
+    {{else}}
+    <div class="empty">За останні 45 днів нічого не закрито.</div>
+    {{end}}
   </section>
 
   <div class="split-grip" aria-hidden="true"></div>
 
   <section class="pdet">
     {{if .Open}}{{template "detail_task" .}}
-    {{else if .Day}}
+    {{else}}
     <div class="det">
       <header class="det-head">
-        <a class="det-back" href="/journal{{if .Filter}}?p={{.Filter}}{{end}}" hx-get="/journal{{if .Filter}}?p={{.Filter}}{{end}}" hx-include="unset" hx-push-url="true" aria-label="Назад до днів">
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <span class="det-h">{{.Day.Full}}</span>
+        <span class="up">Підсумок</span>
         <span class="grow"></span>
-        <span class="det-meta">закрито {{.Day.N}}</span>
+        <span class="det-meta">{{if .Current}}{{.Current.Name}}{{else}}усі проєкти{{end}} · 45 днів</span>
       </header>
       <div class="det-scroll">
-        <div class="list">
-          {{range .Tasks}}{{template "task_row" .}}{{else}}<div class="empty">Цього дня нічого не закрито.</div>{{end}}
-        </div>
         {{if .Counts}}
-        <section class="det-sec">
-          <div class="sec-head"><span class="up">За 45 днів</span><span class="rule"></span></div>
-          <div class="counts">
-            {{range .Counts}}<div class="row"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="mono">{{.N}}</span></div>{{end}}
-            <div class="row total"><span class="grow dim">Разом</span><span class="mono"><b>{{.Total}}</b></span></div>
-          </div>
-        </section>
+        <div class="counts">
+          {{range .Counts}}<div class="row"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="mono">{{.N}}</span></div>{{end}}
+          <div class="row total"><span class="grow dim">Разом</span><span class="mono"><b>{{.Total}}</b></span></div>
+        </div>
+        {{else}}
+        <div class="empty">Нічого не закрито за цей період.</div>
         {{end}}
       </div>
+      <footer class="det-foot dim">Натисни задачу зліва, щоб відкрити її тут.</footer>
     </div>
-    {{else}}
-    <div class="det"><div class="det-scroll"><div class="empty">Вибери день зліва.</div></div></div>
     {{end}}
   </section>
 </div>

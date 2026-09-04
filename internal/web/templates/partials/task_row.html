@@ -1,14 +1,13 @@
+{{/* One line per task: tick, project colour, title, then what is worth knowing
+     without opening it — waiting note, number of links, project or state. */}}
 {{define "task_row"}}
 <div class="task {{.State}}{{if .Sel}} sel{{end}}" id="task-{{.ID}}" style="--project:{{.Project.Color}}" data-open="1">
   <button class="tick" type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"{{if eq .State "done"}}backlog{{else}}done{{end}}"}' aria-label="{{if eq .State "done"}}Повернути в беклог{{else}}Готово{{end}}"></button>
-  <div class="body">
-    <a class="title" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true">{{.Title}}</a>
-    {{if .Waiting}}<span class="wait"><svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 4.2V7l1.9 1.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>{{.Waiting}}{{if ge .Age 2}} · {{.Age}} дн.{{end}}</span>{{end}}
-    {{if .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
-  </div>
-  {{if .Tag}}<span class="plabel mono" style="color:{{.Project.Color}}">{{.Project.Slug}}</span>
+  <span class="sq"></span>
+  <a class="title" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true">{{.Title}}</a>
+  {{if .Waiting}}<span class="wait" title="{{.Waiting}}{{if ge .Age 2}} · {{.Age}} дн.{{end}}"><svg width="10" height="10" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 4.2V7l1.9 1.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>{{.Waiting}}</span>{{end}}
+  {{if .Links}}<span class="lnkn mono" title="лінків: {{len .Links}}">↗{{len .Links}}</span>{{end}}
+  {{if .Tag}}<span class="plabel mono">{{.Project.Slug}}</span>
   {{else}}<span class="statechip{{if .Waiting}} wait{{else if eq .State "now"}} now{{end}}">{{if .Waiting}}Чекаю{{else if eq .State "now"}}Зараз{{else if eq .State "done"}}Готово{{else}}Беклог{{end}}</span>{{end}}
 </div>
 {{end}}
-
-{{define "chips"}}{{range .}}<a class="chip" href="{{.URL}}" target="_blank" rel="noopener">{{if .Label}}<span class="{{if eq .Kind "jira"}}mono{{end}}">{{.Label}}</span>{{else}}{{.Kind}}{{end}}{{if .Meta}}<span class="sep">·</span><span class="meta">{{.Meta}}</span>{{end}}</a>{{end}}{{end}}
