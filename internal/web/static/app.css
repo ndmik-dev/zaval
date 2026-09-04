@@ -190,6 +190,7 @@ a{color:var(--atlas);text-decoration:none}
 }
 .det-title:focus{border-bottom-color:var(--line)}
 .det-state{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.det-state .seg{flex:1}
 .det-state .seg button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 12px 6px;cursor:pointer;flex:none}
 .det-state .seg button.on{background:var(--ink);color:var(--card);box-shadow:none}
 .det-notes-form{flex:1 1 auto;display:flex;flex-direction:column;gap:9px;min-height:190px}
@@ -211,11 +212,11 @@ a{color:var(--atlas);text-decoration:none}
 
 .links{display:flex;flex-direction:column;gap:6px}
 .det-scroll .list{gap:6px}
-.link-row{display:flex;align-items:flex-start;gap:8px;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px 10px}
-.link-main{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;gap:2px 7px;color:var(--ink)}
+.link-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line-2);border-radius:8px;padding:8px 10px}
+.link-main{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;color:var(--ink)}
 .link-label{font-size:13.5px;font-weight:600}
-.link-meta{font-size:13.5px;color:var(--muted)}
-.link-url{grid-column:1 / -1;font-size:12px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-meta{font-size:13.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 .inline-add input{
   width:100%;font:inherit;font-size:13.5px;color:var(--ink);background:none;
   border:1px dashed var(--line);border-radius:8px;padding:8px 11px;outline:0;
@@ -306,6 +307,8 @@ a{color:var(--atlas);text-decoration:none}
 .btn.primary.danger{background:var(--attention);border-color:var(--attention)}
 .btn.primary.danger:hover{background:#8F372F;border-color:#8F372F}
 .btn:active{transform:translateY(1px)}
+.hint{font:inherit;font-size:11px;color:var(--faint);background:none;border:0;padding:2px 4px;cursor:pointer;border-radius:4px}
+.hint:hover{color:var(--ink)}
 .kbd{font:inherit;font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:2px 7px 3px;background:none;cursor:pointer}
 .kbd:hover{color:var(--ink);border-color:#B9BDB5}
 .dd{position:relative;align-self:flex-start}
