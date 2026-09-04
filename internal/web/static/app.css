@@ -2,7 +2,7 @@
   --paper:#E9EAE4;
   --paper-2:#E4E5DF;
   --card:#FCFCFA;
-  --card-2:#F1F2EC;
+  --card-2:#F6F7F2;
   --ink:#17201C;
   --ink-2:#3A423C;
   --muted:#767C74;
@@ -379,7 +379,8 @@ a{color:var(--atlas);text-decoration:none}
 /* ---------- drag, motion, focus ---------- */
 .drag-ghost{opacity:.4}
 .sortable-chosen{box-shadow:0 4px 14px rgba(23,32,28,.14)}
-.task.focused{border-color:var(--ink);box-shadow:0 0 0 3px rgba(47,93,80,.16)}
+.task.focused{outline:1.5px solid var(--ink);outline-offset:-1px;background:rgba(252,252,250,.9)}
+.task.focused.sel{background:#EBF0EB}
 .task,.ritem,.btn,.chip,.nav,.dd-btn,.tick,.box,.pill,.kbd,.prow-project{
   transition:background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease),color .15s var(--ease),transform .15s var(--ease);
 }
