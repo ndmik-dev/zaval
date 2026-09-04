@@ -29,6 +29,15 @@ document.addEventListener('pointerdown', (e) => {
   grip.addEventListener('pointercancel', stop);
 });
 
+// Rail width: icons only, or icons with their names.
+const RAIL_KEY = 'rail-wide';
+try { if (localStorage.getItem(RAIL_KEY) === '1') document.documentElement.classList.add('rail-wide'); } catch (e) { /* private mode */ }
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-rail-toggle]')) return;
+  const wide = document.documentElement.classList.toggle('rail-wide');
+  try { localStorage.setItem(RAIL_KEY, wide ? '1' : '0'); } catch (e) { /* private mode */ }
+});
+
 // ⌘K / Ctrl+K opens the palette; ⌘Enter inside it creates straight into "Зараз".
 const palette = document.getElementById('palette');
 function openPalette() {
@@ -220,8 +229,8 @@ document.addEventListener('keydown', (e) => {
     case 'l': openThenFocus('.inline-add input[name=url]'); break;
     case 'd': document.querySelector('.det-close')?.click(); break;
     case 'g': document.querySelector('.seg.group a:not(.on)')?.click(); break;
-    case 'ArrowLeft': if (stepDay(1)) e.preventDefault(); break;
-    case 'ArrowRight': if (stepDay(-1)) e.preventDefault(); break;
+    case 'ArrowDown': e.preventDefault(); if (!stepDay(1)) moveFocus(1); break;
+    case 'ArrowUp': e.preventDefault(); if (!stepDay(-1)) moveFocus(-1); break;
     default: {
       if (!/^[1-9]$/.test(e.key)) break;
       // On the journal the digits pick a day; elsewhere they are the pages.
@@ -241,6 +250,17 @@ function stepDay(step) {
   if (next) next.click();
   return true;
 }
+
+// Keep expanded sections (release history, "готово сьогодні") open across a morph.
+const KEEP_OPEN = 'details.history-rel, details.done-block';
+document.addEventListener('htmx:before:swap', () => {
+  window.__openDetails = [...document.querySelectorAll(KEEP_OPEN)].map((d) => d.open);
+});
+document.addEventListener('htmx:after:swap', () => {
+  const was = window.__openDetails;
+  if (!was) return;
+  document.querySelectorAll(KEEP_OPEN).forEach((d, i) => { if (was[i]) d.open = true; });
+});
 
 // Keep the focus ring on the same task after a morph.
 document.addEventListener('htmx:before:swap', () => { const r = focusedRow(); if (r) window.__focusedTask = r.id; });

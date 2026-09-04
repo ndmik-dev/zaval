@@ -22,6 +22,12 @@ type taskRow struct {
 	Tag  bool   // show the project tag (off when the list is already grouped by project)
 }
 
+// releaseLine is a work project's release checklist, as far as it is ticked off.
+type releaseLine struct {
+	store.Project
+	store.Progress
+}
+
 // band is one project's open tasks when the board is grouped by project.
 type band struct {
 	store.Project
@@ -41,6 +47,7 @@ type boardData struct {
 	Work      []projectItem
 	Daily     *dailyData // filled when no task is selected
 	DailySlug string
+	Releases  []releaseLine // checklist progress, shown next to the daily
 }
 
 func (s *Server) board(w http.ResponseWriter, r *http.Request) {
@@ -131,6 +138,15 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 		if dd.Project != nil {
 			d.Daily = &dd
 			d.DailySlug = dd.Project.Slug
+		}
+		progress, err := s.store.ChecklistProgress()
+		if err != nil {
+			return d, err
+		}
+		for _, p := range sh.Projects {
+			if pr, ok := progress[p.ID]; ok && pr.Total > 0 {
+				d.Releases = append(d.Releases, releaseLine{p.Project, pr})
+			}
 		}
 	}
 	return d, nil

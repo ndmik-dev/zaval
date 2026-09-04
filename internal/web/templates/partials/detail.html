@@ -34,7 +34,6 @@
         {{if eq .State "done"}}<span class="det-meta">закрито {{slice .DoneAt.String 8 10}}.{{slice .DoneAt.String 5 7}}</span>
         {{else if and (eq .State "now") (ge .Age 3)}}<span class="age">{{day .Age}} у «Зараз»</span>{{end}}
       </div>
-      <textarea class="det-notes" name="notes" rows="3" placeholder="Нотатка">{{.Notes}}</textarea>
     </form>
 
     <form class="det-wait{{if .Waiting}} on{{end}}" hx-post="/tasks/{{.ID}}/waiting" hx-trigger="submit, change">
@@ -61,6 +60,12 @@
         </form>
       </div>
     </section>
+
+    {{/* Last and tallest: the note takes whatever height is left over. */}}
+    <form class="det-notes-form" hx-post="/tasks/{{.ID}}" hx-trigger="change">
+      <div class="sec-head"><span class="up">Нотатка</span><span class="rule"></span></div>
+      <textarea class="det-notes" name="notes" placeholder="Про що це, що перевірити, де саме дивитись…">{{.Notes}}</textarea>
+    </form>
   </div>
 
   <footer class="det-foot">
@@ -100,6 +105,20 @@
   </div>
   {{else}}
   <div class="empty">Нема робочих проєктів — додай у «Проєктах».</div>
+  {{end}}
+
+  {{if .Releases}}
+  <section class="det-sec rel-block">
+    <div class="sec-head"><span class="up">Перед релізом</span><span class="rule"></span></div>
+    {{range .Releases}}
+    <a class="rel-line" href="/releases?p={{.Slug}}">
+      <span class="dot" style="background:{{.Color}}"></span>
+      <span class="rel-name">{{.Name}}</span>
+      <span class="bar" style="--project:{{.Color}}"><span style="width:{{percent .Done .Total}}%"></span></span>
+      <span class="mono dim">{{.Done}} / {{.Total}}</span>
+    </a>
+    {{end}}
+  </section>
   {{end}}
   </div>
 </div>

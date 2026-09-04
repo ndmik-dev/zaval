@@ -30,7 +30,9 @@ type HistoryItem struct {
 	Phase     string
 	Title     string
 	Done      bool
+	TaskID    sql.NullInt64
 	TaskTitle sql.NullString
+	TaskState sql.NullString
 }
 
 type Progress struct{ Done, Total int }
@@ -172,14 +174,14 @@ func (s *Store) ReleaseHistory(projectID int64, limit int) ([]ReleaseRecord, err
 	}
 	rows.Close()
 	for i := range out {
-		irows, err := s.db.Query(`select i.phase, i.title, i.done, t.title from release_items i left join tasks t on t.id = i.task_id
+		irows, err := s.db.Query(`select i.phase, i.title, i.done, i.task_id, t.title, t.state from release_items i left join tasks t on t.id = i.task_id
 			where i.release_id = ? order by i.position, i.id`, out[i].ID)
 		if err != nil {
 			return nil, err
 		}
 		for irows.Next() {
 			var it HistoryItem
-			if err := irows.Scan(&it.Phase, &it.Title, &it.Done, &it.TaskTitle); err != nil {
+			if err := irows.Scan(&it.Phase, &it.Title, &it.Done, &it.TaskID, &it.TaskTitle, &it.TaskState); err != nil {
 				irows.Close()
 				return nil, err
 			}

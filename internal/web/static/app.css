@@ -37,6 +37,13 @@ a{color:var(--atlas);text-decoration:none}
   width:56px;flex:none;border-right:1px solid var(--line);
   display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 0;
 }
+.rail-wide .rail{width:172px;align-items:stretch;padding:14px 10px}
+.rail-wide .brand{width:auto;justify-content:flex-start;gap:10px;padding:0 8px}
+.rail-wide .nav{width:auto;justify-content:flex-start;gap:11px;padding:0 10px}
+.rail-wide .nav-label{display:inline}
+.rail-wide .nav-group{align-items:stretch}
+.rail-wide .rail-chev{transform:rotate(180deg)}
+.rail-toggle{color:var(--faint)}
 .brand{display:flex;align-items:center;justify-content:center;width:34px;height:34px;color:var(--ink);margin-bottom:8px}
 .nav-group{display:flex;flex-direction:column;align-items:center;gap:4px}
 .rail-bottom{margin-top:auto}
@@ -46,8 +53,9 @@ a{color:var(--atlas);text-decoration:none}
 }
 .nav:hover{color:var(--ink);background:rgba(252,252,250,.7)}
 .nav.active{background:var(--card);border-color:var(--line);color:var(--ink)}
-.nav-label{display:none}
+.nav-label{display:none;font-size:14px;white-space:nowrap}
 .rail form{display:flex}
+.rail-wide .rail form,.rail-wide .rail form .nav{width:100%}
 
 .main{flex:1;min-width:0;display:flex}
 .split{flex:1;min-width:0;display:flex}
@@ -141,7 +149,9 @@ a{color:var(--atlas);text-decoration:none}
 .filters a{color:var(--faint);padding-bottom:2px;border-bottom:2px solid transparent}
 .filters a.active{color:var(--ink);border-bottom-color:var(--ink)}
 
-.days{display:flex;flex-direction:column;gap:2px}
+.days{display:flex;flex-direction:column;gap:18px}
+.week{display:flex;flex-direction:column;gap:2px}
+.week .sec-head{margin-bottom:5px}
 .dayrow{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:var(--ink);font-size:14px}
 .dayrow:hover{background:rgba(252,252,250,.75)}
 .dayrow.sel{background:#F1F4F0;box-shadow:inset 2px 0 0 var(--atlas);color:var(--ink);font-weight:500}
@@ -170,7 +180,8 @@ a{color:var(--atlas);text-decoration:none}
 .det-toitem{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--muted);padding:3px 9px 3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
 .det-toitem:hover{color:var(--ink);border-color:#B9BDB5}
 .det-scroll{flex:1;overflow-y:auto;padding:18px 22px 24px;display:flex;flex-direction:column;gap:16px}
-.det-scroll > *{max-width:1100px;width:100%}
+.det-scroll > *{max-width:1100px;width:100%;flex:none}
+.det-scroll > .det-notes-form{flex:1 1 auto}
 .det-scroll > .empty{margin:auto;max-width:400px;background:none}
 .det-body{display:flex;flex-direction:column;gap:12px}
 .det-title{
@@ -181,9 +192,10 @@ a{color:var(--atlas);text-decoration:none}
 .det-state{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .det-state .seg button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 12px 6px;cursor:pointer;flex:none}
 .det-state .seg button.on{background:var(--ink);color:var(--card);box-shadow:none}
+.det-notes-form{flex:1 1 auto;display:flex;flex-direction:column;gap:9px;min-height:190px}
 .det-notes{
-  font:inherit;font-size:14px;color:var(--ink-2);background:var(--card);border:1px solid var(--line-2);
-  border-radius:8px;padding:9px 11px;resize:vertical;outline:0;
+  flex:1;font:inherit;font-size:14px;line-height:1.6;color:var(--ink-2);background:var(--card);
+  border:1px solid var(--line-2);border-radius:8px;padding:11px 13px;resize:none;outline:0;
 }
 .det-notes:focus{border-color:var(--line)}
 .det-wait{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px dashed var(--line);border-radius:8px;color:var(--faint)}
@@ -222,6 +234,12 @@ a{color:var(--atlas);text-decoration:none}
 .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:3px 9px 4px;background:var(--card)}
 .pill.on{color:var(--card);background:var(--ink);border-color:var(--ink)}
 
+.rel-block{margin-top:6px}
+.rel-line{display:flex;align-items:center;gap:10px;padding:8px 11px;border:1px solid var(--line);
+  background:var(--card);border-radius:8px;color:var(--ink);font-size:13.5px;max-width:560px}
+.rel-line:hover{border-color:#B9BDB5}
+.rel-line .rel-name{flex:none;min-width:76px}
+.rel-line .bar{flex:1;min-width:60px}
 .counts{display:flex;flex-direction:column;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:11px 12px}
 .counts .row{display:flex;align-items:center;gap:8px;font-size:14px}
 .counts .total{border-top:1px solid var(--line-2);padding-top:8px}
@@ -290,6 +308,8 @@ a{color:var(--atlas);text-decoration:none}
 .kbd{font:inherit;font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:2px 7px 3px;background:none;cursor:pointer}
 .kbd:hover{color:var(--ink);border-color:#B9BDB5}
 .dd{position:relative;align-self:flex-start}
+.dd.wide{align-self:stretch}
+.dd.wide .dd-btn{width:100%}
 .dd-btn{
   display:flex;align-items:center;gap:8px;font:inherit;font-size:13.5px;color:var(--ink-2);
   background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer;
@@ -303,11 +323,11 @@ a{color:var(--atlas);text-decoration:none}
   padding:5px;display:flex;flex-direction:column;gap:1px;
 }
 .dd-menu[hidden]{display:none}
-.dd-menu [data-value]{
+.dd-menu [data-value],.dd-menu a{
   display:flex;align-items:center;gap:9px;font:inherit;font-size:13.5px;color:var(--ink-2);
   text-align:left;background:none;border:0;border-radius:6px;padding:7px 10px;cursor:pointer;
 }
-.dd-menu [data-value]:hover{background:#EDEFE8;color:var(--ink)}
+.dd-menu [data-value]:hover,.dd-menu a:hover{background:#EDEFE8;color:var(--ink)}
 .dd-menu [aria-selected="true"]{font-weight:600;color:var(--ink)}
 
 /* ---------- palette, dialogs ---------- */
@@ -389,9 +409,11 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     background:var(--card);border-right:0;border-top:1px solid var(--line);
   }
   .rail .brand{display:none}
+  .rail-wide .rail{width:auto;flex-direction:row;padding:0 8px}
+  .rail .nav-label,.rail-toggle{display:none}
   .rail [data-open-palette]{display:none}
   .plist-head .kbd:not(.help){display:none}
-  .nav-group{flex-direction:row;gap:4px}
+  .rail .nav-group{display:contents}
   .rail-bottom{margin-top:0}
   .main{padding-bottom:56px}
   .split{flex-direction:column}

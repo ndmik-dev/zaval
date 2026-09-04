@@ -16,6 +16,9 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 - htmx is pinned to 4.0.0 and vendored in `internal/web/static/`; static URLs
   carry a content hash, the service worker is network-first.
 - Dialogs: `[data-confirm]` opens the in-app modal, never `confirm()`.
+- Per-viewer chrome (pane width, wide rail) lives in `localStorage` and is applied
+  to `:root`, so an htmx morph cannot lose it. The nav item for the current page
+  is a `<span>`, not a link — clicking where you already are must do nothing.
 
 ## Product decisions (deliberate, do not reintroduce)
 - No dates, estimates, timers, WIP limits or task steps.
@@ -26,7 +29,8 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
   pane is never empty and «Дейлі» needs no button of its own.
 - Releases: one checklist per work project, lines optionally point at a task;
   «Зарелізено» archives the lines into history and empties the list.
-- Journal is days on the left, that day on the right; opening a task there keeps you on the journal.
+- Journal is days on the left (grouped by week, one project dropdown as the only
+  filter), that day on the right; opening a task there keeps you on the journal.
 - Projects: name, kind, colour, ⌘K tag. No hidden projects, no integrations yet.
 
 ## Run

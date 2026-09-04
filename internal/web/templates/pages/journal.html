@@ -10,18 +10,31 @@
       <span class="mono dim">{{.Total}} за 45 днів</span>
     </header>
 
-    <nav class="filters">
-      <a{{if eq .Filter ""}} class="active"{{end}} href="/journal" hx-get="/journal" hx-include="unset" hx-push-url="true">Усі</a>
-      {{range .Projects}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}" hx-get="/journal?p={{.Slug}}" hx-include="unset" hx-push-url="true">{{.Name}}</a>{{end}}
-    </nav>
+    <div class="dd wide" data-dd>
+      <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">
+        <span class="dot" style="background:{{if .Current}}{{.Current.Color}}{{else}}#9BA098{{end}}"></span>
+        <span class="dd-label">{{if .Current}}{{.Current.Name}}{{else}}Усі проєкти{{end}}</span>
+        <span class="grow"></span>
+        <svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="dd-menu" role="listbox" hidden>
+        <a href="/journal" hx-get="/journal" hx-include="unset" hx-push-url="true"{{if not .Current}} aria-selected="true"{{end}}><span class="dot" style="background:#9BA098"></span>Усі проєкти</a>
+        {{range .Projects}}<a href="/journal?p={{.Slug}}" hx-get="/journal?p={{.Slug}}" hx-include="unset" hx-push-url="true"{{if and $.Current (eq $.Current.ID .ID)}} aria-selected="true"{{end}}><span class="dot" style="background:{{.Color}}"></span>{{.Name}}</a>{{end}}
+      </div>
+    </div>
 
     <div class="days">
-      {{range .Days}}
-      <a class="dayrow{{if .Sel}} sel{{end}}{{if not .N}} quiet{{end}}" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true">
-        <span class="grow">{{.Label}}</span>
-        {{if .Today}}<span class="dim">сьогодні</span>{{end}}
-        <span class="mono n">{{.N}}</span>
-      </a>
+      {{range .Weeks}}
+      <section class="week">
+        <div class="sec-head"><span class="up">{{.Label}}</span><span class="rule"></span></div>
+        {{range .Days}}
+        <a class="dayrow{{if .Sel}} sel{{end}}{{if not .N}} quiet{{end}}" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true">
+          <span class="grow">{{.Label}}</span>
+          {{if .Today}}<span class="dim">сьогодні</span>{{end}}
+          <span class="mono n">{{.N}}</span>
+        </a>
+        {{end}}
+      </section>
       {{else}}
       <div class="empty">За останні 45 днів нічого не закрито.</div>
       {{end}}
@@ -38,7 +51,7 @@
         <a class="det-back" href="/journal{{if .Filter}}?p={{.Filter}}{{end}}" hx-get="/journal{{if .Filter}}?p={{.Filter}}{{end}}" hx-include="unset" hx-push-url="true" aria-label="Назад до днів">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
-        <span class="det-h">{{.Day.Label}}</span>
+        <span class="det-h">{{.Day.Full}}</span>
         <span class="grow"></span>
         <span class="det-meta">закрито {{.Day.N}}</span>
       </header>

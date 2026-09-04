@@ -13,7 +13,8 @@ import (
 // journalDay is one row in the day list; the selected one fills the detail pane.
 type journalDay struct {
 	Key   string // YYYY-MM-DD
-	Label string
+	Label string // short form for the list, the week header carries the month
+	Full  string // full date for the detail pane
 	N     int
 	Today bool
 	Sel   bool
@@ -25,13 +26,20 @@ type projectCount struct {
 	N int
 }
 
+// journalWeek groups the day rows so a long list keeps some shape.
+type journalWeek struct {
+	Label string
+	Days  []journalDay
+}
+
 type journalData struct {
 	shell
-	Days   []journalDay
-	Day    *journalDay
-	Tasks  []taskRow
-	Counts []projectCount
-	Total  int
+	Weeks   []journalWeek
+	Day     *journalDay
+	Tasks   []taskRow
+	Counts  []projectCount
+	Total   int
+	Current *store.Project // the project the filter is on, if any
 }
 
 // dailyData is the standup text, in the three blocks it is spoken in.
@@ -85,6 +93,12 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 		byProject[t.ProjectID]++
 		d.Total++
 	}
+	for i := range sh.Projects {
+		if sh.Projects[i].Slug == filter {
+			d.Current = &sh.Projects[i].Project
+		}
+	}
+	var days []journalDay
 	want := r.FormValue("d")
 	for i := 0; i <= journalSpan; i++ {
 		day := dayStart(now).AddDate(0, 0, -i)
@@ -95,24 +109,26 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 		}
 		row := journalDay{
 			Key:   key,
-			Label: fmt.Sprintf("%s, %d %s", ukWeekdays[day.Weekday()], day.Day(), ukMonths[day.Month()-1]),
+			Label: fmt.Sprintf("%s, %d", ukWeekdays[day.Weekday()], day.Day()),
+			Full:  fmt.Sprintf("%s, %d %s", ukWeekdays[day.Weekday()], day.Day(), ukMonths[day.Month()-1]),
 			N:     len(tasks),
 			Today: sameDay(day, now),
 			Href:  "/journal?" + journalQuery(filter, key, 0),
 		}
-		d.Days = append(d.Days, row)
+		days = append(days, row)
 	}
 	// Selected day: the asked-for one, else the first with something in it.
-	for i := range d.Days {
-		if d.Days[i].Key == want || (want == "" && d.Day == nil && d.Days[i].N > 0) {
-			d.Days[i].Sel = true
-			d.Day = &d.Days[i]
+	for i := range days {
+		if days[i].Key == want || (want == "" && d.Day == nil && days[i].N > 0) {
+			days[i].Sel = true
+			d.Day = &days[i]
 		}
 	}
-	if d.Day == nil && len(d.Days) > 0 {
-		d.Days[0].Sel = true
-		d.Day = &d.Days[0]
+	if d.Day == nil && len(days) > 0 {
+		days[0].Sel = true
+		d.Day = &days[0]
 	}
+	d.Weeks = groupWeeks(days, now)
 	if d.Day != nil {
 		sh.Ctx["d"] = d.Day.Key
 		d.Ctx = sh.Ctx
@@ -132,6 +148,49 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, "journal", d)
+}
+
+// groupWeeks splits the day rows into weeks, newest first.
+func groupWeeks(days []journalDay, now time.Time) []journalWeek {
+	thisWeek := weekStart(now)
+	var out []journalWeek
+	var lastKey string
+	for _, day := range days {
+		t, err := time.ParseInLocation("2006-01-02", day.Key, now.Location())
+		if err != nil {
+			continue
+		}
+		ws := weekStart(t)
+		if key := ws.Format("2006-01-02"); key != lastKey {
+			out = append(out, journalWeek{Label: weekLabel(ws, thisWeek)})
+			lastKey = key
+		}
+		out[len(out)-1].Days = append(out[len(out)-1].Days, day)
+	}
+	return out
+}
+
+func weekStart(t time.Time) time.Time {
+	t = dayStart(t)
+	wd := int(t.Weekday())
+	if wd == 0 {
+		wd = 7 // Sunday closes the week here, it does not open it
+	}
+	return t.AddDate(0, 0, 1-wd)
+}
+
+func weekLabel(ws, thisWeek time.Time) string {
+	switch {
+	case ws.Equal(thisWeek):
+		return "Цей тиждень"
+	case ws.Equal(thisWeek.AddDate(0, 0, -7)):
+		return "Минулий тиждень"
+	}
+	end := ws.AddDate(0, 0, 6)
+	if ws.Month() == end.Month() {
+		return fmt.Sprintf("%d–%d %s", ws.Day(), end.Day(), ukMonths[ws.Month()-1])
+	}
+	return fmt.Sprintf("%d %s – %d %s", ws.Day(), ukMonths[ws.Month()-1], end.Day(), ukMonths[end.Month()-1])
 }
 
 func journalQuery(filter, day string, taskID int64) string {
