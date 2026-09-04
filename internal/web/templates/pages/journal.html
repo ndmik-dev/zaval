@@ -26,7 +26,7 @@
     {{/* No day list: the days are headings inside one scroll. */}}
     {{range .Feed}}
     <section class="sec">
-      <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span><span class="rule"></span>{{if .Today}}<span class="mono n">сьогодні</span>{{end}}</div>
+      <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span>{{if .Today}}<span class="mono n">· сьогодні</span>{{end}}</div>
       <div class="list">{{range .Tasks}}{{template "task_row" .}}{{end}}</div>
     </section>
     {{else}}

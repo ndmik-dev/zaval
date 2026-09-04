@@ -27,7 +27,7 @@ a{color:var(--atlas);text-decoration:none}
 .mono{font-family:var(--mono)}
 .grow{flex:1}
 .dim{color:var(--faint);font-weight:400}
-.up{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.up{font-size:10px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;color:var(--muted)}
 .rule{flex:1;height:1px;background:var(--line)}
 .warn{color:var(--attention)}
 
@@ -62,10 +62,10 @@ a{color:var(--atlas);text-decoration:none}
 .split{flex:1;min-width:0;display:flex}
 .plist{
   width:var(--plist-w,420px);flex:none;border-right:1px solid var(--line);
-  padding:18px 16px 30px;height:100vh;overflow-y:auto;
-  display:flex;flex-direction:column;gap:14px;
+  padding:0 16px 30px;height:100vh;overflow-y:auto;
+  display:flex;flex-direction:column;gap:20px;
 }
-.pdet{flex:1;min-width:0;background:var(--card-2);height:100vh;display:flex}
+.pdet{flex:1;min-width:0;background:var(--paper);height:100vh;display:flex;padding:16px 16px 16px 14px}
 /* Drag handle straddling the divider; the width lives on :root so it survives morphs. */
 .split-grip{flex:none;width:9px;margin:0 -4px;position:relative;z-index:6;cursor:col-resize}
 .split-grip::after{
@@ -74,14 +74,24 @@ a{color:var(--atlas);text-decoration:none}
 }
 .split-grip:hover::after,.split-grip.dragging::after{background:var(--atlas)}
 
-.plist-head{display:flex;align-items:center;gap:8px}
+.plist-head{
+  display:flex;align-items:flex-start;gap:8px;position:sticky;top:0;z-index:3;
+  background:var(--paper);padding:18px 0 10px;margin-bottom:-6px;
+}
+.plist.scrolled .plist-head{box-shadow:0 10px 12px -12px rgba(23,32,28,.5)}
+.plist-title{min-width:0;display:flex;flex-direction:column;gap:1px}
+.plist-sub{
+  margin:0;font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;
+}
 .plist-head h1{font-size:19px;font-weight:600;letter-spacing:-.015em;margin:0}
 .plist > .sec:last-of-type{margin-bottom:0}
 
 /* ---------- list pane ---------- */
-.sec{display:flex;flex-direction:column;gap:5px}
-.sec-head{display:flex;align-items:center;gap:9px}
-.sec-head .n{font-size:12px;color:var(--faint)}
+.sec{display:flex;flex-direction:column;gap:7px}
+.sec-head{display:flex;align-items:center;gap:8px}
+.sec-head .n{font-size:12px;color:var(--faint);display:inline-block}
+.n.bumped{animation:bump .35s var(--ease)}
+@keyframes bump{0%{transform:translateY(-6px);opacity:0}60%{transform:translateY(1px);opacity:1}100%{transform:none}}
 .list{display:flex;flex-direction:column;gap:0}
 .empty{border:1px dashed #CDD0C8;border-radius:8px;padding:12px;color:var(--faint);font-size:13px;text-align:center}
 .empty.drop{padding:10px}
@@ -97,28 +107,34 @@ a{color:var(--atlas);text-decoration:none}
 
 /* One task is one line. Cards were pretty but fit five tasks where twenty fit. */
 .task{
-  display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;
-  background:transparent;border:0;font-size:14px;cursor:grab;min-height:31px;
+  display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;
+  background:transparent;border:0;font-size:14.5px;cursor:grab;min-height:35px;
 }
-.task + .task{border-top:1px solid var(--line-2)}
 .task:active{cursor:grabbing}
 .task:hover{background:rgba(252,252,250,.8)}
 .task.now .title{font-weight:500}
-.task.sel{background:#EBF0EB;box-shadow:inset 2px 0 0 var(--atlas);border-top-color:transparent}
-.task.sel + .task{border-top-color:transparent}
+.task.sel{background:#EBF0EB;box-shadow:inset 2px 0 0 var(--project)}
+@supports (background:color-mix(in oklab,red,blue)){
+  .task.sel{background:color-mix(in oklab,var(--project) 11%,var(--card))}
+}
 .task.done .title{color:#8C9189;text-decoration:line-through;text-decoration-color:#C3C7BE}
-.tick{flex:none;width:15px;height:15px;border-radius:50%;border:1.5px solid #B9BDB5;background:transparent;cursor:pointer;padding:0}
+.tick{
+  flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid #B9BDB5;background:transparent;
+  cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
+}
+.tick svg{width:11px;height:11px;fill:none;stroke:var(--card);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:0}
 .tick:hover{border-color:var(--ink)}
-.task.done .tick{width:13px;height:13px;background:#B9BDB5;border-color:#B9BDB5}
+.tick:hover svg{opacity:.45;stroke:var(--ink)}
+.task.done .tick{background:#B9BDB5;border-color:#B9BDB5}
+.task.done .tick svg{opacity:1;stroke:var(--card);stroke-dasharray:12;animation:draw .3s var(--ease) both}
+@keyframes draw{from{stroke-dashoffset:12}to{stroke-dashoffset:0}}
 .task .sq{width:8px;height:8px;border-radius:2px;background:var(--project);flex:none}
 .band .task .sq{display:none}
 .title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;cursor:pointer}
 .title:hover{text-decoration:underline;text-decoration-color:#B9BDB5}
 .lnkn{flex:none;font-size:11px;color:var(--faint)}
-.plabel{
-  flex:none;max-width:74px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--project);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+.enter{flex:none;width:11px;text-align:right;font-size:11px;color:var(--faint);opacity:0;transition:opacity .15s var(--ease)}
+.task:hover .enter,.task.focused .enter{opacity:.75}
 .statechip{
   flex:none;font-size:10.5px;color:var(--muted);background:var(--card);
   border:1px solid var(--line);border-radius:5px;padding:1px 7px 2px;white-space:nowrap;
@@ -132,7 +148,6 @@ a{color:var(--atlas);text-decoration:none}
 }
 .wait svg{flex:none}
 .age{font-size:12px;font-weight:600;color:var(--attention);background:var(--attention-bg);border-radius:4px;padding:1px 7px 2px}
-.chips{display:flex;gap:5px;flex-wrap:wrap}
 .chip{
   display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);
   background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:1px 7px 2px;
@@ -166,7 +181,13 @@ a{color:var(--atlas);text-decoration:none}
 .pname-static{font-weight:500}
 
 /* ---------- detail pane ---------- */
-.det{display:flex;flex-direction:column;height:100%;width:100%;min-width:0}
+/* The detail is a sheet lying on the paper, with the project's colour on its edge. */
+.det{
+  display:flex;flex-direction:column;height:100%;width:100%;min-width:0;
+  background:var(--card);border:1px solid var(--line);border-top:2px solid var(--project,var(--line));
+  border-radius:12px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(23,32,28,.04),0 18px 34px -24px rgba(23,32,28,.45);
+}
 .det-head{
   display:flex;align-items:center;gap:10px;padding:15px 22px;border-bottom:1px solid var(--line-2);
   flex:none;min-height:54px;
@@ -190,7 +211,7 @@ a{color:var(--atlas);text-decoration:none}
 }
 .det-title:focus{border-bottom-color:var(--line)}
 .det-state{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.det-state .seg{flex:1}
+.det-state .seg{flex:1;min-width:max-content}
 .det-state .seg button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 12px 6px;cursor:pointer;flex:none}
 .det-state .seg button.on{background:var(--ink);color:var(--card);box-shadow:none}
 .det-notes-form{flex:1 1 auto;display:flex;flex-direction:column;gap:9px;min-height:190px}
@@ -205,7 +226,7 @@ a{color:var(--atlas);text-decoration:none}
 .det-wait.on input{font-weight:500}
 .det-sec{display:flex;flex-direction:column;gap:9px}
 .det-foot{
-  flex:none;padding:14px 22px;border-top:1px solid var(--line-2);background:var(--card);
+  flex:none;padding:13px 22px;border-top:1px solid var(--line-2);background:var(--card-2);
   display:flex;align-items:center;gap:8px;font-size:13px;
 }
 .det-foot.dim{color:var(--faint)}
@@ -379,8 +400,7 @@ a{color:var(--atlas);text-decoration:none}
 /* ---------- drag, motion, focus ---------- */
 .drag-ghost{opacity:.4}
 .sortable-chosen{box-shadow:0 4px 14px rgba(23,32,28,.14)}
-.task.focused{outline:1.5px solid var(--ink);outline-offset:-1px;background:rgba(252,252,250,.9)}
-.task.focused.sel{background:#EBF0EB}
+.task.focused{outline:1.5px solid var(--ink);outline-offset:-1px}
 .task,.ritem,.btn,.chip,.nav,.dd-btn,.tick,.box,.pill,.kbd,.prow-project{
   transition:background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease),color .15s var(--ease),transform .15s var(--ease);
 }
@@ -422,12 +442,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   .rail-bottom{margin-top:0}
   .main{padding-bottom:56px}
   .split{flex-direction:column}
-  .plist{width:auto;height:auto;border-right:0;padding:16px 14px 24px;overflow:visible}
+  .plist{width:auto;height:auto;border-right:0;padding:0 14px 24px;overflow:visible}
+  .plist-head{padding:14px 0 10px}
   .split-grip{display:none}
-  .pdet{height:auto;display:none}
+  .pdet{height:auto;display:none;padding:0;background:var(--paper)}
   .split.detail-open .plist{display:none}
   .split.detail-open .pdet{display:flex;background:var(--paper)}
-  .det{max-width:none;min-height:calc(100vh - 56px)}
+  .det{max-width:none;min-height:calc(100vh - 56px);border:0;border-radius:0;box-shadow:none;border-top:2px solid var(--project,var(--line))}
   .det-scroll{padding:16px 14px 20px}
   .det-head{padding:13px 14px}
   .det-foot{padding:12px 14px}

@@ -236,6 +236,32 @@ document.addEventListener('keydown', (e) => {
     case '3': location.href = '/journal'; break;
   }
 });
+// A shadow under the sticky header once the list is scrolled.
+document.addEventListener('scroll', (e) => {
+  const list = e.target instanceof Element && e.target.closest('.plist');
+  if (list) list.classList.toggle('scrolled', list.scrollTop > 2);
+}, true);
+
+// Counters roll when they change, so you see which section moved.
+const COUNTS = ['n-now', 'n-waiting', 'n-backlog', 'n-done'];
+function readCounts() {
+  const out = {};
+  COUNTS.forEach((id) => { const el = document.getElementById(id); if (el) out[id] = el.textContent; });
+  return out;
+}
+document.addEventListener('htmx:before:swap', () => { window.__counts = readCounts(); });
+document.addEventListener('htmx:after:swap', () => {
+  const before = window.__counts;
+  if (!before) return;
+  COUNTS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || before[id] === undefined || before[id] === el.textContent) return;
+    el.classList.remove('bumped');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('bumped');
+  });
+});
+
 // Keep expanded sections (release history, "готово сьогодні") open across a morph.
 const KEEP_OPEN = 'details.history-rel, details.done-block';
 document.addEventListener('htmx:before:swap', () => {

@@ -5,7 +5,10 @@
 
   <section class="plist">
     <header class="plist-head">
-      <h1>{{.Date}}</h1>
+      <div class="plist-title">
+        <h1>{{.Date}}</h1>
+        {{if .Sub}}<p class="plist-sub">{{.Sub}}</p>{{end}}
+      </div>
       <span class="grow"></span>
       <button type="button" class="hint mono" data-open-palette title="Додати або знайти">⌘K</button>
       <button type="button" class="hint mono" data-open-help title="Клавіатура">?</button>
@@ -24,7 +27,7 @@
     {{if eq .Group "project"}}
       {{range .Bands}}
       <section class="sec band" style="--project:{{.Color}}">
-        <div class="sec-head"><span class="up" style="color:{{.Color}}">{{.Name}}</span><span class="mono n">{{len .Rows}}</span><span class="rule"></span></div>
+        <div class="sec-head"><span class="up" style="color:{{.Color}}">{{.Name}}</span><span class="mono n">{{len .Rows}}</span></div>
         <div class="list">{{range .Rows}}{{template "task_row" .}}{{end}}</div>
       </section>
       {{else}}
@@ -38,23 +41,23 @@
       {{end}}
     {{else}}
       <section class="sec">
-        <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
+        <div class="sec-head"><span class="up">Зараз</span><span class="mono n" id="n-now">{{len .Now}}</span></div>
         <div class="list sortable" id="now" data-state="now">
-          {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty drop">Порожньо. Перетягни з беклогу або додай через ⌘K.</div>{{end}}
+          {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty drop">Тут буде те, що ти взяв у роботу. Перетягни з беклогу або додай через ⌘K.</div>{{end}}
         </div>
       </section>
 
       <section class="sec">
-        <div class="sec-head"><span class="up">Чекаю</span><span class="mono n">{{len .Waiting}}</span><span class="rule"></span></div>
+        <div class="sec-head"><span class="up">Чекаю</span><span class="mono n" id="n-waiting">{{len .Waiting}}</span></div>
         <div class="list sortable" id="waiting" data-state="waiting">
-          {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Перетягни сюди те, що чекає на когось</div>{{end}}
+          {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Нічого не висить на комусь. Перетягни сюди те, що чекає відповіді.</div>{{end}}
         </div>
       </section>
 
       <section class="sec">
-        <div class="sec-head"><span class="up">Беклог</span><span class="mono n">{{len .Backlog}}</span><span class="rule"></span></div>
+        <div class="sec-head"><span class="up">Беклог</span><span class="mono n" id="n-backlog">{{len .Backlog}}</span></div>
         <div class="list sortable" id="backlog" data-state="backlog">
-          {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty drop">Беклог порожній.</div>{{end}}
+          {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty drop">Беклог порожній — рідкісний день.</div>{{end}}
         </div>
       </section>
     {{end}}
@@ -62,7 +65,7 @@
     {{if .DoneToday}}
     <details class="done-block" open>
       <summary>
-        <span class="up">Готово сьогодні</span><span class="mono n">{{len .DoneToday}}</span><span class="rule"></span>
+        <span class="up">Готово сьогодні</span><span class="mono n" id="n-done">{{len .DoneToday}}</span><span class="rule"></span>
         <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </summary>
       <div class="list done-list">{{range .DoneToday}}{{template "task_row" .}}{{end}}</div>

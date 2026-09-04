@@ -24,7 +24,7 @@ func (s *Server) palette(w http.ResponseWriter, r *http.Request) {
 	}
 	d := paletteData{Query: q, Parsed: parseQuick(q, projects)}
 	if d.Parsed.Project == nil {
-		d.Parsed.Project = s.defaultProject(projects, r.URL.Query().Get("p"))
+		d.Parsed.Project = s.defaultProject(projects, preferredProject(r))
 	}
 	if len([]rune(d.Parsed.Title)) >= 2 {
 		found, err := s.searchTasks(d.Parsed.Title, 6)
@@ -55,7 +55,11 @@ func (s *Server) createQuick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if q.Project == nil {
-		q.Project = s.defaultProject(projects, r.FormValue("p"))
+		q.Project = s.defaultProject(projects, preferredProject(r))
+	}
+	if q.Project != nil {
+		// ⌘K opens on the project you used last, not on the first one in the list.
+		http.SetCookie(w, &http.Cookie{Name: "lastp", Value: q.Project.Slug, Path: "/", MaxAge: 86400 * 365, SameSite: http.SameSiteLaxMode})
 	}
 	state := "backlog"
 	if q.Now || r.FormValue("force_now") != "" {
@@ -82,8 +86,19 @@ func (s *Server) createQuick(w http.ResponseWriter, r *http.Request) {
 	s.respondBoard(w, r)
 }
 
-// defaultProject is the filtered project when the board is filtered,
-// otherwise the first project shown on the board.
+// preferredProject is the project the request names, else the last one used.
+func preferredProject(r *http.Request) string {
+	if p := r.FormValue("p"); p != "" {
+		return p
+	}
+	if c, err := r.Cookie("lastp"); err == nil {
+		return c.Value
+	}
+	return ""
+}
+
+// defaultProject is the named project when there is one,
+// otherwise the first project in the list.
 func (s *Server) defaultProject(projects []store.Project, filter string) *store.Project {
 	for i := range projects {
 		if projects[i].Slug == filter {

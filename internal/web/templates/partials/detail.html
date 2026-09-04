@@ -1,7 +1,7 @@
 {{/* The detail pane. It is always on screen, so nothing here opens or closes —
      the task simply changes. #detail-ctx keeps the selected task on mutations. */}}
 {{define "detail_task"}}{{with .Open}}
-<div class="det" hx-include:inherited="#page-ctx, #detail-ctx">
+<div class="det" style="--project:{{.Project.Color}}" hx-include:inherited="#page-ctx, #detail-ctx">
   <span id="detail-ctx" hidden><input type="hidden" name="t" value="{{.ID}}"></span>
   <header class="det-head">
     <a class="det-back" href="{{closeURL (without $.Ctx "i")}}" hx-get="{{closeURL (without $.Ctx "i")}}" hx-include="unset" hx-push-url="true" aria-label="Назад до списку">
@@ -78,7 +78,7 @@
 {{/* Nothing selected on the board: the pane earns its place by holding the
      standup instead of sitting empty. */}}
 {{define "detail_daily"}}
-<div class="det daily">
+<div class="det daily"{{with .Daily}} style="--project:{{.Project.Color}}"{{end}}>
   <header class="det-head">
     <span class="up">Що сказати на дейліку</span>
     <span class="grow"></span>

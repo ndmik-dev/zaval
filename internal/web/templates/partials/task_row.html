@@ -1,14 +1,16 @@
-{{/* One line per task, as in the mockup: tick, project colour, title, and only
-     what is worth knowing without opening it — waiting note and link count.
-     The project is the colour square; its name is in the tooltip and in the
-     «за проєктом» grouping, so it does not steal width from every title. */}}
+{{/* One line per task: tick, project colour, title, and only what is worth
+     knowing without opening it — waiting note and link count. The ⏎ at the end
+     is reserved space, so revealing it on hover shifts nothing. */}}
 {{define "task_row"}}
 <div class="task {{.State}}{{if .Sel}} sel{{end}}" id="task-{{.ID}}" style="--project:{{.Project.Color}}" data-open="1">
-  <button class="tick" type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"{{if eq .State "done"}}backlog{{else}}done{{end}}"}' aria-label="{{if eq .State "done"}}Повернути в беклог{{else}}Готово{{end}}"></button>
+  <button class="tick" type="button" hx-post="/tasks/{{.ID}}/state" hx-vals='{"state":"{{if eq .State "done"}}backlog{{else}}done{{end}}"}' aria-label="{{if eq .State "done"}}Повернути в беклог{{else}}Готово{{end}}">
+    <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3.6 7.3 6 9.7l4.4-5.1"/></svg>
+  </button>
   <span class="sq" title="{{.Project.Name}}"></span>
   <a class="title" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true" title="{{.Title}} · {{.Project.Name}}">{{.Title}}</a>
   {{if .Waiting}}<span class="wait" title="{{.Waiting}}{{if ge .Age 2}} · {{.Age}} дн.{{end}}">{{.Waiting}}</span>{{end}}
   {{if .Links}}<span class="lnkn mono" title="лінків: {{len .Links}}">↗{{len .Links}}</span>{{end}}
   {{if not .Tag}}<span class="statechip{{if .Waiting}} wait{{else if eq .State "now"}} now{{end}}">{{if .Waiting}}Чекаю{{else if eq .State "now"}}Зараз{{else if eq .State "done"}}Готово{{else}}Беклог{{end}}</span>{{end}}
+  <span class="enter mono" aria-hidden="true">⏎</span>
 </div>
 {{end}}

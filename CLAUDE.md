@@ -16,6 +16,11 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 - htmx is pinned to 4.0.0 and vendored in `internal/web/static/`; static URLs
   carry a content hash, the service worker is network-first.
 - Dialogs: `[data-confirm]` opens the in-app modal, never `confirm()`.
+- The detail pane is a sheet: white card on the paper ground, with the open
+  project's colour on its top edge (`--project`). The same colour tints the
+  selected row. Actions — «Готово», the state segment — stay green everywhere,
+  so muscle memory survives.
+- Lists breathe: no hairlines between rows, sections separated by space.
 - Per-viewer chrome (pane width, wide rail) lives in `localStorage` and is applied
   to `:root`, so an htmx morph cannot lose it. The nav item for the current page
   is a `<span>`, not a link — clicking where you already are must do nothing.
