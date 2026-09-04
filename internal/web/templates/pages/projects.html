@@ -13,6 +13,8 @@
     {{template "project_group" (dict "Kind" "pet" "Label" "Своє" "All" .All "Expanded" .Expanded)}}
   </section>
 
+  <div class="split-grip" aria-hidden="true"></div>
+
   <section class="pdet">
     {{if .Expanded}}{{with .Expanded}}
     <form class="det" hx-post="/projects/{{.ID}}">

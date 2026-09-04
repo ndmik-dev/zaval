@@ -1,3 +1,34 @@
+// Pane width: dragged on the grip, kept on :root so an htmx morph cannot lose it.
+const PANE_KEY = 'plist-w';
+function setPaneWidth(px) { document.documentElement.style.setProperty('--plist-w', px + 'px'); }
+try { const w = localStorage.getItem(PANE_KEY); if (w) setPaneWidth(w); } catch (e) { /* private mode */ }
+document.addEventListener('pointerdown', (e) => {
+  const grip = e.target.closest('.split-grip');
+  if (!grip) return;
+  e.preventDefault();
+  const list = grip.closest('.split')?.querySelector('.plist');
+  if (!list) return;
+  const startX = e.clientX;
+  const startW = list.getBoundingClientRect().width;
+  let width = startW;
+  grip.classList.add('dragging');
+  grip.setPointerCapture(e.pointerId);
+  const move = (ev) => {
+    width = Math.round(Math.min(760, Math.max(300, startW + ev.clientX - startX)));
+    setPaneWidth(width);
+  };
+  const stop = () => {
+    grip.classList.remove('dragging');
+    grip.removeEventListener('pointermove', move);
+    grip.removeEventListener('pointerup', stop);
+    grip.removeEventListener('pointercancel', stop);
+    try { localStorage.setItem(PANE_KEY, width); } catch (e) { /* private mode */ }
+  };
+  grip.addEventListener('pointermove', move);
+  grip.addEventListener('pointerup', stop);
+  grip.addEventListener('pointercancel', stop);
+});
+
 // ⌘K / Ctrl+K opens the palette; ⌘Enter inside it creates straight into "Зараз".
 const palette = document.getElementById('palette');
 function openPalette() {
@@ -189,11 +220,28 @@ document.addEventListener('keydown', (e) => {
     case 'l': openThenFocus('.inline-add input[name=url]'); break;
     case 'd': document.querySelector('.det-close')?.click(); break;
     case 'g': document.querySelector('.seg.group a:not(.on)')?.click(); break;
-    case '1': location.href = '/'; break;
-    case '2': location.href = '/releases'; break;
-    case '3': location.href = '/journal'; break;
+    case 'ArrowLeft': if (stepDay(1)) e.preventDefault(); break;
+    case 'ArrowRight': if (stepDay(-1)) e.preventDefault(); break;
+    default: {
+      if (!/^[1-9]$/.test(e.key)) break;
+      // On the journal the digits pick a day; elsewhere they are the pages.
+      const days = [...document.querySelectorAll('.days .dayrow')];
+      if (days.length) { days[Number(e.key) - 1]?.click(); break; }
+      const pages = ['/', '/releases', '/journal'];
+      if (pages[Number(e.key) - 1]) location.href = pages[Number(e.key) - 1];
+    }
   }
 });
+// Journal: step through the day list without leaving the keyboard.
+function stepDay(step) {
+  const days = [...document.querySelectorAll('.days .dayrow')];
+  if (!days.length) return false;
+  const i = days.findIndex((d) => d.classList.contains('sel'));
+  const next = days[Math.min(days.length - 1, Math.max(0, (i < 0 ? 0 : i) + step))];
+  if (next) next.click();
+  return true;
+}
+
 // Keep the focus ring on the same task after a morph.
 document.addEventListener('htmx:before:swap', () => { const r = focusedRow(); if (r) window.__focusedTask = r.id; });
 document.addEventListener('htmx:after:swap', () => {

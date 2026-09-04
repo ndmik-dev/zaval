@@ -52,11 +52,18 @@ a{color:var(--atlas);text-decoration:none}
 .main{flex:1;min-width:0;display:flex}
 .split{flex:1;min-width:0;display:flex}
 .plist{
-  width:352px;flex:none;border-right:1px solid var(--line);
+  width:var(--plist-w,420px);flex:none;border-right:1px solid var(--line);
   padding:18px 16px 30px;height:100vh;overflow-y:auto;
   display:flex;flex-direction:column;gap:14px;
 }
 .pdet{flex:1;min-width:0;background:var(--card-2);height:100vh;display:flex}
+/* Drag handle straddling the divider; the width lives on :root so it survives morphs. */
+.split-grip{flex:none;width:9px;margin:0 -4px;position:relative;z-index:6;cursor:col-resize}
+.split-grip::after{
+  content:"";position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);
+  width:2px;background:transparent;transition:background-color .15s var(--ease);
+}
+.split-grip:hover::after,.split-grip.dragging::after{background:var(--atlas)}
 
 .plist-head{display:flex;align-items:center;gap:8px}
 .plist-head h1{font-size:19px;font-weight:600;letter-spacing:-.015em;margin:0}
@@ -149,7 +156,7 @@ a{color:var(--atlas);text-decoration:none}
 .pname-static{font-weight:500}
 
 /* ---------- detail pane ---------- */
-.det{display:flex;flex-direction:column;height:100%;width:100%;max-width:860px}
+.det{display:flex;flex-direction:column;height:100%;width:100%;min-width:0}
 .det-head{
   display:flex;align-items:center;gap:10px;padding:15px 22px;border-bottom:1px solid var(--line-2);
   flex:none;min-height:54px;
@@ -163,6 +170,7 @@ a{color:var(--atlas);text-decoration:none}
 .det-toitem{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--muted);padding:3px 9px 3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
 .det-toitem:hover{color:var(--ink);border-color:#B9BDB5}
 .det-scroll{flex:1;overflow-y:auto;padding:18px 22px 24px;display:flex;flex-direction:column;gap:16px}
+.det-scroll > *{max-width:1100px;width:100%}
 .det-scroll > .empty{margin:auto;max-width:400px;background:none}
 .det-body{display:flex;flex-direction:column;gap:12px}
 .det-title{
@@ -364,6 +372,8 @@ dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
 .det-title:focus-visible,.det-notes:focus-visible,.inline-add input:focus-visible,.picker input:focus-visible,
 .field input:focus-visible,.palette-input input:focus-visible,.det-wait input:focus-visible,.login input:focus-visible{outline:0}
+.task .title:focus-visible,.ritem .body:focus-visible{outline:0}
+.task:has(.title:focus-visible),.ritem:has(.body:focus-visible){outline:2px solid var(--ink);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
@@ -386,6 +396,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   .main{padding-bottom:56px}
   .split{flex-direction:column}
   .plist{width:auto;height:auto;border-right:0;padding:16px 14px 24px;overflow:visible}
+  .split-grip{display:none}
   .pdet{height:auto;display:none}
   .split.detail-open .plist{display:none}
   .split.detail-open .pdet{display:flex;background:var(--paper)}
