@@ -45,6 +45,7 @@ a{color:var(--atlas);text-decoration:none}
 .rail-wide .rail-chev{transform:rotate(180deg)}
 .rail-toggle{color:var(--faint)}
 .brand{display:flex;align-items:center;justify-content:center;width:34px;height:34px;color:var(--ink);margin-bottom:8px}
+.brand-label{font-weight:600}
 .nav-group{display:flex;flex-direction:column;align-items:center;gap:4px}
 .rail-bottom{margin-top:auto}
 .nav{
