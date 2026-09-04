@@ -25,7 +25,7 @@
      links carry a complete URL instead and cancel the include with a selector
      that matches nothing (hx-include="unset"). */}}
 {{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#page-ctx">
-  {{template "rail" .}}
+  {{template "topbar" .}}
   <main class="main">{{template "content" .}}</main>
   {{template "palette" .}}
   {{template "help" .}}

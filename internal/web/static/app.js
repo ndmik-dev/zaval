@@ -29,15 +29,6 @@ document.addEventListener('pointerdown', (e) => {
   grip.addEventListener('pointercancel', stop);
 });
 
-// Rail width: icons only, or icons with their names.
-const RAIL_KEY = 'rail-wide';
-try { if (localStorage.getItem(RAIL_KEY) === '1') document.documentElement.classList.add('rail-wide'); } catch (e) { /* private mode */ }
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('[data-rail-toggle]')) return;
-  const wide = document.documentElement.classList.toggle('rail-wide');
-  try { localStorage.setItem(RAIL_KEY, wide ? '1' : '0'); } catch (e) { /* private mode */ }
-});
-
 // ⌘K / Ctrl+K opens the palette; ⌘Enter inside it creates straight into "Зараз".
 const palette = document.getElementById('palette');
 function openPalette() {
@@ -227,7 +218,7 @@ document.addEventListener('keydown', (e) => {
     case 'x': row?.querySelector('.tick')?.click(); break;
     case 'w': openThenFocus('.det-wait input'); break;
     case 'l': openThenFocus('.inline-add input[name=url]'); break;
-    case 'd': document.querySelector('.det-close')?.click(); break;
+    case 'd': (document.querySelector('.det.daily .det-close') || document.querySelector('.daily-link'))?.click(); break;
     case 'g': document.querySelector('.seg.group a:not(.on)')?.click(); break;
     case 'ArrowDown': e.preventDefault(); moveFocus(1); break;
     case 'ArrowUp': e.preventDefault(); moveFocus(-1); break;
@@ -238,8 +229,8 @@ document.addEventListener('keydown', (e) => {
 });
 // A shadow under the sticky header once the list is scrolled.
 document.addEventListener('scroll', (e) => {
-  const list = e.target instanceof Element && e.target.closest('.plist');
-  if (list) list.classList.toggle('scrolled', list.scrollTop > 2);
+  const pane = e.target instanceof Element && e.target.closest('.plist, .col');
+  if (pane) pane.classList.toggle('scrolled', pane.scrollTop > 2);
 }, true);
 
 // Keep expanded sections (release history, "готово сьогодні") open across a morph.

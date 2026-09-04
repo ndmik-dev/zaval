@@ -1,87 +1,28 @@
 {{define "content"}}
 {{template "page_ctx" .Ctx}}
-<div class="split{{if .Detail}} detail-open{{end}}">
+<div class="col"><div class="col-in">
 
-  <section class="plist">
-    <header class="plist-head">
-      <h1>Проєкти</h1>
-      <span class="grow"></span>
-      <span class="mono dim">{{len .All}}</span>
-    </header>
-    {{if .Error}}<div class="notice">{{.Error}}</div>{{end}}
-    {{template "project_group" (dict "Kind" "work" "Label" "Робота" "All" .All "Expanded" .Expanded)}}
-    {{template "project_group" (dict "Kind" "pet" "Label" "Своє" "All" .All "Expanded" .Expanded)}}
-  </section>
+  <header class="plist-head">
+    <h1>Проєкти</h1>
+    <span class="grow"></span>
+    <span class="mono dim">{{len .All}}</span>
+  </header>
+  {{if .Error}}<div class="notice">{{.Error}}</div>{{end}}
 
-  <div class="split-grip" aria-hidden="true"></div>
+  {{template "project_group" (dict "Kind" "work" "Label" "Робота" "All" .All "Expanded" .Expanded)}}
+  {{template "project_group" (dict "Kind" "pet" "Label" "Своє" "All" .All "Expanded" .Expanded)}}
 
-  <section class="pdet">
-    {{if .Expanded}}{{with .Expanded}}
-    <form class="det" style="--project:{{.Color}}" hx-post="/projects/{{.ID}}">
-      <header class="det-head">
-        <a class="det-back" href="/projects" hx-get="/projects" hx-include="unset" hx-push-url="true" aria-label="Назад до списку">
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <span class="dot big" style="background:{{.Color}}"></span>
-        <span class="up">Проєкт</span>
-        <span class="grow"></span>
-        <a class="det-close" href="/projects" hx-get="/projects" hx-include="unset" hx-push-url="true" aria-label="Зняти вибір">
-          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </a>
-      </header>
-      <div class="det-scroll">
-        <div class="det-body">
-          <input class="det-title" name="name" value="{{.Name}}" required>
-        </div>
-        <section class="det-sec">
-          <div class="sec-head"><span class="up">Вид</span><span class="rule"></span></div>
-          {{template "kind_dropdown" .Kind}}
-        </section>
-        <section class="det-sec">
-          <div class="sec-head"><span class="up">Колір</span><span class="rule"></span></div>
-          <div class="swatches">
-            {{range $c := colors}}<button type="button" class="sw{{if eq $c $.Expanded.Color}} on{{end}}" style="background:{{$c}}" data-color="{{$c}}" aria-label="{{$c}}"></button>{{end}}
-            <label class="sw custom" title="Свій колір"><input type="color" name="color" value="{{.Color}}"></label>
-          </div>
-        </section>
-        <section class="det-sec">
-          <div class="sec-head"><span class="up">Тег у ⌘K</span><span class="rule"></span></div>
-          <span class="field"><span class="dim mono">#</span><input name="slug" value="{{.Slug}}"></span>
-        </section>
-      </div>
-      <footer class="det-foot">
-        <button type="submit" class="btn primary">Зберегти</button>
-        <span class="grow"></span>
-        <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" data-confirm="Видалити проєкт {{.Name}}?" data-confirm-ok="Видалити" data-confirm-danger>Видалити</button>
-      </footer>
-    </form>
-    {{end}}
-    {{else}}
-    <form class="det" hx-post="/projects" hx-on:htmx:after:request="this.reset()">
-      <header class="det-head"><span class="up">Новий проєкт</span></header>
-      <div class="det-scroll">
-        <div class="det-body">
-          <input class="det-title" name="name" placeholder="Назва" autocomplete="off" required>
-        </div>
-        <section class="det-sec">
-          <div class="sec-head"><span class="up">Вид</span><span class="rule"></span></div>
-          {{template "kind_dropdown" "pet"}}
-        </section>
-      </div>
-      <footer class="det-foot">
-        <button type="submit" class="btn primary">Додати</button>
-        <span class="grow"></span>
-        <span class="dim">Колір і тег можна змінити після створення.</span>
-      </footer>
-    </form>
-    {{end}}
-  </section>
-</div>
+  <form class="inline-add" hx-post="/projects" hx-on:htmx:after:request="this.reset()">
+    <input name="name" placeholder="＋ новий проєкт" autocomplete="off" required>
+    <input type="hidden" name="kind" value="pet">
+  </form>
+
+</div></div>
 {{end}}
 
 {{define "project_group"}}
 <section class="sec">
-  <div class="sec-head"><span class="up">{{.Label}}</span><span class="rule"></span></div>
+  <div class="sec-head"><span class="up">{{.Label}}</span></div>
   <div class="list">
     {{range .All}}{{if eq .Kind $.Kind}}
     <a class="prow-project{{if and $.Expanded (eq .ID $.Expanded.ID)}} sel{{end}}" href="/projects?e={{.Slug}}" hx-get="/projects?e={{.Slug}}" hx-include="unset" hx-push-url="true">
@@ -90,9 +31,49 @@
       <span class="mono dim">#{{.Slug}}</span>
       <span class="mono n">{{add .Now .Backlog}}</span>
     </a>
+    {{if and $.Expanded (eq .ID $.Expanded.ID)}}{{template "project_card" $.Expanded}}{{end}}
     {{end}}{{end}}
   </div>
 </section>
+{{end}}
+
+{{define "project_card"}}
+<form class="expand" style="--project:{{.Color}}" hx-post="/projects/{{.ID}}">
+  <header class="expand-head">
+    <span class="dot big" style="background:{{.Color}}"></span>
+    <span class="up">Проєкт</span>
+    <span class="grow"></span>
+    <a class="det-close" href="/projects" hx-get="/projects" hx-include="unset" hx-push-url="true" aria-label="Згорнути">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </a>
+  </header>
+  <div class="det-body">
+    <input class="det-title" name="name" value="{{.Name}}" required>
+  </div>
+  <div class="pgrid">
+    <div class="det-sec">
+      <div class="sec-head"><span class="up">Вид</span><span class="rule"></span></div>
+      {{template "kind_dropdown" .Kind}}
+    </div>
+    <div class="det-sec">
+      <div class="sec-head"><span class="up">Тег у ⌘K</span><span class="rule"></span></div>
+      <span class="field"><span class="dim mono">#</span><input name="slug" value="{{.Slug}}"></span>
+    </div>
+  </div>
+  <section class="det-sec">
+    <div class="sec-head"><span class="up">Колір</span><span class="rule"></span></div>
+    <div class="swatches">
+      {{$cur := .Color}}
+      {{range $c := colors}}<button type="button" class="sw{{if eq $c $cur}} on{{end}}" style="background:{{$c}}" data-color="{{$c}}" aria-label="{{$c}}"></button>{{end}}
+      <label class="sw custom" title="Свій колір"><input type="color" name="color" value="{{.Color}}"></label>
+    </div>
+  </section>
+  <footer class="expand-foot">
+    <button type="submit" class="btn primary">Зберегти</button>
+    <span class="grow"></span>
+    <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" data-confirm="Видалити проєкт {{.Name}}?" data-confirm-ok="Видалити" data-confirm-danger>Видалити</button>
+  </footer>
+</form>
 {{end}}
 
 {{define "kind_dropdown"}}

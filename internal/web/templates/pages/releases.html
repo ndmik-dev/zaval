@@ -1,21 +1,20 @@
 {{define "content"}}
 {{template "page_ctx" .Ctx}}
-<div class="split{{if .Detail}} detail-open{{end}}">
+<div class="col"><div class="col-in">
 
-  <section class="plist">
-    <header class="plist-head">
-      <h1>Релізи</h1>
-      <span class="grow"></span>
-      {{with .Current}}<span class="mono dim">{{.Done}} / {{.Total}}</span>{{end}}
-    </header>
-
+  <header class="plist-head">
+    <h1>Релізи</h1>
+    <span class="grow"></span>
     {{if gt (len .Work) 1}}
-    <div class="seg group">
+    <div class="seg">
       {{range .Work}}<a href="/releases?p={{.Slug}}" hx-get="/releases?p={{.Slug}}" hx-include="unset" hx-push-url="true" class="{{if and $.Current (eq $.Current.Project.ID .ID)}}on{{end}}">{{.Name}}</a>{{end}}
     </div>
     {{end}}
+  </header>
 
-    {{with .Current}}
+  {{with .Current}}
+  <section class="sec">
+    <div class="sec-head"><span class="up">Чекліст</span><span class="mono n">{{.Done}} / {{.Total}}</span></div>
     <div class="bar" style="--project:{{.Project.Color}}"><span style="width:{{if .Total}}{{percent .Done .Total}}{{else}}0{{end}}%"></span></div>
 
     <div class="list check-list">
@@ -27,6 +26,9 @@
           {{if .TaskID.Valid}}<span class="ritem-task">→ {{.TaskTitle.String}}{{if eq .TaskState.String "done"}} <span class="dim">· готово</span>{{end}}</span>{{end}}
         </a>
       </div>
+      {{if eq (index $.Ctx "i") (printf "%d" .ID)}}
+        {{if $.Open}}{{template "inline_task" $}}{{else}}{{template "inline_item" $}}{{end}}
+      {{end}}
       {{end}}
       <form class="inline-add" hx-post="/checklist/{{.Project.ID}}/items" hx-on:htmx:after:request="this.reset()">
         <input name="title" placeholder="Що запустити чи перевірити" autocomplete="off" required>
@@ -36,89 +38,81 @@
     {{if .Total}}
     <button type="button" class="btn primary wide" hx-post="/checklist/{{.Project.ID}}/released" data-confirm="{{if lt .Done .Total}}Відмічено {{.Done}} з {{.Total}}. {{end}}Записати реліз в історію і очистити список?" data-confirm-ok="Зарелізено">Зарелізено</button>
     {{end}}
-
-    <section class="sec history">
-      <div class="sec-head"><span class="up">Історія</span><span class="mono n">{{len .History}}</span><span class="rule"></span></div>
-      {{if .History}}
-      <div class="history-list">
-        {{range $h := .History}}
-        <details class="history-rel">
-          <summary>
-            <span class="history-when">{{$h.When}}</span>
-            <span class="mono dim">{{doneHistory $h.Items}} / {{len $h.Items}}</span>
-            <span class="grow"></span>
-            <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </summary>
-          <div class="history-items">
-            {{range $h.Items}}
-            {{if .TaskID.Valid}}
-            <a class="history-item{{if .Done}} done{{end}}" href="/releases?p={{$.Current.Project.Slug}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{$.Current.Project.Slug}}&t={{.TaskID.Int64}}" hx-include="unset" hx-push-url="true">
-              <span class="mark">{{if .Done}}✓{{else}}○{{end}}</span><span class="grow">{{.Title}}</span><span class="dim">{{.TaskTitle.String}}</span>
-            </a>
-            {{else}}
-            <div class="history-item{{if .Done}} done{{end}}"><span class="mark">{{if .Done}}✓{{else}}○{{end}}</span><span class="grow">{{.Title}}</span></div>
-            {{end}}
-            {{end}}
-          </div>
-        </details>
-        {{end}}
-      </div>
-      {{else}}<div class="empty">Ще жодного релізу.</div>{{end}}
-    </section>
-    {{else}}
-    <div class="empty">Нема робочих проєктів — додай у «Проєктах».</div>
-    {{end}}
   </section>
 
-  <div class="split-grip" aria-hidden="true"></div>
-
-  <section class="pdet">
-    {{if .Open}}{{template "detail_task" .}}
-    {{else if .OpenItem}}{{with .OpenItem}}
-    <div class="det" style="--project:{{$.Current.Project.Color}}" hx-include:inherited="#page-ctx">
-      <header class="det-head">
-        <a class="det-back" href="/releases?p={{index $.Ctx "p"}}" hx-get="/releases?p={{index $.Ctx "p"}}" hx-include="unset" hx-push-url="true" aria-label="Назад до списку">
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <span class="up">Пункт релізу</span>
-        <span class="grow"></span>
-        <a class="det-close" href="{{closeURL (without $.Ctx "i")}}" hx-get="{{closeURL (without $.Ctx "i")}}" hx-include="unset" hx-push-url="true" aria-label="Зняти вибір">
-          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </a>
-      </header>
-      <div class="det-scroll">
-        <form class="det-body" hx-post="/checklist-items/{{.ID}}" hx-trigger="submit, change">
-          <input class="det-title" name="title" value="{{.Title}}" required>
-        </form>
-        <section class="det-sec">
-          <div class="sec-head"><span class="up">Повʼязана задача</span><span class="rule"></span></div>
+  <section class="sec history">
+    <div class="sec-head"><span class="up">Історія</span><span class="mono n">{{len .History}}</span></div>
+    {{if .History}}
+    <div class="history-list">
+      {{range $h := .History}}
+      <details class="history-rel">
+        <summary>
+          <span class="history-when">{{$h.When}}</span>
+          <span class="mono dim">{{doneHistory $h.Items}} / {{len $h.Items}}</span>
+          <span class="grow"></span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <div class="history-items">
+          {{range $h.Items}}
           {{if .TaskID.Valid}}
-          <div class="task-chip big">
-            <a class="grow task-open" href="/releases?p={{index $.Ctx "p"}}&i={{.ID}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{index $.Ctx "p"}}&i={{.ID}}&t={{.TaskID.Int64}}" hx-include="unset" hx-push-url="true">{{.TaskTitle.String}} <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.4 2.6h6v6M11.4 2.6 6 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-            {{if eq .TaskState.String "done"}}<span class="dim">готово</span>{{end}}
-            <button type="button" class="x" hx-post="/checklist-items/{{.ID}}/task" hx-vals='{"task_id":"0"}' aria-label="Відвʼязати">✕</button>
-          </div>
+          <a class="history-item{{if .Done}} done{{end}}" href="/releases?p={{$.Current.Project.Slug}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{$.Current.Project.Slug}}&t={{.TaskID.Int64}}" hx-include="unset" hx-push-url="true">
+            <span class="mark">{{if .Done}}✓{{else}}○{{end}}</span><span class="grow">{{.Title}}</span><span class="dim">{{.TaskTitle.String}}</span>
+          </a>
           {{else}}
-          <div class="picker">
-            <input type="search" placeholder="Знайти в беклозі чи журналі…" autocomplete="off" name="text"
-                   hx-get="/tasks/options?item={{.ID}}" hx-trigger="input changed delay:150ms, focus" hx-target="next .picker-menu" hx-swap="innerHTML" hx-include="unset">
-            <div class="picker-menu"></div>
-          </div>
+          <div class="history-item{{if .Done}} done{{end}}"><span class="mark">{{if .Done}}✓{{else}}○{{end}}</span><span class="grow">{{.Title}}</span></div>
           {{end}}
-        </section>
-      </div>
-      <footer class="det-foot">
-        <span class="grow"></span>
-        <button type="button" class="btn ghost" hx-delete="/checklist-items/{{.ID}}" data-confirm="Прибрати пункт?" data-confirm-ok="Прибрати" data-confirm-danger>Прибрати</button>
-      </footer>
+          {{end}}
+        </div>
+      </details>
+      {{end}}
+    </div>
+    {{else}}<div class="empty">Ще жодного релізу.</div>{{end}}
+  </section>
+  {{else}}
+  <div class="empty">Нема робочих проєктів — додай у «Проєктах».</div>
+  {{end}}
+
+  {{/* A task opened from the history, when no checklist line is selected. */}}
+  {{if and .Open (not (index .Ctx "i"))}}{{template "inline_task" .}}{{end}}
+
+</div></div>
+{{end}}
+
+{{define "inline_item"}}{{with .OpenItem}}
+<div class="expand" style="--project:{{$.Current.Project.Color}}" hx-include:inherited="#page-ctx">
+  <header class="expand-head">
+    <span class="up">Пункт релізу</span>
+    <span class="grow"></span>
+    <a class="det-close" href="/releases?p={{index $.Ctx "p"}}" hx-get="/releases?p={{index $.Ctx "p"}}" hx-include="unset" hx-push-url="true" aria-label="Згорнути">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </a>
+  </header>
+  <form class="det-body" hx-post="/checklist-items/{{.ID}}" hx-trigger="submit, change">
+    <input class="det-title" name="title" value="{{.Title}}" required>
+  </form>
+  <section class="det-sec">
+    <div class="sec-head"><span class="up">Повʼязана задача</span><span class="rule"></span></div>
+    {{if .TaskID.Valid}}
+    <div class="task-chip big">
+      <a class="grow task-open" href="/releases?p={{index $.Ctx "p"}}&i={{.ID}}&t={{.TaskID.Int64}}" hx-get="/releases?p={{index $.Ctx "p"}}&i={{.ID}}&t={{.TaskID.Int64}}" hx-include="unset" hx-push-url="true">{{.TaskTitle.String}} <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.4 2.6h6v6M11.4 2.6 6 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      {{if eq .TaskState.String "done"}}<span class="dim">готово</span>{{end}}
+      <button type="button" class="x" hx-post="/checklist-items/{{.ID}}/task" hx-vals='{"task_id":"0"}' aria-label="Відвʼязати">✕</button>
+    </div>
+    {{else}}
+    <div class="picker">
+      <input type="search" placeholder="Знайти в беклозі чи журналі…" autocomplete="off" name="text"
+             hx-get="/tasks/options?item={{.ID}}" hx-trigger="input changed delay:150ms, focus" hx-target="next .picker-menu" hx-swap="innerHTML" hx-include="unset">
+      <div class="picker-menu"></div>
     </div>
     {{end}}
-    {{else}}
-    <div class="det"{{with .Current}} style="--project:{{.Project.Color}}"{{end}}><div class="det-scroll"><div class="empty">Натисни на пункт зліва, щоб його переписати або привʼязати задачу.</div></div></div>
-    {{end}}
   </section>
+  <footer class="expand-foot">
+    <button type="button" class="btn" hx-post="/checklist-items/{{.ID}}/toggle">{{if .Done}}Зняти відмітку{{else}}Відмітити зробленим{{end}}</button>
+    <span class="grow"></span>
+    <button type="button" class="btn ghost" hx-delete="/checklist-items/{{.ID}}" data-confirm="Прибрати пункт?" data-confirm-ok="Прибрати" data-confirm-danger>Прибрати</button>
+  </footer>
 </div>
-{{end}}
+{{end}}{{end}}
 
 {{define "task_options"}}
 {{if .Tasks}}

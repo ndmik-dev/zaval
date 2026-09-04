@@ -1,0 +1,18 @@
+{{/* Three pages do not deserve a column of icons. The page you are on is a
+     span, not a link: clicking where you already are must do nothing. */}}
+{{define "topbar"}}<nav class="topbar">
+  {{if eq .Nav "board"}}<span class="mark" aria-hidden="true"></span>{{else}}<a class="mark" href="/" aria-label="Дошка"></a>{{end}}
+  {{template "nav_item" (dict "Nav" .Nav "Key" "board" "Href" "/" "Label" "Дошка")}}
+  {{template "nav_item" (dict "Nav" .Nav "Key" "releases" "Href" "/releases" "Label" "Релізи")}}
+  {{template "nav_item" (dict "Nav" .Nav "Key" "journal" "Href" "/journal" "Label" "Журнал")}}
+  <span class="grow"></span>
+  {{template "nav_item" (dict "Nav" .Nav "Key" "projects" "Href" "/projects" "Label" "Проєкти")}}
+  <button type="button" class="nav hint mono" data-open-palette title="Додати або знайти">⌘K</button>
+  <button type="button" class="nav hint mono" data-open-help title="Клавіатура">?</button>
+  {{if .AuthOn}}<form method="post" action="/logout"><button type="submit" class="nav hint">Вийти</button></form>{{end}}
+</nav>{{end}}
+
+{{define "nav_item"}}
+{{if eq .Nav .Key}}<span class="nav on" aria-current="page">{{.Label}}</span>
+{{else}}<a class="nav" href="{{.Href}}">{{.Label}}</a>{{end}}
+{{end}}

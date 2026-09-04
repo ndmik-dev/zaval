@@ -7,8 +7,10 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 - Code comments: English, only where the code is not self-explanatory.
 - Templates: `html/template`, one page = layout + page file. Every mutation
   re-renders the page's `app` block and htmx morphs it (`hx-target:inherited="#app"`).
-- Every page is one shape: `.split` = list pane (`.plist`) + detail pane (`.pdet`).
-  Nothing slides in or out; selecting a row swaps what the detail pane holds.
+- Navigation is a row of words on top (`topbar`), not a rail. The board is one
+  centred column until something is open beside it; then it splits into list +
+  sheet (`.split.detail-open`). Journal, releases and projects have no side pane
+  at all — what you open expands in place (`.expand`).
 - Mutations inherit `#page-ctx` (page name + its parameters, `shell.Ctx`) so an
   edit lands back where it was made; the detail pane adds `#detail-ctx` with the
   selected task. Navigation links carry a full URL and cancel the include with
@@ -33,8 +35,8 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
   scanning, and cards fit five tasks where twenty fit.
 - The board groups by state or by project (`?g=`, remembered in a cookie). That
   toggle replaces project filtering — there is no separate filter control.
-- With no task selected the board's detail pane holds the daily standup, so the
-  pane is never empty and «Дейлі» needs no button of its own.
+- The daily standup is not a default view: it takes the sheet only when asked
+  for («Дейлі» in the header, or `d`). With nothing open the board is just the board.
 - Releases: one checklist per work project, lines optionally point at a task;
   «Зарелізено» archives the lines into history and empties the list.
 - Journal is a feed: days are headings inside one scroll, no day list to click

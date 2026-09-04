@@ -1,19 +1,15 @@
 {{define "content"}}
 <button type="button" class="fab" data-open-palette aria-label="Додати задачу"><svg width="22" height="22" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
 {{template "page_ctx" .Ctx}}
-<div class="split{{if .Detail}} detail-open{{end}}">
+<div class="col"><div class="col-in">
 
-  <section class="plist">
-    <header class="plist-head">
-      <h1>Журнал</h1>
-      <span class="grow"></span>
-    </header>
-
-    <div class="dd wide" data-dd>
+  <header class="plist-head">
+    <h1>Журнал</h1>
+    <span class="grow"></span>
+    <div class="dd" data-dd>
       <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">
         <span class="dot" style="background:{{if .Current}}{{.Current.Color}}{{else}}#9BA098{{end}}"></span>
         <span class="dd-label">{{if .Current}}{{.Current.Name}}{{else}}Усі проєкти{{end}}</span>
-        <span class="grow"></span>
         <svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="dd-menu" role="listbox" hidden>
@@ -21,42 +17,26 @@
         {{range .Projects}}<a href="/journal?p={{.Slug}}" hx-get="/journal?p={{.Slug}}" hx-include="unset" hx-push-url="true"{{if and $.Current (eq $.Current.ID .ID)}} aria-selected="true"{{end}}><span class="dot" style="background:{{.Color}}"></span>{{.Name}}</a>{{end}}
       </div>
     </div>
+  </header>
 
-    {{/* No day list: the days are headings inside one scroll. */}}
-    {{range .Feed}}
-    <section class="sec">
-      <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span>{{if .Today}}<span class="mono n">· сьогодні</span>{{end}}</div>
-      <div class="list">{{range .Tasks}}{{template "task_row" .}}{{end}}</div>
-    </section>
-    {{else}}
-    <div class="empty">За останні 45 днів нічого не закрито.</div>
-    {{end}}
-  </section>
-
-  <div class="split-grip" aria-hidden="true"></div>
-
-  <section class="pdet">
-    {{if .Open}}{{template "detail_task" .}}
-    {{else}}
-    <div class="det">
-      <header class="det-head">
-        <span class="up">Підсумок</span>
-        <span class="grow"></span>
-        <span class="det-meta">{{if .Current}}{{.Current.Name}}{{else}}усі проєкти{{end}} · 45 днів</span>
-      </header>
-      <div class="det-scroll">
-        {{if .Counts}}
-        <div class="counts">
-          {{range .Counts}}<div class="row"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="mono">{{.N}}</span></div>{{end}}
-          <div class="row total"><span class="grow dim">Разом</span><span class="mono"><b>{{.Total}}</b></span></div>
-        </div>
-        {{else}}
-        <div class="empty">Нічого не закрито за цей період.</div>
-        {{end}}
-      </div>
-      <footer class="det-foot dim">Натисни задачу зліва, щоб відкрити її тут.</footer>
+  {{range .Feed}}
+  <section class="sec">
+    <div class="sec-head"><span class="up">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span>{{if .Today}}<span class="mono n">· сьогодні</span>{{end}}</div>
+    <div class="list">
+      {{range .Tasks}}{{template "task_row" .}}{{if .Sel}}{{template "inline_task" $}}{{end}}{{end}}
     </div>
-    {{end}}
   </section>
-</div>
+  {{else}}
+  <div class="empty">За останні 45 днів нічого не закрито.</div>
+  {{end}}
+
+  {{if .Counts}}
+  <div class="totals">
+    {{range .Counts}}<span><span class="dot" style="background:{{.Color}}"></span>{{.Name}} {{.N}}</span>{{end}}
+    <span class="grow"></span>
+    <span>за 45 днів разом <b>{{.Total}}</b></span>
+  </div>
+  {{end}}
+
+</div></div>
 {{end}}

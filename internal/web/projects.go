@@ -44,7 +44,6 @@ func (s *Server) respondProjects(w http.ResponseWriter, r *http.Request, expandS
 			d.Expanded = &all[i]
 		}
 	}
-	d.Detail = d.Expanded != nil
 	d.Ctx = map[string]string{"page": "projects"}
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "projects", "app", d)

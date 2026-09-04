@@ -45,8 +45,9 @@ type boardData struct {
 	Bands     []band
 	Quiet     []store.Project // projects with nothing open, listed as chips
 	Work      []projectItem
-	Daily     *dailyData // filled when no task is selected
+	Daily     *dailyData // filled only when the standup was asked for
 	DailySlug string
+	DailyOn   string        // where the «Дейлі» link points
 	Releases  []releaseLine // checklist progress, shown next to the daily
 }
 
@@ -93,7 +94,6 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 	d := boardData{shell: sh, Date: ukDate(now), Group: grouping, Work: sh.work()}
 	d.Ctx = map[string]string{"page": "board", "g": grouping, "daily": daily}
 	d.Open = s.openTask(openID, now)
-	d.Detail = d.Open != nil
 
 	rows := func(ts []store.Task, err error) ([]taskRow, error) {
 		if err != nil {
@@ -129,8 +129,13 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 		d.Bands, d.Quiet = bands(sh.Projects, d.Now, d.Waiting, d.Backlog)
 	}
 
-	// The detail pane shows the standup text whenever no task is selected.
-	if d.Open == nil {
+	for _, p := range d.Work {
+		if d.DailyOn == "" {
+			d.DailyOn = "/?daily=" + p.Slug
+		}
+	}
+	// The standup is not a default view: it takes the pane only when asked for.
+	if d.Open == nil && daily != "" {
 		dd, err := s.daily(sh, daily, now)
 		if err != nil {
 			return d, err
@@ -149,6 +154,7 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 			}
 		}
 	}
+	d.Detail = d.Open != nil || d.Daily != nil
 	return d, nil
 }
 

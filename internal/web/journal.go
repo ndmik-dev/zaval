@@ -62,7 +62,6 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 	}
 	sh.Ctx = map[string]string{"page": "journal", "p": filter}
 	sh.Open = s.openTask(openID, now)
-	sh.Detail = openID != 0
 	d := journalData{shell: sh}
 	for i := range sh.Projects {
 		if sh.Projects[i].Slug == filter {
