@@ -7,8 +7,12 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 - Code comments: English, only where the code is not self-explanatory.
 - Templates: `html/template`, one page = layout + page file. Every mutation
   re-renders the page's `app` block and htmx morphs it (`hx-target:inherited="#app"`).
-- The drawer carries `page` + filters in hidden fields (`shell.Ctx`), so an edit
-  lands back on the page it was made from (board, journal, releases).
+- Every page is one shape: `.split` = list pane (`.plist`) + detail pane (`.pdet`).
+  Nothing slides in or out; selecting a row swaps what the detail pane holds.
+- Mutations inherit `#page-ctx` (page name + its parameters, `shell.Ctx`) so an
+  edit lands back where it was made; the detail pane adds `#detail-ctx` with the
+  selected task. Navigation links carry a full URL and cancel the include with
+  `hx-include="unset"` — a selector that matches nothing — to avoid duplicate params.
 - htmx is pinned to 4.0.0 and vendored in `internal/web/static/`; static URLs
   carry a content hash, the service worker is network-first.
 - Dialogs: `[data-confirm]` opens the in-app modal, never `confirm()`.
@@ -16,9 +20,13 @@ Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 ## Product decisions (deliberate, do not reintroduce)
 - No dates, estimates, timers, WIP limits or task steps.
 - Task states: Зараз / Чекаю (with a note) / Беклог / Готово. Adding only via ⌘K.
+- The board groups by state or by project (`?g=`, remembered in a cookie). That
+  toggle replaces project filtering — there is no separate filter control.
+- With no task selected the board's detail pane holds the daily standup, so the
+  pane is never empty and «Дейлі» needs no button of its own.
 - Releases: one checklist per work project, lines optionally point at a task;
   «Зарелізено» archives the lines into history and empties the list.
-- Journal shows closed tasks by day; the daily-standup text lives on the board (button/`d`).
+- Journal is days on the left, that day on the right; opening a task there keeps you on the journal.
 - Projects: name, kind, colour, ⌘K tag. No hidden projects, no integrations yet.
 
 ## Run

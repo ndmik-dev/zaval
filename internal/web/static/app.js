@@ -1,11 +1,3 @@
-// Escape closes the drawer; everything else is htmx.
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  const inField = e.target instanceof Element && e.target.closest('input, textarea');
-  const close = document.querySelector('.drawer-close');
-  if (close && !inField) close.click();
-});
-
 // ⌘K / Ctrl+K opens the palette; ⌘Enter inside it creates straight into "Зараз".
 const palette = document.getElementById('palette');
 function openPalette() {
@@ -26,8 +18,7 @@ document.addEventListener('click', (e) => {
 // ↑/↓ move between the create row and the matches; Enter activates the highlighted one.
 function paletteRows() { return [...palette.querySelectorAll('.prow')]; }
 function highlight(i) {
-  const all = paletteRows();
-  all.forEach((r, k) => r.classList.toggle('hl', k === i));
+  paletteRows().forEach((r, k) => r.classList.toggle('hl', k === i));
 }
 palette?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -93,29 +84,9 @@ function sendOrder() {
 initSortable();
 document.addEventListener('htmx:after:swap', initSortable);
 
-// Copy-to-clipboard buttons: data-copy holds the selector of the text source.
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-copy]');
-  if (!btn) return;
-  const src = document.querySelector(btn.dataset.copy);
-  if (!src) return;
-  await navigator.clipboard.writeText(src.textContent);
-  const label = btn.textContent;
-  btn.textContent = 'Скопійовано';
-  setTimeout(() => { btn.textContent = label; }, 1200);
-});
-
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
-
-// Projects: a click anywhere outside the expanded card collapses it.
-document.addEventListener('click', (e) => {
-  const open = document.querySelector('.pcard.open');
-  const link = document.getElementById('collapse-projects');
-  if (!open || !link || e.target.closest('.pcard.open') || e.target.closest('.pcard.new') || e.target.closest('a, button')) return;
-  link.click();
-});
 
 // Custom dropdown (.dd): hidden input + button + menu. Choosing an option
 // updates the input and fires a change event so hx-trigger="change" forms react.
@@ -153,17 +124,16 @@ document.addEventListener('click', (e) => {
   }
   if (!e.target.closest('.dd')) closeDropdowns();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDropdowns(); });
 
-// A click anywhere on a task row opens its card; controls inside keep their own behaviour.
+// A click anywhere on a row selects it; controls inside keep their own behaviour.
 document.addEventListener('click', (e) => {
-  const row = e.target.closest('.task[data-open]');
-  if (!row || e.target.closest('a, button, input, .acts')) return;
-  const title = row.querySelector('a.title');
-  if (title) title.click();
+  const row = e.target.closest('.task[data-open], .ritem[data-open-item]');
+  if (!row || e.target.closest('a, button, input')) return;
+  const link = row.querySelector('a.title, a.body');
+  if (link) link.click();
 });
 
-// Keyboard: j/k walk the rows, the rest act on the focused row. Off while typing.
+// Keyboard: j/k walk the rows, the rest act on the selected one. Off while typing.
 const help = document.getElementById('help');
 function typing(e) { return e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]'); }
 function rows() { return [...document.querySelectorAll('.task[data-open]')]; }
@@ -177,29 +147,48 @@ function focusRow(row) {
 function moveFocus(step) {
   const all = rows();
   if (!all.length) return;
-  const i = all.indexOf(focusedRow());
+  const i = all.indexOf(focusedRow() || document.querySelector('.task.sel'));
   focusRow(all[Math.min(all.length - 1, Math.max(0, i + step))]);
+}
+// Opening a row and then reaching into the pane it renders.
+function openThenFocus(selector) {
+  const row = focusedRow();
+  if (!row) return;
+  row.querySelector('a.title')?.click();
+  const tryFocus = (n) => {
+    const el = document.querySelector(selector);
+    if (el) { el.focus(); return; }
+    if (n > 0) setTimeout(() => tryFocus(n - 1), 80);
+  };
+  tryFocus(10);
 }
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-open-help]')) help?.showModal();
   if (e.target.closest('[data-close-help]') || e.target === help) help?.close();
 });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDropdowns();
+    if (!typing(e) && !document.querySelector('dialog[open]')) {
+      const back = document.querySelector('.det-close, .det-back');
+      if (back) back.click();
+    }
+    return;
+  }
   if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (document.querySelector('dialog[open]') && e.key !== 'Escape' && e.key !== '?') return;
+  if (document.querySelector('dialog[open]') && e.key !== '?') return;
   const row = focusedRow();
-  const act = (sel) => { const b = row && row.querySelector(sel); if (b) b.click(); };
   switch (e.key) {
     case '?': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
     case '/': e.preventDefault(); openPalette(); break;
     case 'j': moveFocus(1); break;
     case 'k': moveFocus(-1); break;
     case 'Enter': if (row) { e.preventDefault(); row.querySelector('a.title')?.click(); } break;
-    case 'x': act('.tick'); break;
-    case 'f': act('.acts button:not(.del)'); break;
-    case 'w': if (row) { row.querySelector('a.title')?.click(); setTimeout(() => document.querySelector('.drawer-wait input')?.focus(), 500); } break;
-    case 'l': if (row) { row.querySelector('a.title')?.click(); setTimeout(() => document.querySelector('.inline-add input[name=url]')?.focus(), 500); } break;
-    case 'd': document.querySelector('.head-actions .btn')?.click(); break;
+    case 'x': row?.querySelector('.tick')?.click(); break;
+    case 'w': openThenFocus('.det-wait input'); break;
+    case 'l': openThenFocus('.inline-add input[name=url]'); break;
+    case 'd': document.querySelector('.det-close')?.click(); break;
+    case 'g': document.querySelector('.seg.group a:not(.on)')?.click(); break;
     case '1': location.href = '/'; break;
     case '2': location.href = '/releases'; break;
     case '3': location.href = '/journal'; break;
@@ -207,7 +196,11 @@ document.addEventListener('keydown', (e) => {
 });
 // Keep the focus ring on the same task after a morph.
 document.addEventListener('htmx:before:swap', () => { const r = focusedRow(); if (r) window.__focusedTask = r.id; });
-document.addEventListener('htmx:after:swap', () => { if (window.__focusedTask) { const r = document.getElementById(window.__focusedTask); if (r && !r.classList.contains('focused')) focusRow(r); } });
+document.addEventListener('htmx:after:swap', () => {
+  if (!window.__focusedTask) return;
+  const r = document.getElementById(window.__focusedTask);
+  if (r && !r.classList.contains('focused')) focusRow(r);
+});
 
 // Confirmation modal for [data-confirm]: the first click is held back and shown
 // in a dialog; accepting re-clicks the element with a one-shot pass flag.
@@ -247,6 +240,6 @@ document.addEventListener('click', (e) => {
   const wrap = sw.closest('.swatches');
   wrap.querySelector('input[type=color]').value = sw.dataset.color;
   wrap.querySelectorAll('.sw').forEach((s) => s.classList.toggle('on', s === sw));
-  const form = sw.closest('form');
-  form.querySelector('.dot.big').style.background = sw.dataset.color;
+  const dot = sw.closest('form')?.querySelector('.dot.big');
+  if (dot) dot.style.background = sw.dataset.color;
 });

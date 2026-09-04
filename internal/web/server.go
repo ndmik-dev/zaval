@@ -50,7 +50,7 @@ func without(m map[string]string, keys ...string) map[string]string {
 	return out
 }
 
-// closeURL rebuilds the page URL the drawer sits on, without the task.
+// closeURL rebuilds the URL of the page behind the detail pane, without the task.
 func closeURL(ctx map[string]string) string {
 	path := "/"
 	switch ctx["page"] {
@@ -58,6 +58,8 @@ func closeURL(ctx map[string]string) string {
 		path = "/journal"
 	case "releases":
 		path = "/releases"
+	case "projects":
+		path = "/projects"
 	}
 	q := url.Values{}
 	for k, v := range ctx {

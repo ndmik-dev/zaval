@@ -8,8 +8,9 @@ type shell struct {
 	Nav      string
 	Filter   string
 	Projects []projectItem
-	Open     *taskRow          // task shown in the drawer, if any
-	Ctx      map[string]string // hidden fields every drawer request carries back (page, filters)
+	Open     *taskRow          // task shown in the detail pane, if any
+	Ctx      map[string]string // page parameters every mutation carries back
+	Detail   bool              // something is selected: on a phone the pane replaces the list
 	AuthOn   bool
 }
 
@@ -39,7 +40,7 @@ func (sh shell) work() []projectItem {
 	return out
 }
 
-// openTask loads the task for the drawer; a missing id just leaves it closed.
+// openTask loads the task for the detail pane; a missing id leaves it unselected.
 func (s *Server) openTask(id int64, now time.Time) *taskRow {
 	if id == 0 {
 		return nil

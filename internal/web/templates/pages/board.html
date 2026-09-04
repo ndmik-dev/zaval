@@ -1,81 +1,77 @@
 {{define "content"}}
 <button type="button" class="fab" data-open-palette aria-label="Додати задачу"><svg width="22" height="22" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-<input type="hidden" id="daily-state" name="daily" value="{{.DailySlug}}">
-<input type="hidden" id="filter-p" name="p" value="{{.Filter}}">
-<header class="head board-head">
-  <div>
-    <h1>{{.Date}}{{if .FilterProject}} <a class="filter-chip" href="/" hx-get="/" hx-push-url="true"><span class="dot" style="background:{{.FilterProject.Color}}"></span>{{.FilterProject.Name}} <span class="x-in">✕</span></a>{{end}}</h1>
-    <div class="week">
-      <div class="week-bars">
-        {{range .Week}}<div class="week-day{{if .Today}} today{{end}}" title="{{.N}}"><div class="week-bar"><span style="height:{{.Pct}}%"></span></div><span class="mono week-label">{{.Label}}</span></div>{{end}}
+{{template "page_ctx" .Ctx}}
+<div class="split{{if .Detail}} detail-open{{end}}">
+
+  <section class="plist">
+    <header class="plist-head">
+      <h1>{{.Date}}</h1>
+      <span class="grow"></span>
+      <button type="button" class="kbd" data-open-palette title="Додати або знайти">⌘K</button>
+      <button type="button" class="kbd help" data-open-help title="Клавіатура">?</button>
+    </header>
+
+    <div class="seg group">
+      <a href="/?g=state" hx-get="/?g=state" hx-include="unset" hx-push-url="true" class="{{if eq .Group "state"}}on{{end}}">за станом</a>
+      <a href="/?g=project" hx-get="/?g=project" hx-include="unset" hx-push-url="true" class="{{if eq .Group "project"}}on{{end}}">за проєктом</a>
+    </div>
+
+    {{/* Filled by app.js after a drag; the reorder event fires the request. */}}
+    <form id="reorder" hx-post="/tasks/reorder" hx-trigger="reorder" hidden>
+      <input type="hidden" name="t" value="{{if .Open}}{{.Open.ID}}{{end}}">
+    </form>
+
+    {{if eq .Group "project"}}
+      {{range .Bands}}
+      <section class="sec band" style="--project:{{.Color}}">
+        <div class="sec-head"><span class="up" style="color:{{.Color}}">{{.Name}}</span><span class="mono n">{{len .Rows}}</span><span class="rule"></span></div>
+        <div class="list">{{range .Rows}}{{template "task_row" .}}{{end}}</div>
+      </section>
+      {{else}}
+      <div class="empty">Нічого відкритого. Додай через ⌘K.</div>
+      {{end}}
+      {{if .Quiet}}
+      <div class="quiet">
+        <span class="up">Тихо</span>
+        {{range .Quiet}}<span class="chip"><span class="dot" style="background:{{.Color}}"></span>{{.Name}}</span>{{end}}
       </div>
-      <span class="week-note">за тиждень <b class="mono">{{.WeekTotal}}</b> · сьогодні <b class="mono">{{len .DoneToday}}</b></span>
-    </div>
-  </div>
-  <div class="head-actions">
-    {{if .Daily}}
-    <button type="button" class="btn on" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":""}' hx-push-url="true">Дейлі</button>
+      {{end}}
     {{else}}
-    <button type="button" class="btn" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":"{{if .FilterProject}}{{if eq .FilterProject.Kind "work"}}{{.FilterProject.Slug}}{{else}}-{{end}}{{else}}-{{end}}"}' hx-push-url="true">Дейлі</button>
+      <section class="sec">
+        <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
+        <div class="list sortable" id="now" data-state="now">
+          {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty drop">Порожньо. Перетягни з беклогу або додай через ⌘K.</div>{{end}}
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head"><span class="up">Чекаю</span><span class="mono n">{{len .Waiting}}</span><span class="rule"></span></div>
+        <div class="list sortable" id="waiting" data-state="waiting">
+          {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Перетягни сюди те, що чекає на когось</div>{{end}}
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head"><span class="up">Беклог</span><span class="mono n">{{len .Backlog}}</span><span class="rule"></span></div>
+        <div class="list sortable" id="backlog" data-state="backlog">
+          {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty drop">Беклог порожній.</div>{{end}}
+        </div>
+      </section>
     {{end}}
-    <button type="button" class="kbd help" data-open-help title="Клавіатура">?</button>
-  </div>
-</header>
 
-{{with .Daily}}
-<section class="daily-card">
-  <div class="daily-head">
-    <span class="up">Для дейлі</span>
-    <div class="daily-pick">
-      {{range $.Projects}}{{if eq .Kind "work"}}<button type="button" class="pill{{if eq .ID $.Daily.Project.ID}} on{{end}}" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":"{{.Slug}}"}' hx-push-url="true">{{.Name}}</button>{{end}}{{end}}
-    </div>
-    <span class="grow"></span>
-    {{if .Yesterday}}<span class="dim">останній закритий день — {{.Yesterday}}</span>{{end}}
-    <button type="button" class="x" hx-get="/" hx-include="#filter-p" hx-vals='{"daily":""}' hx-push-url="true" aria-label="Сховати">✕</button>
-  </div>
-  <pre class="daily-text mono">{{.Text}}</pre>
-</section>
-{{end}}
+    {{if .DoneToday}}
+    <details class="done-block">
+      <summary>
+        <span class="up">Готово сьогодні</span><span class="mono n">{{len .DoneToday}}</span><span class="rule"></span>
+        <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </summary>
+      <div class="list done-list">{{range .DoneToday}}{{template "task_row" .}}{{end}}</div>
+    </details>
+    {{end}}
+  </section>
 
-
-{{/* Filled by app.js after a drag; the reorder event fires the request. */}}
-<form id="reorder" hx-post="/tasks/reorder" hx-trigger="reorder" hidden>
-  <input type="hidden" name="p" value="{{.Filter}}">
-  <input type="hidden" name="t" value="{{if .Open}}{{.Open.ID}}{{end}}">
-</form>
-
-<div class="board-cols">
-<div class="board-left">
-<section class="sec">
-  <div class="sec-head"><span class="up">Зараз</span><span class="mono n">{{len .Now}}</span><span class="rule"></span></div>
-  <div class="list sortable" id="now" data-state="now">
-    {{range .Now}}{{template "task_row" .}}{{else}}<div class="empty">Порожньо. Перетягни щось із беклогу або додай через ⌘K.</div>{{end}}
-  </div>
-</section>
-
-<section class="sec">
-  <div class="sec-head"><span class="up">Чекаю</span><span class="mono n">{{len .Waiting}}</span><span class="rule"></span></div>
-  <div class="list sortable" id="waiting" data-state="waiting">
-    {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Перетягни сюди те, що чекає на когось</div>{{end}}
-  </div>
-</section>
-
-{{if .DoneToday}}
-<section class="sec">
-  <div class="sec-head"><span class="up">Готово сьогодні</span><span class="mono n">{{len .DoneToday}}</span><span class="rule"></span></div>
-  <div class="list done-list" id="done">
-    {{range .DoneToday}}{{template "task_row" .}}{{end}}
-  </div>
-</section>
-{{end}}
-</div>
-<div class="board-right">
-<section class="sec">
-  <div class="sec-head"><span class="up">Беклог</span><span class="mono n">{{len .Backlog}}</span><span class="rule"></span></div>
-  <div class="list sortable" id="backlog" data-state="backlog">
-    {{range .Backlog}}{{template "task_row" .}}{{else}}<div class="empty">Беклог порожній.</div>{{end}}
-  </div>
-</section>
-</div>
+  <section class="pdet">
+    {{if .Open}}{{template "detail_task" .}}{{else}}{{template "detail_daily" .}}{{end}}
+  </section>
 </div>
 {{end}}

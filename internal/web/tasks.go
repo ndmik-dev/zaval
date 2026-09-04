@@ -3,7 +3,6 @@ package web
 import (
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -49,15 +48,14 @@ func (s *Server) deleteTask(w http.ResponseWriter, r *http.Request) {
 	s.respondBoard(w, r)
 }
 
-// respondBoard re-renders the page the request came from (the drawer carries
-// a "page" field), so a task edited from the journal stays on the journal.
+// respondBoard re-renders the page the request came from (every page puts its
+// name in the context), so a task edited from the journal stays on the journal.
 // Plain form posts (no htmx) get a redirect back to the board.
 func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	filter := r.FormValue("p")
-	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
+	openID := taskParam(r)
 	if r.Header.Get("HX-Request") == "" {
-		http.Redirect(w, r, boardURL(filter, openID), http.StatusSeeOther)
+		http.Redirect(w, r, boardURL(openID), http.StatusSeeOther)
 		return
 	}
 	switch r.FormValue("page") {
@@ -68,7 +66,7 @@ func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 		s.respondReleases(w, r)
 		return
 	}
-	data, err := s.boardData(filter, openID, r.FormValue("daily"))
+	data, err := s.boardData(group(r), openID, r.FormValue("daily"))
 	if err != nil {
 		s.fail(w, "board", err)
 		return
@@ -76,18 +74,11 @@ func (s *Server) respondBoard(w http.ResponseWriter, r *http.Request) {
 	s.renderPart(w, "board", "app", data)
 }
 
-func boardURL(filter string, openID int64) string {
-	q := url.Values{}
-	if filter != "" {
-		q.Set("p", filter)
-	}
-	if openID != 0 {
-		q.Set("t", strconv.FormatInt(openID, 10))
-	}
-	if len(q) == 0 {
+func boardURL(openID int64) string {
+	if openID == 0 {
 		return "/"
 	}
-	return "/?" + q.Encode()
+	return "/?t=" + strconv.FormatInt(openID, 10)
 }
 
 func (s *Server) fail(w http.ResponseWriter, what string, err error) {

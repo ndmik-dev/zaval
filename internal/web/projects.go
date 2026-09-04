@@ -44,6 +44,8 @@ func (s *Server) respondProjects(w http.ResponseWriter, r *http.Request, expandS
 			d.Expanded = &all[i]
 		}
 	}
+	d.Detail = d.Expanded != nil
+	d.Ctx = map[string]string{"page": "projects"}
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "projects", "app", d)
 		return
@@ -99,7 +101,7 @@ func (s *Server) updateProject(w http.ResponseWriter, r *http.Request) {
 		s.respondProjects(w, r, p.Slug, "Не збереглося: назва або slug уже зайняті")
 		return
 	}
-	s.respondProjects(w, r, "", "")
+	s.respondProjects(w, r, p.Slug, "") // the pane keeps the project it just saved
 }
 
 func (s *Server) deleteProject(w http.ResponseWriter, r *http.Request) {

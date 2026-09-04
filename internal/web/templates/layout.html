@@ -21,10 +21,12 @@
 </body>
 </html>{{end}}
 
-{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#daily-state">
+{{/* Mutations inherit #page-ctx so they land back on the same view; navigation
+     links carry a complete URL instead and cancel the include with a selector
+     that matches nothing (hx-include="unset"). */}}
+{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#page-ctx">
   {{template "rail" .}}
   <main class="main">{{template "content" .}}</main>
-  {{if .Open}}{{template "drawer" .}}{{end}}
   {{template "palette" .}}
   {{template "help" .}}
   <dialog id="confirm" class="confirm-dialog">
@@ -35,3 +37,5 @@
     </div>
   </dialog>
 </div>{{end}}
+
+{{define "page_ctx"}}<span id="page-ctx" hidden>{{range $k, $v := .}}<input type="hidden" name="{{$k}}" value="{{$v}}">{{end}}</span>{{end}}

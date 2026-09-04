@@ -3,17 +3,21 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ndmik-dev/zaval/internal/store"
 )
 
+// journalDay is one row in the day list; the selected one fills the detail pane.
 type journalDay struct {
+	Key   string // YYYY-MM-DD
 	Label string
+	N     int
 	Today bool
-	Tasks []taskRow
+	Sel   bool
+	Href  string
 }
 
 type projectCount struct {
@@ -23,78 +27,100 @@ type projectCount struct {
 
 type journalData struct {
 	shell
-	WeekLabel string
-	PrevWeek  string
-	NextWeek  string
-	IsCurrent bool
-	Days      []journalDay
-	Counts    []projectCount
-	Total     int
+	Days   []journalDay
+	Day    *journalDay
+	Tasks  []taskRow
+	Counts []projectCount
+	Total  int
 }
 
+// dailyData is the standup text, in the three blocks it is spoken in.
 type dailyData struct {
 	Project   *store.Project
-	Text      string
-	Yesterday string // set when the last closed day was not literally yesterday
+	Yesterday string // label of the last day something was closed, when not literally yesterday
+	Closed    []store.Task
+	Today     []store.Task
+	Blockers  []store.Task
 }
+
+// journalSpan is how far back the day list reaches.
+const journalSpan = 45
 
 func (s *Server) journal(w http.ResponseWriter, r *http.Request) {
 	s.respondJournal(w, r)
 }
 
 // respondJournal reads its parameters from the query or the posted form, so
-// drawer actions on the journal land back on the same week and filter.
+// actions taken in the detail pane land back on the same day and filter.
 func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	now := time.Now()
-	week := weekStart(now)
-	weekParam := r.FormValue("w")
-	if v, err := time.ParseInLocation("2006-01-02", weekParam, now.Location()); err == nil {
-		week = weekStart(v)
-	} else {
-		weekParam = ""
-	}
 	filter := r.FormValue("p")
-	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
+	openID := taskParam(r)
 
 	sh, err := s.shell("Журнал", "journal", filter)
 	if err != nil {
 		s.fail(w, "journal", err)
 		return
 	}
-	sh.Ctx = map[string]string{"page": "journal", "w": weekParam, "p": filter}
+	sh.Ctx = map[string]string{"page": "journal", "p": filter, "d": r.FormValue("d")}
 	sh.Open = s.openTask(openID, now)
-	d := journalData{
-		shell:     sh,
-		WeekLabel: weekLabel(week),
-		PrevWeek:  week.AddDate(0, 0, -7).Format("2006-01-02"),
-		NextWeek:  week.AddDate(0, 0, 7).Format("2006-01-02"),
-		IsCurrent: week.Equal(weekStart(now)),
-	}
+	sh.Detail = openID != 0 || r.FormValue("d") != ""
+	d := journalData{shell: sh}
 
-	done, err := s.store.DoneBetween(utc(week), utc(week.AddDate(0, 0, 7)))
+	from := dayStart(now).AddDate(0, 0, -journalSpan)
+	done, err := s.store.DoneBetween(utc(from), utc(dayStart(now).AddDate(0, 0, 1)))
 	if err != nil {
 		s.fail(w, "journal", err)
 		return
 	}
+	byDay := map[string][]store.Task{}
 	byProject := map[int64]int{}
-	var days []journalDay
-	var lastDay string
 	for _, t := range done {
 		if !matchesFilter(t.Project, filter) {
 			continue
 		}
+		key := localDay(t.DoneAt.String, now.Location()).Format("2006-01-02")
+		byDay[key] = append(byDay[key], t)
 		byProject[t.ProjectID]++
 		d.Total++
-		day := localDay(t.DoneAt.String, now.Location())
-		key := day.Format("2006-01-02")
-		if key != lastDay {
-			days = append(days, journalDay{Label: fmt.Sprintf("%s, %d", ukWeekdays[day.Weekday()], day.Day()), Today: sameDay(day, now)})
-			lastDay = key
-		}
-		days[len(days)-1].Tasks = append(days[len(days)-1].Tasks, taskRow{Task: t})
 	}
-	d.Days = days
+	want := r.FormValue("d")
+	for i := 0; i <= journalSpan; i++ {
+		day := dayStart(now).AddDate(0, 0, -i)
+		key := day.Format("2006-01-02")
+		tasks := byDay[key]
+		if len(tasks) == 0 && !sameDay(day, now) {
+			continue // quiet days are not worth a row
+		}
+		row := journalDay{
+			Key:   key,
+			Label: fmt.Sprintf("%s, %d %s", ukWeekdays[day.Weekday()], day.Day(), ukMonths[day.Month()-1]),
+			N:     len(tasks),
+			Today: sameDay(day, now),
+			Href:  "/journal?" + journalQuery(filter, key, 0),
+		}
+		d.Days = append(d.Days, row)
+	}
+	// Selected day: the asked-for one, else the first with something in it.
+	for i := range d.Days {
+		if d.Days[i].Key == want || (want == "" && d.Day == nil && d.Days[i].N > 0) {
+			d.Days[i].Sel = true
+			d.Day = &d.Days[i]
+		}
+	}
+	if d.Day == nil && len(d.Days) > 0 {
+		d.Days[0].Sel = true
+		d.Day = &d.Days[0]
+	}
+	if d.Day != nil {
+		sh.Ctx["d"] = d.Day.Key
+		d.Ctx = sh.Ctx
+		for _, t := range byDay[d.Day.Key] {
+			row := taskRow{Task: t, Href: "/journal?" + journalQuery(filter, d.Day.Key, t.ID), Sel: t.ID == openID, Tag: true}
+			d.Tasks = append(d.Tasks, row)
+		}
+	}
 	for _, p := range sh.Projects {
 		if n := byProject[p.ID]; n > 0 {
 			d.Counts = append(d.Counts, projectCount{p.Project, n})
@@ -108,12 +134,26 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "journal", d)
 }
 
-// daily builds the standup text: what was closed for the project on the last
-// working day, what is in "Зараз" for it now, and what it waits on.
+func journalQuery(filter, day string, taskID int64) string {
+	q := url.Values{}
+	if filter != "" {
+		q.Set("p", filter)
+	}
+	if day != "" {
+		q.Set("d", day)
+	}
+	if taskID != 0 {
+		q.Set("t", strconv.FormatInt(taskID, 10))
+	}
+	return q.Encode()
+}
+
+// daily collects the standup for a work project: what was closed on the last
+// day anything was closed, what is in «Зараз» now, and what it waits on.
 func (s *Server) daily(sh shell, slug string, now time.Time) (dailyData, error) {
 	var d dailyData
 	for i := range sh.Projects {
-		if sh.Projects[i].Slug == slug || ((slug == "" || slug == "-") && sh.Projects[i].Kind == "work") {
+		if sh.Projects[i].Slug == slug || (slug == "" && sh.Projects[i].Kind == "work") {
 			d.Project = &sh.Projects[i].Project
 			break
 		}
@@ -122,96 +162,54 @@ func (s *Server) daily(sh shell, slug string, now time.Time) (dailyData, error) 
 		return d, nil
 	}
 	today := dayStart(now)
-	done, err := s.store.DoneBetween(utc(today.AddDate(0, 0, -7)), utc(today))
+	done, err := s.store.DoneBetween(utc(today.AddDate(0, 0, -14)), utc(today.AddDate(0, 0, 1)))
 	if err != nil {
 		return d, err
 	}
-	var closed []store.Task
 	var lastDay time.Time
 	for _, t := range done { // newest first
 		if t.ProjectID != d.Project.ID {
 			continue
 		}
 		day := localDay(t.DoneAt.String, now.Location())
+		if sameDay(day, today) {
+			continue // today's work belongs under "Сьогодні"
+		}
 		if lastDay.IsZero() {
 			lastDay = day
 		}
 		if !sameDay(day, lastDay) {
 			break
 		}
-		closed = append(closed, t)
+		d.Closed = append([]store.Task{t}, d.Closed...) // chronological
+	}
+	if !lastDay.IsZero() && !sameDay(lastDay, today.AddDate(0, 0, -1)) {
+		d.Yesterday = fmt.Sprintf("%s, %d %s", ukWeekdays[lastDay.Weekday()], lastDay.Day(), ukMonths[lastDay.Month()-1])
 	}
 	nowTasks, err := s.store.TasksByState("now")
 	if err != nil {
 		return d, err
 	}
-
-	var b strings.Builder
-	head := "Вчора"
-	if !lastDay.IsZero() && !sameDay(lastDay, today.AddDate(0, 0, -1)) {
-		head = fmt.Sprintf("%s, %d", ukWeekdays[lastDay.Weekday()], lastDay.Day())
-		d.Yesterday = head
-	}
-	b.WriteString(head + ":\n")
-	if len(closed) == 0 {
-		b.WriteString("- —\n")
-	}
-	for i := len(closed) - 1; i >= 0; i-- { // chronological
-		b.WriteString("- " + taskLine(closed[i]) + "\n")
-	}
-	b.WriteString("Сьогодні:\n")
-	n := 0
 	for _, t := range nowTasks {
 		if t.ProjectID == d.Project.ID && t.Waiting == "" {
-			b.WriteString("- " + taskLine(t) + "\n")
-			n++
+			d.Today = append(d.Today, t)
 		}
 	}
-	if n == 0 {
-		b.WriteString("- —\n")
+	for _, t := range done {
+		if t.ProjectID == d.Project.ID && sameDay(localDay(t.DoneAt.String, now.Location()), today) {
+			d.Today = append(d.Today, t)
+		}
 	}
 	waiting, err := s.store.WaitingTasks()
 	if err != nil {
 		return d, err
 	}
-	blockers := 0
 	for _, t := range waiting {
 		if t.ProjectID == d.Project.ID {
-			if blockers == 0 {
-				b.WriteString("Блокери:\n")
-			}
-			b.WriteString("- " + taskLine(t) + " — чекаю: " + t.Waiting + "\n")
-			blockers++
+			d.Blockers = append(d.Blockers, t)
 		}
 	}
-	if blockers == 0 {
-		b.WriteString("Блокери: нема")
-	}
-	d.Text = strings.TrimRight(b.String(), "\n")
 	return d, nil
-}
-
-func taskLine(t store.Task) string {
-	line := t.Title
-	for _, l := range t.Links {
-		if l.Kind == "jira" || l.Kind == "github" || l.Kind == "gitlab" {
-			ref := l.Label
-			if l.Meta != "" && l.Kind != "jira" {
-				ref = l.Meta
-			}
-			return line + " (" + ref + ")"
-		}
-	}
-	return line
-}
-
-func weekStart(t time.Time) time.Time {
-	t = dayStart(t)
-	wd := int(t.Weekday())
-	if wd == 0 {
-		wd = 7
-	}
-	return t.AddDate(0, 0, 1-wd)
 }
 
 func dayStart(t time.Time) time.Time {
@@ -229,12 +227,4 @@ func localDay(stored string, loc *time.Location) time.Time {
 
 func utc(t time.Time) string {
 	return t.UTC().Format(store.TimeLayout)
-}
-
-func weekLabel(monday time.Time) string {
-	sunday := monday.AddDate(0, 0, 6)
-	if monday.Month() == sunday.Month() {
-		return fmt.Sprintf("%d–%d %s", monday.Day(), sunday.Day(), ukMonths[monday.Month()-1])
-	}
-	return fmt.Sprintf("%d %s – %d %s", monday.Day(), ukMonths[monday.Month()-1], sunday.Day(), ukMonths[sunday.Month()-1])
 }

@@ -104,6 +104,7 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 		itemVal = strconv.FormatInt(itemID, 10)
 	}
 	d.Ctx = map[string]string{"page": "releases", "p": slug, "i": itemVal}
+	d.Detail = d.Open != nil || d.OpenItem != nil
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "releases", "app", d)
 		return

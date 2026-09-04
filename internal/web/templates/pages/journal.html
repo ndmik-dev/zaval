@@ -1,48 +1,63 @@
 {{define "content"}}
-<header class="head">
-  <h1>Журнал <span class="dim">· {{.WeekLabel}}</span></h1>
-  <nav class="weeknav">
-    <a class="kbd" href="/journal?w={{.PrevWeek}}{{if .Filter}}&p={{.Filter}}{{end}}" aria-label="Попередній тиждень">&larr;</a>
-    {{if not .IsCurrent}}<a class="kbd" href="/journal?w={{.NextWeek}}{{if .Filter}}&p={{.Filter}}{{end}}" aria-label="Наступний тиждень">&rarr;</a>{{end}}
-  </nav>
-  <nav class="filters">
-    <a{{if eq .Filter ""}} class="active"{{end}} href="/journal">Усі</a>
-    {{range .Projects}}{{if eq .Kind "work"}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}">{{.Name}}</a>{{end}}{{end}}
-    {{range .Projects}}{{if eq .Kind "pet"}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}">{{.Name}}</a>{{end}}{{end}}
-  </nav>
-</header>
+<button type="button" class="fab" data-open-palette aria-label="Додати задачу"><svg width="22" height="22" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.4v9.2M2.4 7h9.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+{{template "page_ctx" .Ctx}}
+<div class="split{{if .Detail}} detail-open{{end}}">
 
-<div class="journal">
-  <div class="journal-days">
-    {{range .Days}}
-    <section class="sec">
-      <div class="sec-head"><span class="day-label">{{.Label}}</span><span class="mono n">{{len .Tasks}}</span>{{if .Today}}<span class="n">· сьогодні</span>{{end}}<span class="rule"></span></div>
-      <div class="list">
-        {{range .Tasks}}
-        <div class="task log" style="--project:{{.Project.Color}}" data-open="1">
-          <span class="dot" style="background:{{.Project.Color}}"></span>
-          <a class="title" href="/journal?t={{.ID}}{{if $.Filter}}&p={{$.Filter}}{{end}}{{if not $.IsCurrent}}&w={{index $.Ctx "w"}}{{end}}" hx-get="/journal?t={{.ID}}{{if $.Filter}}&p={{$.Filter}}{{end}}{{if not $.IsCurrent}}&w={{index $.Ctx "w"}}{{end}}" hx-push-url="true">{{.Title}}</a>
-          <span class="grow"></span><span class="plabel" style="color:{{.Project.Color}}">{{.Project.Name}}</span>
-          {{if .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
-          <span class="mono when">{{slice .DoneAt.String 11 16}}</span>
+  <section class="plist">
+    <header class="plist-head">
+      <h1>Журнал</h1>
+      <span class="grow"></span>
+      <span class="mono dim">{{.Total}} за 45 днів</span>
+    </header>
+
+    <nav class="filters">
+      <a{{if eq .Filter ""}} class="active"{{end}} href="/journal" hx-get="/journal" hx-include="unset" hx-push-url="true">Усі</a>
+      {{range .Projects}}<a{{if eq $.Filter .Slug}} class="active"{{end}} href="/journal?p={{.Slug}}" hx-get="/journal?p={{.Slug}}" hx-include="unset" hx-push-url="true">{{.Name}}</a>{{end}}
+    </nav>
+
+    <div class="days">
+      {{range .Days}}
+      <a class="dayrow{{if .Sel}} sel{{end}}{{if not .N}} quiet{{end}}" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true">
+        <span class="grow">{{.Label}}</span>
+        {{if .Today}}<span class="dim">сьогодні</span>{{end}}
+        <span class="mono n">{{.N}}</span>
+      </a>
+      {{else}}
+      <div class="empty">За останні 45 днів нічого не закрито.</div>
+      {{end}}
+    </div>
+  </section>
+
+  <section class="pdet">
+    {{if .Open}}{{template "detail_task" .}}
+    {{else if .Day}}
+    <div class="det">
+      <header class="det-head">
+        <a class="det-back" href="/journal{{if .Filter}}?p={{.Filter}}{{end}}" hx-get="/journal{{if .Filter}}?p={{.Filter}}{{end}}" hx-include="unset" hx-push-url="true" aria-label="Назад до днів">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <span class="det-h">{{.Day.Label}}</span>
+        <span class="grow"></span>
+        <span class="det-meta">закрито {{.Day.N}}</span>
+      </header>
+      <div class="det-scroll">
+        <div class="list">
+          {{range .Tasks}}{{template "task_row" .}}{{else}}<div class="empty">Цього дня нічого не закрито.</div>{{end}}
         </div>
+        {{if .Counts}}
+        <section class="det-sec">
+          <div class="sec-head"><span class="up">За 45 днів</span><span class="rule"></span></div>
+          <div class="counts">
+            {{range .Counts}}<div class="row"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="mono">{{.N}}</span></div>{{end}}
+            <div class="row total"><span class="grow dim">Разом</span><span class="mono"><b>{{.Total}}</b></span></div>
+          </div>
+        </section>
         {{end}}
       </div>
-    </section>
+    </div>
     {{else}}
-    <div class="empty">Цього тижня нічого не закрито.</div>
+    <div class="det"><div class="det-scroll"><div class="empty">Вибери день зліва.</div></div></div>
     {{end}}
-  </div>
-
-  <aside class="journal-side">
-    <section class="sec">
-      <div class="sec-head"><span class="up">Цього тижня</span><span class="rule"></span></div>
-      <div class="card counts">
-        {{range .Counts}}<div class="row"><span class="dot" style="background:{{.Color}}"></span><span class="grow">{{.Name}}</span><span class="mono">{{.N}}</span></div>{{end}}
-        <div class="row total"><span class="grow dim">Разом</span><span class="mono"><b>{{.Total}}</b></span></div>
-      </div>
-    </section>
-
-  </aside>
+  </section>
 </div>
 {{end}}

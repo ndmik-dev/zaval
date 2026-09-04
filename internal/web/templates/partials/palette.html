@@ -42,7 +42,7 @@
   <a class="prow" href="/?t={{.ID}}" hx-get="/?t={{.ID}}" hx-push-url="true" hx-target="#app" hx-swap="outerMorph">
     <span class="dot" style="background:{{.Project.Color}}"></span>
     <span class="grow{{if eq .State "done"}} done{{end}}">{{.Title}}</span>
-    <span class="meta">{{if eq .State "now"}}Зараз{{else if eq .State "backlog"}}Беклог{{else}}Готово{{end}} · {{.Project.Name}}</span>
+    <span class="meta">{{if .Waiting}}Чекаю{{else if eq .State "now"}}Зараз{{else if eq .State "backlog"}}Беклог{{else}}Готово{{end}} · {{.Project.Name}}</span>
   </a>
   {{end}}
 </div>
