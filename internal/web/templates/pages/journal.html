@@ -30,13 +30,6 @@
   <div class="empty">За останні 45 днів нічого не закрито.</div>
   {{end}}
 
-  {{if .Counts}}
-  <div class="totals">
-    {{range .Counts}}<span><span class="dot" style="background:{{.Color}}"></span>{{.Name}} {{.N}}</span>{{end}}
-    <span class="grow"></span>
-    <span>за 45 днів разом <b>{{.Total}}</b></span>
-  </div>
-  {{end}}
 
 </div></div>
 {{end}}

@@ -5,7 +5,7 @@
 
   <section class="plist">
     <header class="plist-head">
-      <h1>{{.Date}}</h1>
+      <h1><span class="wd">{{.Weekday}}</span> {{.DayLabel}}</h1>
       <span class="grow"></span>
       {{if .DailyOn}}<a class="daily-link" href="{{.DailyOn}}" hx-get="{{.DailyOn}}" hx-include="unset" hx-push-url="true">Дейлі</a>{{end}}
     </header>
@@ -43,12 +43,16 @@
         </div>
       </section>
 
+      {{/* «Чекаю» earns a section only when something actually waits;
+           the way in is the «Чекаю» button on an open task. */}}
+      {{if .Waiting}}
       <section class="sec">
         <div class="sec-head"><span class="up">Чекаю</span><span class="mono n" id="n-waiting">{{len .Waiting}}</span></div>
         <div class="list sortable" id="waiting" data-state="waiting">
-          {{range .Waiting}}{{template "task_row" .}}{{else}}<div class="empty drop">Нічого не чекає на когось</div>{{end}}
+          {{range .Waiting}}{{template "task_row" .}}{{end}}
         </div>
       </section>
+      {{end}}
 
       <section class="sec">
         <div class="sec-head"><span class="up">Беклог</span><span class="mono n" id="n-backlog">{{len .Backlog}}</span></div>

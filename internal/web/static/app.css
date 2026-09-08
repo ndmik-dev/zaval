@@ -37,7 +37,7 @@ a{color:var(--atlas);text-decoration:none}
   flex:none;display:flex;align-items:center;gap:18px;padding:11px 22px;
   border-bottom:1px solid var(--line);background:var(--paper);
 }
-.topbar .mark{width:15px;height:15px;border-radius:4px;background:var(--ink);display:block;flex:none}
+.topbar .mark{display:flex;color:var(--ink);flex:none;margin-right:2px}
 .nav{font:inherit;font-size:15px;color:var(--muted);background:none;border:0;padding:0;cursor:pointer;white-space:nowrap}
 .nav:hover{color:var(--ink)}
 .nav.on{color:var(--ink);font-weight:600}
@@ -81,6 +81,7 @@ a{color:var(--atlas);text-decoration:none}
 }
 .plist.scrolled .plist-head,.col.scrolled .plist-head{box-shadow:0 10px 12px -12px rgba(23,32,28,.5)}
 .plist-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0}
+.plist-head h1 .wd{color:var(--muted);font-weight:500}
 .daily-link{font-size:15px;color:var(--atlas)}
 .daily-link:hover{text-decoration:underline}
 
@@ -97,12 +98,6 @@ a{color:var(--atlas);text-decoration:none}
 .expand .det-body,.expand .det-sec{gap:11px}
 .pgrid{display:flex;gap:26px;flex-wrap:wrap}
 
-.totals{
-  display:flex;gap:20px;flex-wrap:wrap;align-items:center;padding-top:15px;
-  border-top:1px solid var(--line);color:var(--muted);font-size:14.5px;
-}
-.totals b{color:var(--ink)}
-.totals .dot{margin-right:7px}
 
 /* ---------- list pane ---------- */
 .sec{display:flex;flex-direction:column;gap:7px}
@@ -131,10 +126,7 @@ a{color:var(--atlas);text-decoration:none}
 .task:active{cursor:grabbing}
 .task:hover{background:rgba(252,252,250,.8)}
 .task.now .title{font-weight:500}
-.task.sel{background:#EBF0EB;box-shadow:inset 2px 0 0 var(--project)}
-@supports (background:color-mix(in oklab,red,blue)){
-  .task.sel{background:color-mix(in oklab,var(--project) 11%,var(--card))}
-}
+.task.sel{background:var(--card);box-shadow:inset 2px 0 0 var(--atlas),0 0 0 1px var(--line)}
 .done-block .task.done .chips{display:none}
 .task.done .title{color:#8C9189;text-decoration:line-through;text-decoration-color:#C3C7BE}
 .tick{
@@ -191,7 +183,7 @@ a{color:var(--atlas);text-decoration:none}
 
 .prow-project{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:15px}
 .prow-project:hover{border-color:#C3C7BE}
-.prow-project.sel{border-color:var(--atlas);background:#F1F4F0;box-shadow:inset 2px 0 0 var(--atlas)}
+.prow-project.sel{border-color:var(--line);box-shadow:inset 2px 0 0 var(--atlas)}
 .prow-project .n{font-size:13px;color:var(--faint);min-width:14px;text-align:right}
 .pname-static{font-weight:500}
 
@@ -263,6 +255,8 @@ a{color:var(--atlas);text-decoration:none}
 .x:hover{color:var(--attention);background:#EDEEE8}
 
 .daily .det-head{gap:14px}
+.det.daily{height:auto;align-self:flex-start;width:100%;max-width:560px}
+.det.daily .det-scroll{overflow:visible;flex:none}
 .daily-blocks{display:flex;flex-direction:column;gap:20px}
 .daily-blocks .dl{margin-bottom:7px}
 .dline{font-size:15.5px;line-height:1.6;color:var(--ink-2)}
@@ -289,7 +283,7 @@ a{color:var(--atlas);text-decoration:none}
 .plist .check-list{gap:5px}
 .ritem{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 11px;cursor:pointer}
 .ritem:hover{border-color:#C3C7BE}
-.ritem.sel{border-color:var(--atlas);background:#F1F4F0;box-shadow:inset 2px 0 0 var(--atlas)}
+.ritem.sel{border-color:var(--line);box-shadow:inset 2px 0 0 var(--atlas)}
 .ritem .box{width:17px;height:17px;border-radius:5px;border:1.5px solid #B9BDB5;background:none;cursor:pointer;padding:0;flex:none;margin-top:1px}
 .ritem .box:hover{border-color:var(--ink)}
 .ritem.done{background:transparent;border-color:transparent;color:#8C9189}
@@ -425,11 +419,10 @@ dialog[open]{animation:dialog-in .16s var(--ease)}
 dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
 @keyframes dialog-in{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
-a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+a:focus-visible{outline:0}
 .det-title:focus-visible,.det-notes:focus-visible,.inline-add input:focus-visible,.picker input:focus-visible,
 .field input:focus-visible,.palette-input input:focus-visible,.det-wait input:focus-visible,.login input:focus-visible{outline:0}
-.task .title:focus-visible,.ritem .body:focus-visible{outline:0}
-.task:has(.title:focus-visible),.ritem:has(.body:focus-visible){outline:2px solid var(--ink);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }

@@ -7,7 +7,7 @@
   </button>
   <span class="sq" title="{{.Project.Name}}"></span>
   <div class="body">
-    <a class="title" href="{{.Href}}" hx-get="{{.Href}}" hx-include="unset" hx-push-url="true" title="{{.Title}} · {{.Project.Name}}">{{.Title}}</a>
+    <a class="title" href="{{if .Sel}}{{.CloseHref}}{{else}}{{.Href}}{{end}}" hx-get="{{if .Sel}}{{.CloseHref}}{{else}}{{.Href}}{{end}}" hx-include="unset" hx-push-url="true" title="{{.Title}} · {{.Project.Name}}">{{.Title}}</a>
     {{if .Links}}<div class="chips">{{template "chips" .Links}}</div>{{end}}
   </div>
   {{if .Waiting}}<span class="wait" title="{{.Waiting}}{{if ge .Age 2}} · {{.Age}} дн.{{end}}">{{.Waiting}}</span>{{end}}

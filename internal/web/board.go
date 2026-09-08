@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,10 +17,11 @@ type projectItem struct {
 
 type taskRow struct {
 	store.Task
-	Age  int
-	Href string // where a click on the row leads; each page builds its own
-	Sel  bool   // shown in the detail pane right now
-	Tag  bool   // show the project tag (off when the list is already grouped by project)
+	Age       int
+	Href      string // where a click on the row leads; each page builds its own
+	CloseHref string // where a click leads when the row is already open
+	Sel       bool   // shown in the detail pane right now
+	Tag       bool   // show the project tag (off when the list is already grouped by project)
 }
 
 // releaseLine is a work project's release checklist, as far as it is ticked off.
@@ -37,6 +39,8 @@ type band struct {
 type boardData struct {
 	shell
 	Date      string
+	Weekday   string // "Вівторок," — set quieter than the day itself
+	DayLabel  string // "8 вересня"
 	Group     string // "state" or "project"
 	Now       []taskRow
 	Waiting   []taskRow
@@ -92,8 +96,11 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 		return boardData{}, err
 	}
 	d := boardData{shell: sh, Date: ukDate(now), Group: grouping, Work: sh.work()}
-	d.Ctx = map[string]string{"page": "board", "g": grouping, "daily": daily}
+	d.Weekday = ukWeekdays[now.Weekday()] + ","
+	d.DayLabel = fmt.Sprintf("%d %s", now.Day(), ukMonths[now.Month()-1])
+	d.Ctx = map[string]string{"page": "board", "g": grouping}
 	d.Open = s.openTask(openID, now)
+	home := closeURL(d.Ctx)
 
 	rows := func(ts []store.Task, err error) ([]taskRow, error) {
 		if err != nil {
@@ -104,7 +111,7 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 			if t.Waiting != "" && t.State != "done" {
 				continue // listed under "Чекаю" instead
 			}
-			out = append(out, s.row(t, openID, now))
+			out = append(out, s.row(t, openID, now, home))
 		}
 		return out, nil
 	}
@@ -122,7 +129,7 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 		return d, err
 	}
 	for _, t := range waiting {
-		d.Waiting = append(d.Waiting, s.row(t, openID, now))
+		d.Waiting = append(d.Waiting, s.row(t, openID, now, home))
 	}
 
 	if grouping == "project" {
@@ -159,8 +166,8 @@ func (s *Server) boardData(grouping string, openID int64, daily string) (boardDa
 }
 
 // row builds a board row: age badge, link back to the board, selected flag.
-func (s *Server) row(t store.Task, openID int64, now time.Time) taskRow {
-	r := taskRow{Task: t, Href: "/?t=" + strconv.FormatInt(t.ID, 10), Sel: t.ID == openID, Tag: true}
+func (s *Server) row(t store.Task, openID int64, now time.Time, home string) taskRow {
+	r := taskRow{Task: t, Href: "/?t=" + strconv.FormatInt(t.ID, 10), CloseHref: home, Sel: t.ID == openID, Tag: true}
 	switch {
 	case t.Waiting != "" && t.WaitingSince.Valid:
 		r.Age = ageDays(t.WaitingSince.String, now)

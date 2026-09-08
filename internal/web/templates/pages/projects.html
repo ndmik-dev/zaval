@@ -25,7 +25,8 @@
   <div class="sec-head"><span class="up">{{.Label}}</span></div>
   <div class="list">
     {{range .All}}{{if eq .Kind $.Kind}}
-    <a class="prow-project{{if and $.Expanded (eq .ID $.Expanded.ID)}} sel{{end}}" href="/projects?e={{.Slug}}" hx-get="/projects?e={{.Slug}}" hx-include="unset" hx-push-url="true">
+    {{$href := printf "/projects?e=%s" .Slug}}{{if and $.Expanded (eq .ID $.Expanded.ID)}}{{$href = "/projects"}}{{end}}
+    <a class="prow-project{{if and $.Expanded (eq .ID $.Expanded.ID)}} sel{{end}}" href="{{$href}}" hx-get="{{$href}}" hx-include="unset" hx-push-url="true">
       <span class="dot big" style="background:{{.Color}}"></span>
       <span class="grow pname-static">{{.Name}}</span>
       <span class="mono dim">#{{.Slug}}</span>

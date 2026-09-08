@@ -21,7 +21,8 @@
       {{range .Items}}
       <div class="ritem{{if .Done}} done{{end}}{{if eq (index $.Ctx "i") (printf "%d" .ID)}} sel{{end}}" data-open-item>
         <button type="button" class="box" hx-post="/checklist-items/{{.ID}}/toggle" aria-label="Перемкнути"></button>
-        <a class="body" href="/releases?p={{$.Current.Project.Slug}}&i={{.ID}}" hx-get="/releases?p={{$.Current.Project.Slug}}&i={{.ID}}" hx-include="unset" hx-push-url="true">
+        {{$href := printf "/releases?p=%s&i=%d" $.Current.Project.Slug .ID}}{{if eq (index $.Ctx "i") (printf "%d" .ID)}}{{$href = printf "/releases?p=%s" $.Current.Project.Slug}}{{end}}
+        <a class="body" href="{{$href}}" hx-get="{{$href}}" hx-include="unset" hx-push-url="true">
           <span class="ritem-title">{{.Title}}</span>
           {{if .TaskID.Valid}}<span class="ritem-task">→ {{.TaskTitle.String}}{{if eq .TaskState.String "done"}} <span class="dim">· готово</span>{{end}}</span>{{end}}
         </a>

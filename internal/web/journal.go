@@ -91,7 +91,7 @@ func (s *Server) respondJournal(w http.ResponseWriter, r *http.Request) {
 				Today: sameDay(day, now),
 			})
 		}
-		row := taskRow{Task: t, Href: "/journal?" + journalQuery(filter, t.ID), Sel: t.ID == openID, Tag: true}
+		row := taskRow{Task: t, Href: "/journal?" + journalQuery(filter, t.ID), CloseHref: "/journal?" + journalQuery(filter, 0), Sel: t.ID == openID, Tag: true}
 		d.Feed[len(d.Feed)-1].Tasks = append(d.Feed[len(d.Feed)-1].Tasks, row)
 	}
 	for _, p := range sh.Projects {
