@@ -2,6 +2,8 @@
 
 Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 
+Read [PLAN.md](PLAN.md) first: the interface is frozen, and it says why.
+
 ## Conventions
 - Commit messages: short, lowercase first letter, no trailers (no Co-Authored-By).
 - Code comments: English, only where the code is not self-explanatory.

@@ -8,6 +8,8 @@ Self-hosted, single user, server-rendered. Go + htmx 4 + SQLite, one binary,
 one dependency (`modernc.org/sqlite`, pure Go), no frontend build. The
 interface is Ukrainian.
 
+Status and the decision not to redesign again: [PLAN.md](PLAN.md).
+
 ## Run
 
     go run .            # http://localhost:8080, dayboard.db in the working directory
