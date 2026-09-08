@@ -46,6 +46,18 @@ Only one thing: live statuses on the chips — `ATL-412 · In review`,
 the existing code. Do this *before* any notebook, because a redesign without
 new capability is round eight.
 
+## Small UX debts, noted so they are not forgotten
+
+Not to be done during the freeze. If the app is still in use after thirty days,
+these are the first hour of work:
+
+- Rows look different between the two groupings: a colour square in «за
+  станом», none in «за проєктом». One row shape in both.
+- A day with nothing closed drops the «Готово сьогодні» section without a
+  trace. One quiet line — «сьогодні ще нічого» — keeps the page's shape.
+- Empty sections say what to do (⌘K) — keep that; the empty *board* on a fresh
+  database does not yet.
+
 ## Deliberately absent
 
 Dates, estimates, timers, WIP limits, task steps, hidden projects, a second way
