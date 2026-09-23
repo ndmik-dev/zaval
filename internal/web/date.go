@@ -3,6 +3,8 @@ package web
 import (
 	"fmt"
 	"time"
+
+	"github.com/ndmik-dev/zaval/internal/store"
 )
 
 var ukWeekdays = [...]string{"Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "Пʼятниця", "Субота"}
@@ -47,4 +49,21 @@ func ukDateShort(ymd string, now time.Time) string {
 		return "вчора"
 	}
 	return fmt.Sprintf("%s, %d %s", ukWeekdaysShort[d.Weekday()], d.Day(), ukMonths[d.Month()-1])
+}
+
+func dayStart(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+func sameDay(a, b time.Time) bool {
+	return a.Year() == b.Year() && a.YearDay() == b.YearDay()
+}
+
+func localDay(stored string, loc *time.Location) time.Time {
+	t, _ := time.Parse(store.TimeLayout, stored)
+	return dayStart(t.In(loc))
+}
+
+func utc(t time.Time) string {
+	return t.UTC().Format(store.TimeLayout)
 }

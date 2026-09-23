@@ -1,0 +1,18 @@
+{{define "content"}}
+{{template "page_ctx" .Ctx}}
+<div class="col"><div class="col-in nb">
+  <form id="order" hx-post="/lines/order" hx-trigger="order" hidden></form>
+  <div class="dh top"><h1 class="d">Беклог</h1><span class="n">{{.Total}}</span></div>
+
+  {{range .Bands}}
+  <section class="day band" style="--project:{{.Color}}">
+    <div class="dh"><h2 class="d pj">{{.Name}}</h2><span class="n">{{len .Lines}}</span></div>
+    <div class="lines sortable" data-state="backlog">{{range .Lines}}{{template "line" (dict "L" . "Page" "backlog")}}{{end}}</div>
+  </section>
+  {{else}}
+  <p class="hint-empty">Беклог порожній — рідкісний день.</p>
+  {{end}}
+
+  {{template "newline" (printf "новий рядок… #%s" .NewTag)}}
+</div></div>
+{{end}}

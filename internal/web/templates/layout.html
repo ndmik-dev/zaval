@@ -24,10 +24,9 @@
 {{/* Mutations inherit #page-ctx so they land back on the same view; navigation
      links carry a complete URL instead and cancel the include with a selector
      that matches nothing (hx-include="unset"). */}}
-{{define "app"}}<div class="app" id="app" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#page-ctx">
+{{define "app"}}<div class="app" id="app" data-tags="{{tagmap .Projects}}" hx-target:inherited="#app" hx-swap:inherited="outerMorph" hx-include:inherited="#page-ctx">
   {{template "topbar" .}}
   <main class="main">{{template "content" .}}</main>
-  {{template "palette" .}}
   {{template "help" .}}
   <dialog id="confirm" class="confirm-dialog">
     <p class="confirm-text"></p>

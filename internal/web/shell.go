@@ -1,16 +1,19 @@
 package web
 
-import "time"
+import "github.com/ndmik-dev/zaval/internal/store"
 
-// shell is what the layout and rail need on every page.
+type projectItem struct {
+	store.Project
+	store.Counts
+}
+
+// shell is what the layout needs on every page.
 type shell struct {
 	Title    string
 	Nav      string
 	Filter   string
 	Projects []projectItem
-	Open     *taskRow          // task shown in the detail pane, if any
 	Ctx      map[string]string // page parameters every mutation carries back
-	Detail   bool              // something is selected: on a phone the pane replaces the list
 	AuthOn   bool
 }
 
@@ -38,20 +41,4 @@ func (sh shell) work() []projectItem {
 		}
 	}
 	return out
-}
-
-// openTask loads the task for the detail pane; a missing id leaves it unselected.
-func (s *Server) openTask(id int64, now time.Time) *taskRow {
-	if id == 0 {
-		return nil
-	}
-	t, err := s.store.Task(id)
-	if err != nil {
-		return nil
-	}
-	row := taskRow{Task: t}
-	if t.State == "now" && t.NowSince.Valid {
-		row.Age = ageDays(t.NowSince.String, now)
-	}
-	return &row
 }

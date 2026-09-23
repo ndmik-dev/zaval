@@ -93,11 +93,11 @@ func TestPagesRender(t *testing.T) {
 	s := testServer(t, "")
 	st := s.store
 	atl, _ := st.ProjectBySlug("atl")
-	task, _ := st.CreateTask(atl.ID, "x", "now")
+	st.CreateTask(atl.ID, "x", "now")
 	item, _ := st.AddChecklistItem(atl.ID, "before", "line")
 	st.MarkReleased(atl.ID)
 	item, _ = st.AddChecklistItem(atl.ID, "before", "line 2")
-	for _, path := range []string{"/", "/?t=" + itoa(task.ID), "/?daily=atl", "/journal", "/journal?t=" + itoa(task.ID), "/releases", "/releases?p=atl&i=" + itoa(item.ID), "/releases?p=atl&t=" + itoa(task.ID), "/projects", "/projects?e=atl"} {
+	for _, path := range []string{"/", "/backlog", "/releases", "/releases?p=atl&i=" + itoa(item.ID), "/projects", "/projects?e=atl"} {
 		w := get(s, path, nil)
 		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "</html>") {
 			t.Errorf("%s: %d, body ends %q", path, w.Code, tail(w.Body.String()))

@@ -1,116 +1,314 @@
-// Pane width: dragged on the grip, kept on :root so an htmx morph cannot lose it.
-const PANE_KEY = 'plist-w';
-function setPaneWidth(px) { document.documentElement.style.setProperty('--plist-w', px + 'px'); }
-try { const w = localStorage.getItem(PANE_KEY); if (w) setPaneWidth(w); } catch (e) { /* private mode */ }
-document.addEventListener('pointerdown', (e) => {
-  const grip = e.target.closest('.split-grip');
-  if (!grip) return;
-  e.preventDefault();
-  const list = grip.closest('.split')?.querySelector('.plist');
-  if (!list) return;
-  const startX = e.clientX;
-  const startW = list.getBoundingClientRect().width;
-  let width = startW;
-  grip.classList.add('dragging');
-  grip.setPointerCapture(e.pointerId);
-  const move = (ev) => {
-    width = Math.round(Math.min(760, Math.max(300, startW + ev.clientX - startX)));
-    setPaneWidth(width);
-  };
-  const stop = () => {
-    grip.classList.remove('dragging');
-    grip.removeEventListener('pointermove', move);
-    grip.removeEventListener('pointerup', stop);
-    grip.removeEventListener('pointercancel', stop);
-    try { localStorage.setItem(PANE_KEY, width); } catch (e) { /* private mode */ }
-  };
-  grip.addEventListener('pointermove', move);
-  grip.addEventListener('pointerup', stop);
-  grip.addEventListener('pointercancel', stop);
-});
+// Lines. A line is read as rendered text and edited as its raw text in a
+// textarea that grows with it; a backdrop behind the textarea colours the
+// syntax (#tag, link, ? waiting, → command). Keyboard focus is a separate
+// notion from editing: ↑/↓ walk lines from the moment the page opens, Enter
+// opens the focused line, Esc steps back out.
+function lineOf(el) { return el.closest('.ln'); }
+function allLines() { return [...document.querySelectorAll('.ln:not(.hist)')]; }
+function editable(line) { return !!line?.querySelector('.raw'); }
+function size(area) { area.style.height = 'auto'; area.style.height = area.scrollHeight + 'px'; }
 
-// ⌘K / Ctrl+K opens the palette; ⌘Enter inside it creates straight into "Зараз".
-const palette = document.getElementById('palette');
-function openPalette() {
-  if (!palette || palette.open) return;
-  palette.showModal();
-  palette.querySelector('input[name=text]').focus();
+// ---- syntax colouring behind the textarea
+const tagColors = {};
+(document.getElementById('app')?.dataset.tags || '').split(' ').forEach((kv) => {
+  const [slug, color] = kv.split(':');
+  if (slug) tagColors[slug] = color;
+});
+function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function paint(area) {
+  const hl = area.previousElementSibling;
+  if (!hl || !hl.classList.contains('hl')) return;
+  const tokens = area.value.split(/(\s+)/);
+  let waiting = false;
+  let html = '';
+  tokens.forEach((tok, i) => {
+    if (!tok || /^\s+$/.test(tok)) { html += tok; return; }
+    if (i === 0 && (tok === '/release' || tok === '/реліз')) { html += `<span class="r">${esc(tok)}</span>`; return; }
+    if (/^https?:\/\//.test(tok)) { html += `<span class="u">${esc(tok)}</span>`; return; }
+    if (tok.length > 1 && tok[0] === '#') {
+      const slug = Object.keys(tagColors).find((k) => k.startsWith(tok.slice(1).toLowerCase()));
+      const style = slug ? ` style="color:${tagColors[slug]}"` : '';
+      html += `<span class="h"${style}>${esc(tok)}</span>`;
+      waiting = false;
+      return;
+    }
+    if (tok === '?') { waiting = true; html += `<span class="w">?</span>`; return; }
+    if (tok === '→' || tok === '->') { html += `<span class="c">${esc(tok)}</span>`; waiting = false; return; }
+    if (tokens[i - 2] === '→' || tokens[i - 2] === '->') { html += `<span class="c">${esc(tok)}</span>`; return; }
+    html += waiting ? `<span class="w">${esc(tok)}</span>` : esc(tok);
+  });
+  hl.innerHTML = html + (area.value.endsWith('\n') ? ' ' : '');
 }
-document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-    e.preventDefault();
-    openPalette();
+
+// ---- editing
+function titleEnd(form, area) {
+  // The caret lands after the title, before "? waiting", "#tag" and links.
+  const t = form.querySelector('.tx .t')?.textContent.trim();
+  if (!t) return area.value.length;
+  const at = area.value.indexOf(t);
+  return at < 0 ? area.value.length : at + t.length;
+}
+function startEdit(form, text, caret) {
+  if (!form) return;
+  if (!editable(form)) { focusLine(form); return; }
+  const area = form.querySelector('.raw');
+  const ed = area.closest('.ed');
+  if (!form.classList.contains('editing')) {
+    form.classList.add('editing');
+    ed.hidden = false;
+    // The server's text, not what a morph may have kept in the box.
+    area.value = text !== undefined ? text : area.defaultValue;
+    area.dataset.orig = area.defaultValue;
+    delete area.dataset.saving;
+    if (caret === undefined && text === undefined) caret = titleEnd(form, area);
   }
+  size(area);
+  paint(area);
+  area.focus({ preventScroll: true });
+  const at = caret !== undefined ? caret : area.value.length;
+  area.setSelectionRange(at, at);
+  focusLine(form, false);
+}
+function stopEdit(form) {
+  const area = form.querySelector('.raw');
+  area.value = form.classList.contains('new') ? '' : area.defaultValue;
+  form.classList.remove('editing');
+  if (!form.classList.contains('new')) area.closest('.ed').hidden = true;
+  area.style.height = '';
+  paint(area);
+}
+function changed(area) { return area.value !== (area.dataset.orig ?? area.defaultValue); }
+// Save now; `then` names the line to open once the page comes back.
+function save(form, then) {
+  const area = form.querySelector('.raw');
+  area.dataset.saving = '1';
+  window.__then = then === 'new' ? '#' + form.id : then;
+  form.requestSubmit();
+}
+function findLine(key) {
+  if (!key) return null;
+  if (key.startsWith('#')) return document.getElementById(key.slice(1));
+  return document.querySelector(`.ln[data-id="${key}"], .ln[data-item="${key}"]`);
+}
+function lineKey(form) {
+  if (form.id) return '#' + form.id;
+  return form.dataset.id || form.dataset.item;
+}
+function nextLine(form, step) {
+  const all = allLines();
+  return all[all.indexOf(form) + step];
+}
+
+// ---- keyboard focus on a line (no editing yet)
+function focusedLine() { return document.querySelector('.ln.focused'); }
+function focusLine(line, scroll = true) {
+  allLines().forEach((l) => l.classList.toggle('focused', l === line));
+  if (line && scroll) line.scrollIntoView({ block: 'nearest' });
+}
+function moveFocus(step) {
+  const all = allLines();
+  if (!all.length) return;
+  const cur = focusedLine();
+  const i = cur ? all.indexOf(cur) + step : (step > 0 ? 0 : all.length - 1);
+  focusLine(all[Math.min(all.length - 1, Math.max(0, i))]);
+}
+// Enter on a focused line: edit it, or follow it when it is a link (a project row).
+function activate(line) {
+  if (!line) return;
+  if (editable(line)) startEdit(line);
+  else if (line.matches('a')) { window.__openRow = line.id; line.click(); }
+}
+
+document.addEventListener('click', (e) => {
+  const tx = e.target.closest('.tx[data-edit]');
+  if (!tx || e.target.closest('a, button')) return;
+  startEdit(lineOf(tx));
 });
 document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-open-palette]')) openPalette();
-  if (e.target === palette) palette.close();
+  const row = e.target.closest('a.ln.pr');
+  if (row && !row.classList.contains('open')) window.__openRow = row.id;
 });
-// ↑/↓ move between the create row and the matches; Enter activates the highlighted one.
-function paletteRows() { return [...palette.querySelectorAll('.prow')]; }
-function highlight(i) {
-  paletteRows().forEach((r, k) => r.classList.toggle('hl', k === i));
-}
-palette?.addEventListener('keydown', (e) => {
+document.addEventListener('focusin', (e) => {
+  const area = e.target instanceof Element && e.target.closest('.ln.new .raw');
+  if (area) startEdit(lineOf(area));
+});
+document.addEventListener('input', (e) => {
+  const area = e.target instanceof Element && e.target.closest('.ln .raw');
+  if (area) { size(area); paint(area); }
+});
+document.addEventListener('focusout', (e) => {
+  const area = e.target instanceof Element && e.target.closest('.ln .raw');
+  if (!area) return;
+  const form = lineOf(area);
+  setTimeout(() => {
+    // A morph in between (⌘⏎, ⌥↑) has already re-rendered the line: nothing to do.
+    if (!form.isConnected || !form.classList.contains('editing') || area.dataset.saving) return;
+    if (document.activeElement === area) return;
+    if (form.classList.contains('new')) { if (!area.value.trim()) stopEdit(form); return; }
+    if (changed(area)) save(form, null);
+    else stopEdit(form);
+  }, 0);
+});
+document.addEventListener('keydown', (e) => {
+  const area = e.target instanceof Element && e.target.closest('.ln .raw');
+  if (!area) return;
+  const form = lineOf(area);
+  const isNew = form.classList.contains('new');
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
     e.preventDefault();
-    palette.querySelector('input[name=force_now]').value = '1';
-    palette.querySelector('form').requestSubmit();
+    form.querySelector('.strike')?.click();
     return;
   }
-  const all = paletteRows();
-  const cur = all.findIndex((r) => r.classList.contains('hl'));
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+  if (e.key === 'Enter') {
     e.preventDefault();
-    if (!all.length) return;
-    highlight(Math.min(all.length - 1, Math.max(0, cur + (e.key === 'ArrowDown' ? 1 : -1))));
-  } else if (e.key === 'Enter' && cur > 0) {
+    if (isNew) { if (area.value.trim()) save(form, 'new'); return; }
+    // Enter moves on like in a text editor: the next line, or the empty one.
+    const next = nextLine(form, 1);
+    const then = next ? lineKey(next) : null;
+    if (changed(area)) save(form, then);
+    else { stopEdit(form); startEdit(next); }
+    return;
+  }
+  if (e.key === 'Escape') {
     e.preventDefault();
-    all[cur].click();
-    palette.close();
+    stopEdit(form);
+    area.blur();
+    focusLine(form, false);
+    return;
+  }
+  if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    if (isNew) return;
+    e.preventDefault();
+    if (changed(area)) { save(form, lineKey(form)); return; }
+    window.__then = lineKey(form); // keep editing the line after it moves
+    form.querySelector(e.key === 'ArrowUp' ? '.mv.up' : '.mv.down')?.click();
+    return;
+  }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    const next = nextLine(form, e.key === 'ArrowDown' ? 1 : -1);
+    if (!next) return;
+    e.preventDefault();
+    const then = lineKey(next);
+    if (!isNew && changed(area)) { save(form, then); return; }
+    if (isNew && area.value.trim()) { save(form, then); return; }
+    stopEdit(form);
+    area.blur();
+    startEdit(next);
   }
 });
-palette?.addEventListener('htmx:after:swap', () => { if (paletteRows().length) highlight(0); });
-palette?.addEventListener('close', () => {
-  palette.querySelector('input[name=force_now]').value = '';
+// The project editor: Esc closes it, a save keeps the row focused.
+document.addEventListener('keydown', (e) => {
+  const pedit = e.target instanceof Element && e.target.closest('.pedit');
+  if (!pedit || e.key !== 'Escape') return;
+  e.preventDefault();
+  document.getElementById(pedit.dataset.row)?.click();
 });
-// Close only after the form's own POST — the search input's GETs bubble the same event.
-palette?.addEventListener('htmx:after:request', (e) => {
-  const form = palette.querySelector('form');
-  if (e.target === form) {
-    form.reset();
-    palette.close();
-  }
+document.addEventListener('submit', (e) => {
+  const pedit = e.target.closest?.('.pedit');
+  if (pedit) window.__focusKey = '#' + pedit.dataset.row;
 });
 
-// Drag ordering. Lists share a group, so dragging across them changes state.
-// Morph keeps the list containers, so one init per container is enough.
+// The page is morphed after every save. Remember what was being edited (and
+// the caret) and what was focused, and put both back — a blur-save must not
+// swallow the click that started editing another line.
+document.addEventListener('htmx:before:swap', () => {
+  // Two lines can be "editing" at once: the one being saved and the one just clicked.
+  const form = [...document.querySelectorAll('.ln.editing')].find((f) => !f.querySelector('.raw').dataset.saving);
+  const area = form?.querySelector('.raw');
+  window.__editing = form ? { key: lineKey(form), text: area.value, caret: area.selectionStart } : null;
+  const f = focusedLine();
+  if (f && !window.__focusKey) window.__focusKey = lineKey(f);
+});
+document.addEventListener('htmx:after:swap', () => {
+  document.querySelectorAll('.ln.new .raw').forEach((a) => { if (!a.matches(':focus')) { a.value = ''; paint(a); } }); // a morph keeps typed text; the line is saved
+  const then = window.__then;
+  const was = window.__editing;
+  const focus = window.__focusKey;
+  const opened = window.__openRow;
+  window.__then = null;
+  window.__editing = null;
+  window.__focusKey = null;
+  window.__openRow = null;
+  if (then) { startEdit(findLine(then)); return; }
+  if (was) {
+    const form = findLine(was.key);
+    if (form) { startEdit(form, was.text, was.caret); return; }
+  }
+  if (opened) {
+    const name = document.querySelector('.pedit input[name=name]');
+    if (name) { name.focus(); name.setSelectionRange(name.value.length, name.value.length); }
+    focusLine(document.getElementById(opened), false);
+    return;
+  }
+  if (focus) focusLine(findLine(focus), false);
+});
+// A mouse click on an action word must not leave a focus ring on it.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.ln-act button, .ln-act a, .box, .act, .strike, .sw');
+  if (b && e.detail > 0) setTimeout(() => b.blur(), 0);
+});
+
+// Keys outside inputs.
+const help = document.getElementById('help');
+function typing(e) { return e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]'); }
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-open-help]')) help?.showModal();
+  if (e.target.closest('[data-close-help]') || e.target === help) help?.close();
+});
+document.addEventListener('keydown', (e) => {
+  if (typing(e) || e.altKey) return;
+  if (document.querySelector('dialog[open]') && e.key !== '?') return;
+  const cur = focusedLine();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); cur?.querySelector('.strike')?.click(); return; }
+  if (e.metaKey || e.ctrlKey) return;
+  switch (e.key) {
+    case '?': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
+    case 'ArrowDown': case 'j': e.preventDefault(); moveFocus(1); break;
+    case 'ArrowUp': case 'k': e.preventDefault(); moveFocus(-1); break;
+    case 'Enter': e.preventDefault(); activate(cur); break;
+    case 'Escape': focusLine(null); break;
+    case 'x': cur?.querySelector('.strike')?.click(); break;
+    case 'b': cur?.querySelector('.ln-act button:not(.strike)')?.click(); break;
+    case 'n': e.preventDefault(); startEdit(document.querySelector('.ln.new')); break;
+    case '1': location.href = '/'; break;
+    case '2': location.href = '/backlog'; break;
+    case '3': location.href = '/releases'; break;
+    case '4': location.href = '/projects'; break;
+  }
+});
+document.querySelectorAll('.ln.new .raw').forEach(paint);
+
+// Drag ordering within a page. The order sent is every line of that state in
+// document order, so the backlog's project bands share one sequence.
+const sortables = new WeakSet(); // a morph erases attributes, so remember instances by element
 function initSortable() {
-  document.querySelectorAll('.sortable:not([data-sortable])').forEach((list) => {
-    list.dataset.sortable = '1';
+  document.querySelectorAll('.sortable').forEach((list) => {
+    if (sortables.has(list)) return;
+    sortables.add(list);
     new Sortable(list, {
-      group: 'tasks',
-      draggable: '.task',
+      group: 'lines-' + list.dataset.state,
+      draggable: '.ln:not(.new)',
+      handle: '.pm',
       animation: 120,
       ghostClass: 'drag-ghost',
-      onEnd: sendOrder,
+      onEnd: () => sendOrder(list.dataset.state),
     });
   });
 }
-function sendOrder() {
-  const form = document.getElementById('reorder');
+function sendOrder(state) {
+  const form = document.getElementById('order');
   if (!form) return;
-  form.querySelectorAll('input[name=now], input[name=backlog], input[name=waiting]').forEach((i) => i.remove());
-  document.querySelectorAll('.sortable').forEach((list) => {
-    list.querySelectorAll('.task').forEach((row) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = list.dataset.state;
-      input.value = row.id.replace('task-', '');
-      form.appendChild(input);
-    });
-  });
-  form.dispatchEvent(new CustomEvent('reorder', { bubbles: true }));
+  form.innerHTML = '';
+  const add = (name, value) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  };
+  add('state', state);
+  document.querySelectorAll(`.sortable[data-state="${state}"] .ln[data-id]`).forEach((row) => add('id', row.dataset.id));
+  form.dispatchEvent(new CustomEvent('order', { bubbles: true }));
 }
 initSortable();
 document.addEventListener('htmx:after:swap', initSortable);
@@ -119,138 +317,11 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
 
-// Custom dropdown (.dd): hidden input + button + menu. Choosing an option
-// updates the input and fires a change event so hx-trigger="change" forms react.
-function closeDropdowns(except) {
-  document.querySelectorAll('.dd.open').forEach((dd) => {
-    if (dd === except) return;
-    dd.classList.remove('open');
-    dd.querySelector('.dd-menu').hidden = true;
-    dd.querySelector('.dd-btn').setAttribute('aria-expanded', 'false');
-  });
-}
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.dd-btn');
-  const opt = e.target.closest('.dd-menu [data-value]');
-  if (btn) {
-    const dd = btn.closest('.dd');
-    const open = !dd.classList.contains('open');
-    closeDropdowns(dd);
-    dd.classList.toggle('open', open);
-    dd.querySelector('.dd-menu').hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    return;
-  }
-  if (opt) {
-    const dd = opt.closest('.dd');
-    const input = dd.querySelector('input[type=hidden]');
-    input.value = opt.dataset.value;
-    dd.querySelector('.dd-label').textContent = opt.textContent.trim();
-    const dot = dd.querySelector('.dd-btn .dot');
-    if (dot && opt.dataset.color) dot.style.background = opt.dataset.color;
-    dd.querySelectorAll('[data-value]').forEach((o) => o.toggleAttribute('aria-selected', o === opt));
-    closeDropdowns();
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    return;
-  }
-  if (!e.target.closest('.dd')) closeDropdowns();
-});
-
-// A click anywhere on a row selects it; controls inside keep their own behaviour.
-document.addEventListener('click', (e) => {
-  const row = e.target.closest('.task[data-open], .ritem[data-open-item]');
-  if (!row || e.target.closest('a, button, input')) return;
-  const link = row.querySelector('a.title, a.body');
-  if (link) link.click();
-});
-
-// Keyboard: j/k walk the rows, the rest act on the selected one. Off while typing.
-const help = document.getElementById('help');
-function typing(e) { return e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]'); }
-function rows() { return [...document.querySelectorAll('.task[data-open]')]; }
-function focusedRow() { return document.querySelector('.task.focused'); }
-function focusRow(row) {
-  rows().forEach((r) => r.classList.remove('focused'));
-  if (!row) return;
-  row.classList.add('focused');
-  row.scrollIntoView({ block: 'nearest' });
-}
-function moveFocus(step) {
-  const all = rows();
-  if (!all.length) return;
-  const i = all.indexOf(focusedRow() || document.querySelector('.task.sel'));
-  focusRow(all[Math.min(all.length - 1, Math.max(0, i + step))]);
-}
-// Opening a row and then reaching into the pane it renders.
-function openThenFocus(selector) {
-  const row = focusedRow();
-  if (!row) return;
-  row.querySelector('a.title')?.click();
-  const tryFocus = (n) => {
-    const el = document.querySelector(selector);
-    if (el) { el.focus(); return; }
-    if (n > 0) setTimeout(() => tryFocus(n - 1), 80);
-  };
-  tryFocus(10);
-}
-document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-open-help]')) help?.showModal();
-  if (e.target.closest('[data-close-help]') || e.target === help) help?.close();
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeDropdowns();
-    if (!typing(e) && !document.querySelector('dialog[open]')) {
-      const back = document.querySelector('.det-close, .det-back');
-      if (back) back.click();
-    }
-    return;
-  }
-  if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (document.querySelector('dialog[open]') && e.key !== '?') return;
-  const row = focusedRow();
-  switch (e.key) {
-    case '?': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
-    case '/': e.preventDefault(); openPalette(); break;
-    case 'j': moveFocus(1); break;
-    case 'k': moveFocus(-1); break;
-    case 'Enter': if (row) { e.preventDefault(); row.querySelector('a.title')?.click(); } break;
-    case 'x': row?.querySelector('.tick')?.click(); break;
-    case 'w': openThenFocus('.det-wait input'); break;
-    case 'l': openThenFocus('.inline-add input[name=url]'); break;
-    case 'd': (document.querySelector('.det.daily .det-close') || document.querySelector('.daily-link'))?.click(); break;
-    case 'g': document.querySelector('.seg.group a:not(.on)')?.click(); break;
-    case 'ArrowDown': e.preventDefault(); moveFocus(1); break;
-    case 'ArrowUp': e.preventDefault(); moveFocus(-1); break;
-    case '1': location.href = '/'; break;
-    case '2': location.href = '/releases'; break;
-    case '3': location.href = '/journal'; break;
-  }
-});
-// A shadow under the sticky header once the list is scrolled.
+// A shadow under the sticky header once the column is scrolled.
 document.addEventListener('scroll', (e) => {
-  const pane = e.target instanceof Element && e.target.closest('.plist, .col');
+  const pane = e.target instanceof Element && e.target.closest('.col');
   if (pane) pane.classList.toggle('scrolled', pane.scrollTop > 2);
 }, true);
-
-// Keep expanded sections (release history, "готово сьогодні") open across a morph.
-const KEEP_OPEN = 'details.history-rel, details.done-block';
-document.addEventListener('htmx:before:swap', () => {
-  window.__openDetails = [...document.querySelectorAll(KEEP_OPEN)].map((d) => d.open);
-});
-document.addEventListener('htmx:after:swap', () => {
-  const was = window.__openDetails;
-  if (!was) return;
-  document.querySelectorAll(KEEP_OPEN).forEach((d, i) => { if (was[i] !== undefined) d.open = was[i]; });
-});
-
-// Keep the focus ring on the same task after a morph.
-document.addEventListener('htmx:before:swap', () => { const r = focusedRow(); if (r) window.__focusedTask = r.id; });
-document.addEventListener('htmx:after:swap', () => {
-  if (!window.__focusedTask) return;
-  const r = document.getElementById(window.__focusedTask);
-  if (r && !r.classList.contains('focused')) focusRow(r);
-});
 
 // Confirmation modal for [data-confirm]: the first click is held back and shown
 // in a dialog; accepting re-clicks the element with a one-shot pass flag.
@@ -290,6 +361,6 @@ document.addEventListener('click', (e) => {
   const wrap = sw.closest('.swatches');
   wrap.querySelector('input[type=color]').value = sw.dataset.color;
   wrap.querySelectorAll('.sw').forEach((s) => s.classList.toggle('on', s === sw));
-  const dot = sw.closest('form')?.querySelector('.dot.big');
-  if (dot) dot.style.background = sw.dataset.color;
+  const form = sw.closest('form');
+  if (form) form.style.setProperty('--project', sw.dataset.color);
 });

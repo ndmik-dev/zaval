@@ -1,0 +1,44 @@
+{{/* One line of the notebook. The rendered text is what you read; the raw
+     textarea under it is what you edit — click the text and it becomes the raw
+     line, Enter saves, Esc cancels. The project square is the drag handle.
+     Actions are words that appear on hover; hidden buttons serve ⌘⏎ and ⌥↑↓. */}}
+{{define "line"}}{{$l := .L}}{{$page := .Page}}
+<form class="ln{{if eq $l.State "done"}} done{{end}}{{if $l.Waiting}} waiting{{end}}{{if $l.Release}} rel{{end}}" id="task-{{$l.ID}}" data-id="{{$l.ID}}" style="--project:{{$l.Project.Color}}" hx-post="/lines/{{$l.ID}}" hx-trigger="submit">
+  <span class="pm" title="{{$l.Project.Name}}"></span>
+  <div class="tx" data-edit>
+    {{if $l.Release}}<span class="t"><span class="mono dim">/release</span> {{$l.Project.Name}} <span class="mono dim">{{$l.Release.Done}} / {{$l.Release.Total}}</span></span>
+    {{else}}<span class="t">{{$l.Title}}</span>{{end}}
+    {{template "chips" $l.Links}}
+    {{if $l.Waiting}}<span class="ch wait"><i></i>чекаю {{$l.Waiting}}{{if ge $l.Age 2}} · {{$l.Age}} дн.{{end}}</span>{{end}}
+  </div>
+  <div class="ed" hidden><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" autocomplete="off" spellcheck="false">{{$l.Raw}}</textarea></div>
+  <span class="ln-act">
+    {{if eq $l.State "done"}}<button type="button" class="strike" hx-post="/lines/{{$l.ID}}/strike">повернути</button>
+    {{else}}<button type="button" class="strike" hx-post="/lines/{{$l.ID}}/strike" title="⌘⏎">закреслити</button>
+    {{if eq $page "backlog"}}<button type="button" hx-post="/lines/{{$l.ID}}/send" hx-vals='{"state":"now"}'>→ сьогодні</button>
+    {{else}}<button type="button" hx-post="/lines/{{$l.ID}}/send" hx-vals='{"state":"backlog"}'>→ беклог</button>{{end}}
+    {{end}}
+  </span>
+  {{if ne $l.State "done"}}
+  <button type="button" class="mv up" hx-post="/lines/{{$l.ID}}/move" hx-vals='{"dir":"up"}' hidden tabindex="-1" aria-hidden="true"></button>
+  <button type="button" class="mv down" hx-post="/lines/{{$l.ID}}/move" hx-vals='{"dir":"down"}' hidden tabindex="-1" aria-hidden="true"></button>
+  {{end}}
+</form>
+{{with $l.Release}}
+<div class="chk" style="--project:{{$l.Project.Color}}">
+  {{range .Items}}{{template "check_item" (dict "It" . "Page" $page)}}{{end}}
+  {{template "check_add" $l.ProjectID}}
+  {{if .Total}}<button type="button" class="act" hx-post="/lines/{{$l.ID}}/released" data-confirm="{{if lt .Done .Total}}Відмічено {{.Done}} з {{.Total}}. {{end}}Записати реліз в історію і закреслити рядок?" data-confirm-ok="Зарелізено">Зарелізено →</button>{{end}}
+</div>
+{{end}}
+{{end}}
+
+{{define "chips"}}{{range .}}<a class="ch" href="{{.URL}}" target="_blank" rel="noopener" title="{{.URL}}"><i></i><b{{if eq .Kind "jira"}} class="mono"{{end}}>{{if .Label}}{{.Label}}{{else}}{{.Kind}}{{end}}</b>{{if .Meta}} · {{.Meta}}{{end}}</a>{{end}}{{end}}
+
+{{/* The empty line at the end of a page: Enter creates, the caret stays. */}}
+{{define "newline"}}
+<form class="ln new" id="new-line" hx-post="/lines" hx-trigger="submit">
+  <span class="pm dashed" aria-hidden="true"></span>
+  <div class="ed"><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" placeholder="{{.}}" autocomplete="off" spellcheck="false" aria-label="Новий рядок"></textarea></div>
+</form>
+{{end}}

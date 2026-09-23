@@ -1,92 +1,54 @@
 {{define "content"}}
 {{template "page_ctx" .Ctx}}
-<div class="col"><div class="col-in">
+<div class="col"><div class="col-in nb">
+  <div class="dh top"><h1 class="d">Проєкти</h1><span class="n">{{len .All}}</span></div>
+  {{if .Error}}<p class="notice">{{.Error}}</p>{{end}}
 
-  <header class="plist-head">
-    <h1>Проєкти</h1>
-    <span class="grow"></span>
-    <span class="mono dim">{{len .All}}</span>
-  </header>
-  {{if .Error}}<div class="notice">{{.Error}}</div>{{end}}
+  {{template "project_group" (dict "Label" "Робота" "Items" .Work "Expanded" .Expanded)}}
+  {{template "project_group" (dict "Label" "Своє" "Items" .Pet "Expanded" .Expanded)}}
 
-  {{template "project_group" (dict "Kind" "work" "Label" "Робота" "All" .All "Expanded" .Expanded)}}
-  {{template "project_group" (dict "Kind" "pet" "Label" "Своє" "All" .All "Expanded" .Expanded)}}
-
-  <form class="inline-add" hx-post="/projects" hx-on:htmx:after:request="this.reset()">
-    <input name="name" placeholder="＋ новий проєкт" autocomplete="off" required>
-    <input type="hidden" name="kind" value="pet">
+  <form class="ln new" id="new-project" hx-post="/projects" hx-trigger="submit">
+    <span class="pm dashed" aria-hidden="true"></span>
+    <div class="ed"><div class="hl" aria-hidden="true"></div><textarea class="raw" name="name" rows="1" placeholder="новий проєкт…" autocomplete="off" spellcheck="false" aria-label="Новий проєкт"></textarea></div>
   </form>
-
 </div></div>
 {{end}}
 
 {{define "project_group"}}
-<section class="sec">
-  <div class="sec-head"><span class="up">{{.Label}}</span></div>
-  <div class="list">
-    {{range .All}}{{if eq .Kind $.Kind}}
-    {{$href := printf "/projects?e=%s" .Slug}}{{if and $.Expanded (eq .ID $.Expanded.ID)}}{{$href = "/projects"}}{{end}}
-    <a class="prow-project{{if and $.Expanded (eq .ID $.Expanded.ID)}} sel{{end}}" href="{{$href}}" hx-get="{{$href}}" hx-include="unset" hx-push-url="true">
-      <span class="dot big" style="background:{{.Color}}"></span>
-      <span class="grow pname-static">{{.Name}}</span>
-      <span class="mono dim">#{{.Slug}}</span>
-      <span class="mono n">{{add .Now .Backlog}}</span>
+<section class="day">
+  <div class="dh"><h2 class="d">{{.Label}}</h2><span class="n">{{len .Items}}</span></div>
+  <div class="lines">
+    {{range .Items}}
+    {{$open := and $.Expanded (eq .ID $.Expanded.ID)}}
+    {{$href := printf "/projects?e=%s" .Slug}}{{if $open}}{{$href = "/projects"}}{{end}}
+    <a class="ln pr{{if $open}} open{{end}}" id="proj-{{.Slug}}" style="--project:{{.Color}}" href="{{$href}}" hx-get="{{$href}}" hx-include="unset" hx-push-url="true">
+      <span class="pm"></span>
+      <span class="tx"><span class="t">{{.Name}}</span><span class="ch"><b>#{{.Slug}}</b></span></span>
+      <span class="n">{{add .Now .Backlog}}</span>
     </a>
-    {{if and $.Expanded (eq .ID $.Expanded.ID)}}{{template "project_card" $.Expanded}}{{end}}
-    {{end}}{{end}}
+    {{if $open}}{{template "project_edit" $.Expanded}}{{end}}
+    {{end}}
   </div>
 </section>
 {{end}}
 
-{{define "project_card"}}
-<form class="expand" style="--project:{{.Color}}" hx-post="/projects/{{.ID}}">
-  <header class="expand-head">
-    <span class="dot big" style="background:{{.Color}}"></span>
-    <span class="up">Проєкт</span>
-    <span class="grow"></span>
-    <a class="det-close" href="/projects" hx-get="/projects" hx-include="unset" hx-push-url="true" aria-label="Згорнути">
-      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    </a>
-  </header>
-  <div class="det-body">
-    <input class="det-title" name="name" value="{{.Name}}" required>
+{{/* The editor unfolds under the project like a checklist under a line. */}}
+{{define "project_edit"}}
+<form class="pedit" style="--project:{{.Color}}" hx-post="/projects/{{.ID}}" data-row="proj-{{.Slug}}">
+  <label class="pf"><span class="lab">Назва</span><input class="pin" name="name" value="{{.Name}}" required autocomplete="off"></label>
+  <label class="pf"><span class="lab">Тег</span><span class="pin tag"><span class="dim mono">#</span><input name="slug" value="{{.Slug}}" autocomplete="off" spellcheck="false"></span></label>
+  <div class="pf"><span class="lab">Вид</span><span class="kind">
+    <label><input type="radio" name="kind" value="work"{{if eq .Kind "work"}} checked{{end}}><span>робота</span></label>
+    <label><input type="radio" name="kind" value="pet"{{if eq .Kind "pet"}} checked{{end}}><span>своє</span></label>
+  </span></div>
+  <div class="pf"><span class="lab">Колір</span><div class="swatches">
+    {{$cur := .Color}}
+    {{range $c := colors}}<button type="button" class="sw{{if eq $c $cur}} on{{end}}" style="background:{{$c}}" data-color="{{$c}}" aria-label="{{$c}}"></button>{{end}}
+    <label class="sw custom" title="Свій колір"><input type="color" name="color" value="{{.Color}}"></label>
+  </div></div>
+  <div class="pact">
+    <button type="submit" class="act">Зберегти</button>
+    <button type="button" class="act ghost" hx-delete="/projects/{{.ID}}" data-confirm="Видалити проєкт {{.Name}}?" data-confirm-ok="Видалити" data-confirm-danger>Видалити</button>
   </div>
-  <div class="pgrid">
-    <div class="det-sec">
-      <div class="sec-head"><span class="up">Вид</span><span class="rule"></span></div>
-      {{template "kind_dropdown" .Kind}}
-    </div>
-    <div class="det-sec">
-      <div class="sec-head"><span class="up">Тег у ⌘K</span><span class="rule"></span></div>
-      <span class="field"><span class="dim mono">#</span><input name="slug" value="{{.Slug}}"></span>
-    </div>
-  </div>
-  <section class="det-sec">
-    <div class="sec-head"><span class="up">Колір</span><span class="rule"></span></div>
-    <div class="swatches">
-      {{$cur := .Color}}
-      {{range $c := colors}}<button type="button" class="sw{{if eq $c $cur}} on{{end}}" style="background:{{$c}}" data-color="{{$c}}" aria-label="{{$c}}"></button>{{end}}
-      <label class="sw custom" title="Свій колір"><input type="color" name="color" value="{{.Color}}"></label>
-    </div>
-  </section>
-  <footer class="expand-foot">
-    <button type="submit" class="btn primary">Зберегти</button>
-    <span class="grow"></span>
-    <button type="button" class="btn ghost" hx-delete="/projects/{{.ID}}" data-confirm="Видалити проєкт {{.Name}}?" data-confirm-ok="Видалити" data-confirm-danger>Видалити</button>
-  </footer>
 </form>
-{{end}}
-
-{{define "kind_dropdown"}}
-<div class="dd" data-dd>
-  <input type="hidden" name="kind" value="{{.}}">
-  <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false">
-    <span class="dot" style="background:{{if eq . "work"}}#2F5D50{{else}}#8A6A30{{end}}"></span><span class="dd-label">{{if eq . "work"}}робота{{else}}своє{{end}}</span>
-    <svg class="dd-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 4.4 6 7.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
-  <div class="dd-menu" role="listbox" hidden>
-    <button type="button" role="option" data-value="work" data-color="#2F5D50"{{if eq . "work"}} aria-selected="true"{{end}}><span class="dot" style="background:#2F5D50"></span>робота</button>
-    <button type="button" role="option" data-value="pet" data-color="#8A6A30"{{if eq . "pet"}} aria-selected="true"{{end}}><span class="dot" style="background:#8A6A30"></span>своє</button>
-  </div>
-</div>
 {{end}}

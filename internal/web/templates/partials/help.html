@@ -1,20 +1,23 @@
 {{define "help"}}
 <dialog id="help" class="help-dialog">
-  <div class="help-head"><span class="up">Клавіатура</span><span class="grow"></span><button type="button" class="x" data-close-help aria-label="Закрити">✕</button></div>
+  <div class="help-head"><span class="up">Рядок</span><span class="grow"></span><button type="button" class="x" data-close-help aria-label="Закрити">✕</button></div>
   <div class="help-grid">
-    <kbd>⌘K</kbd><span>додати або знайти задачу</span>
-    <kbd>/</kbd><span>те саме, без ⌘</span>
-    <kbd>j</kbd><span>наступний рядок</span>
-    <kbd>k</kbd><span>попередній рядок</span>
-    <kbd>Enter</kbd><span>відкрити в панелі</span>
-    <kbd>x</kbd><span>готово</span>
-    <kbd>w</kbd><span>чекаю на…</span>
-    <kbd>l</kbd><span>додати лінк</span>
-    <kbd>g</kbd><span>групувати за станом / за проєктом</span>
-    <kbd>d</kbd><span>дейлік</span>
-    <kbd>1 2 3</kbd><span>Дошка / Релізи / Журнал</span>
-    <kbd>↑ ↓</kbd><span>те саме, що j / k</span>
-    <kbd>Esc</kbd><span>назад до списку</span>
+    <kbd>#atl</kbd><span>проєкт; без тега — той, що в рядку вище (він у підказці порожнього рядка)</span>
+    <kbd>https://…</kbd><span>лінк стає чипом: Jira, GitHub, GitLab, Slack, Figma</span>
+    <kbd>? відповіді</kbd><span>чекаю — рядок отримує червону позначку</span>
+    <kbd>→ беклог</kbd><span>у кінці рядка — забрати його з дня; <span class="mono">→ сьогодні</span> — навпаки</span>
+    <kbd>/release #atl</kbd><span>розгорнути чекліст релізу прямо тут</span>
+  </div>
+  <div class="help-head" style="margin-top:16px"><span class="up">Клавіатура</span></div>
+  <div class="help-grid">
+    <kbd>↑ ↓</kbd><span>сусідній рядок — одразу, без кліку; у редагуванні зміни зберігаються</span>
+    <kbd>Enter</kbd><span>редагувати вибраний рядок; у редагуванні — зберегти і перейти далі</span>
+    <kbd>Esc</kbd><span>вийти з редагування; ще раз — зняти вибір</span>
+    <kbd>x · ⌘⏎</kbd><span>закреслити / повернути</span>
+    <kbd>b</kbd><span>→ беклог / → сьогодні</span>
+    <kbd>⌥↑ ⌥↓</kbd><span>пересунути рядок; мишею — за квадратик проєкту</span>
+    <kbd>n</kbd><span>новий рядок</span>
+    <kbd>1 2 3 4</kbd><span>Сьогодні / Беклог / Релізи / Проєкти</span>
     <kbd>?</kbd><span>ця підказка</span>
   </div>
 </dialog>

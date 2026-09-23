@@ -12,7 +12,9 @@ import (
 
 type projectsData struct {
 	shell
-	All      []projectItem // including hidden ones
+	All      []projectItem
+	Work     []projectItem
+	Pet      []projectItem
 	Expanded *store.Project
 	Error    string
 }
@@ -39,7 +41,13 @@ func (s *Server) respondProjects(w http.ResponseWriter, r *http.Request, expandS
 		return
 	}
 	for i := range all {
-		d.All = append(d.All, projectItem{all[i], counts[all[i].ID]})
+		item := projectItem{all[i], counts[all[i].ID]}
+		d.All = append(d.All, item)
+		if all[i].Kind == "work" {
+			d.Work = append(d.Work, item)
+		} else {
+			d.Pet = append(d.Pet, item)
+		}
 		if all[i].Slug == expandSlug {
 			d.Expanded = &all[i]
 		}

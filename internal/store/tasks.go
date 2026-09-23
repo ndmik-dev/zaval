@@ -261,3 +261,26 @@ func (s *Store) LinkTask(linkID int64) (int64, error) {
 	err := s.db.QueryRow(`select task_id from task_links where id = ?`, linkID).Scan(&taskID)
 	return taskID, err
 }
+
+// SetProject moves a task to another project; the notebook does this when a
+// line's #tag changes.
+func (s *Store) SetProject(id, projectID int64) error {
+	_, err := s.db.Exec(`update tasks set project_id = ? where id = ?`, projectID, id)
+	return err
+}
+
+// SetPositions writes the order of one state's lines, touching nothing else:
+// unlike Reorder it keeps waiting notes and timestamps as they are.
+func (s *Store) SetPositions(state string, ids []int64) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for i, id := range ids {
+		if _, err := tx.Exec(`update tasks set position = ? where id = ? and state = ?`, i+1, id, state); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}

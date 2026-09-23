@@ -22,13 +22,14 @@ type checklistView struct {
 type historyView struct {
 	store.ReleaseRecord
 	When string
+	Done int
 }
 
 type releasesData struct {
 	shell
-	Work     []projectItem
-	Current  *checklistView
-	OpenItem *store.ChecklistItem // line shown in the side panel, if any
+	Work    []projectItem
+	Current *checklistView
+	OpenID  int64 // line with the task picker unfolded, if any
 }
 
 func (s *Server) checklistView(p store.Project, now time.Time) (*checklistView, error) {
@@ -51,7 +52,13 @@ func (s *Server) checklistView(p store.Project, now time.Time) (*checklistView, 
 			continue // records from before lines were archived
 		}
 		d := localDay(h.ReleasedAt, now.Location())
-		v.History = append(v.History, historyView{h, ukDateShort(d.Format("2006-01-02"), now)})
+		hv := historyView{ReleaseRecord: h, When: ukDate(d)}
+		for _, it := range h.Items {
+			if it.Done {
+				hv.Done++
+			}
+		}
+		v.History = append(v.History, hv)
 	}
 	return v, nil
 }
@@ -60,12 +67,11 @@ func (s *Server) releases(w http.ResponseWriter, r *http.Request) {
 	s.respondReleases(w, r)
 }
 
-// respondReleases reads project, open line and open task from the query or the
+// respondReleases reads the project and the open line from the query or the
 // posted form, so every action lands back on the same view.
 func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	slug := r.FormValue("p")
-	openID, _ := strconv.ParseInt(r.FormValue("t"), 10, 64)
 	itemID, _ := strconv.ParseInt(r.FormValue("i"), 10, 64)
 	now := time.Now()
 	sh, err := s.shell("Релізи", "releases", "")
@@ -73,7 +79,7 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "releases", err)
 		return
 	}
-	d := releasesData{shell: sh, Work: sh.work()}
+	d := releasesData{shell: sh, Work: sh.work(), OpenID: itemID}
 	var current *store.Project
 	for i := range d.Work {
 		if d.Work[i].Slug == slug || (slug == "" && current == nil) {
@@ -88,17 +94,6 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// A task link inside the line panel opens the task instead of the line.
-	if openID != 0 {
-		d.Open = s.openTask(openID, now)
-	}
-	if d.Open == nil && itemID != 0 {
-		if it, err := s.store.ChecklistItem(itemID); err == nil {
-			d.OpenItem = &it
-		}
-	}
-	// The line id stays in the context while its task is open, so the task
-	// drawer can offer a way back to the line.
 	itemVal := ""
 	if itemID != 0 {
 		itemVal = strconv.FormatInt(itemID, 10)
@@ -123,13 +118,17 @@ func (s *Server) checklistAction(w http.ResponseWriter, r *http.Request, do func
 		return
 	}
 	r.ParseForm()
+	if r.FormValue("page") != "releases" {
+		s.respondNotebook(w, r) // ticked off under a "/release" line
+		return
+	}
 	r.Form.Set("p", p.Slug)
 	s.respondReleases(w, r)
 }
 
 func (s *Server) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	s.checklistAction(w, r, func(p store.Project) error {
-		title := strings.TrimSpace(r.FormValue("title"))
+		title := lineTitle(r)
 		if title == "" {
 			return nil
 		}
@@ -162,6 +161,10 @@ func (s *Server) itemAction(w http.ResponseWriter, r *http.Request, do func(id i
 		return
 	}
 	r.ParseForm()
+	if r.FormValue("page") != "releases" {
+		s.respondNotebook(w, r)
+		return
+	}
 	r.Form.Set("p", p.Slug)
 	s.respondReleases(w, r)
 }
@@ -177,17 +180,18 @@ func (s *Server) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) updateChecklistItem(w http.ResponseWriter, r *http.Request) {
-	s.itemAction(w, r, func(id int64) error {
-		title := strings.TrimSpace(r.FormValue("title"))
-		if title == "" {
-			title = "—"
-		}
-		return s.store.UpdateChecklistItem(id, title, "before")
-	})
+	r.ParseForm()
+	if lineTitle(r) == "" {
+		s.itemAction(w, r, s.store.DeleteChecklistItem) // an emptied line is removed, like a notebook line
+		return
+	}
+	s.itemAction(w, r, func(id int64) error { return s.store.UpdateChecklistItem(id, lineTitle(r), "before") })
 }
 
 func (s *Server) setChecklistItemTask(w http.ResponseWriter, r *http.Request) {
 	taskID, _ := strconv.ParseInt(r.FormValue("task_id"), 10, 64)
+	r.ParseForm()
+	r.Form.Del("i") // the picker has done its job
 	s.itemAction(w, r, func(id int64) error { return s.store.SetChecklistItemTask(id, taskID) })
 }
 
@@ -202,4 +206,13 @@ func (s *Server) taskOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderPart(w, "releases", "task_options", map[string]any{"Tasks": found, "Item": itemID, "Query": q})
+}
+
+// lineTitle is the checklist line as typed: the notebook editor posts "raw",
+// older forms post "title".
+func lineTitle(r *http.Request) string {
+	if v := strings.TrimSpace(r.FormValue("raw")); v != "" {
+		return v
+	}
+	return strings.TrimSpace(r.FormValue("title"))
 }

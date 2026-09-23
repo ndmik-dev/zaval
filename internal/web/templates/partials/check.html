@@ -1,0 +1,55 @@
+{{/* A release checklist line. Same editor as a notebook line: click the
+     text to edit the title, Enter saves; the box ticks it off. Used under a
+     "/release" line in the notebook and on the releases page. */}}
+{{define "check_item"}}{{$it := .It}}
+<form class="ln ci{{if $it.Done}} done{{end}}" data-item="{{$it.ID}}" hx-post="/checklist-items/{{$it.ID}}" hx-trigger="submit">
+  <button type="button" class="box" hx-post="/checklist-items/{{$it.ID}}/toggle" aria-label="{{if $it.Done}}Зняти відмітку{{else}}Зроблено{{end}}"></button>
+  <div class="tx" data-edit>
+    <span class="t">{{$it.Title}}</span>
+    {{if $it.TaskID.Valid}}<a class="ch" href="/#task-{{$it.TaskID.Int64}}" title="{{$it.TaskTitle.String}}"><i{{if eq $it.TaskState.String "done"}} class="ok"{{end}}></i>{{$it.TaskTitle.String}}</a>{{end}}
+  </div>
+  <div class="ed" hidden><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" autocomplete="off" spellcheck="false">{{$it.Title}}</textarea></div>
+  <span class="ln-act">
+    <button type="button" class="strike" hx-post="/checklist-items/{{$it.ID}}/toggle" title="⌘⏎">{{if $it.Done}}зняти{{else}}зроблено{{end}}</button>
+    {{if eq .Page "releases"}}
+      {{if $it.TaskID.Valid}}<button type="button" hx-post="/checklist-items/{{$it.ID}}/task" hx-vals='{"task_id":"0"}'>відвʼязати</button>
+      {{else if eq .OpenID $it.ID}}<a href="/releases?p={{.Slug}}" hx-get="/releases?p={{.Slug}}" hx-include="unset" hx-push-url="true">згорнути</a>
+      {{else}}<a href="/releases?p={{.Slug}}&i={{$it.ID}}" hx-get="/releases?p={{.Slug}}&i={{$it.ID}}" hx-include="unset" hx-push-url="true">→ задача</a>{{end}}
+    {{end}}
+    <button type="button" hx-delete="/checklist-items/{{$it.ID}}" data-confirm="Прибрати пункт «{{$it.Title}}»?" data-confirm-ok="Прибрати" data-confirm-danger>прибрати</button>
+  </span>
+</form>
+{{if and (eq .Page "releases") (eq .OpenID $it.ID) (not $it.TaskID.Valid)}}
+<div class="picker">
+  <input type="search" placeholder="Знайти в беклозі чи журналі…" autocomplete="off" name="text" autofocus
+         hx-get="/tasks/options?item={{$it.ID}}" hx-trigger="input changed delay:150ms, focus" hx-target="next .picker-menu" hx-swap="innerHTML" hx-include="unset">
+  <div class="picker-menu"></div>
+</div>
+{{end}}
+{{end}}
+
+{{define "check_add"}}
+<form class="ln new ci" id="new-item-{{.}}" hx-post="/checklist/{{.}}/items" hx-trigger="submit">
+  <span class="box dashed" aria-hidden="true"></span>
+  <div class="ed"><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" placeholder="пункт чекліста…" autocomplete="off" spellcheck="false" aria-label="Новий пункт"></textarea></div>
+</form>
+{{end}}
+
+{{/* An archived line: struck when it was ticked, the task a link into the feed. */}}
+{{define "check_history"}}
+<div class="ln ci hist{{if .Done}} done{{end}}">
+  <span class="box{{if .Done}} on{{end}}" aria-hidden="true"></span>
+  <div class="tx">
+    <span class="t">{{.Title}}</span>
+    {{if .TaskID.Valid}}<a class="ch" href="/#task-{{.TaskID.Int64}}"><i{{if eq .TaskState.String "done"}} class="ok"{{end}}></i>{{.TaskTitle.String}}</a>{{end}}
+  </div>
+</div>
+{{end}}
+
+{{define "task_options"}}
+{{if .Tasks}}
+<div class="picker-list">
+  {{range .Tasks}}<button type="button" class="picker-opt" hx-post="/checklist-items/{{$.Item}}/task" hx-vals='{"task_id":"{{.ID}}"}'><span class="pm" style="--project:{{.Project.Color}}"></span><span class="grow">{{.Title}}</span><span class="dim">{{if eq .State "now"}}сьогодні{{else if eq .State "backlog"}}беклог{{else}}закреслено{{end}}</span></button>{{end}}
+</div>
+{{else if .Query}}<div class="picker-list"><div class="dim" style="padding:8px 11px">Нічого не знайдено</div></div>{{end}}
+{{end}}

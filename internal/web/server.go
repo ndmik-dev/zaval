@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/ndmik-dev/zaval/internal/store"
 )
@@ -20,57 +20,19 @@ var templateFS embed.FS
 var staticFS embed.FS
 
 var funcs = template.FuncMap{
-	"day":      ukDay,
-	"dict":     dict,
-	"percent":  func(a, b int) int { return a * 100 / b },
-	"add":      func(a, b int) int { return a + b },
-	"colors":   func() []string { return projectColors },
-	"closeURL": closeURL,
-	"without":  without,
-	"doneHistory": func(items []store.HistoryItem) int {
-		n := 0
-		for _, it := range items {
-			if it.Done {
-				n++
-			}
-		}
-		return n
-	},
+	"dict":   dict,
+	"add":    func(a, b int) int { return a + b },
+	"colors": func() []string { return projectColors },
+	"tagmap": tagmap,
 }
 
-// without copies a context map minus the given keys.
-func without(m map[string]string, keys ...string) map[string]string {
-	out := make(map[string]string, len(m))
-	for k, v := range m {
-		out[k] = v
+// tagmap is "slug:#colour slug:#colour …" — app.js colours #tags in the editor with it.
+func tagmap(ps []projectItem) string {
+	parts := make([]string, 0, len(ps))
+	for _, p := range ps {
+		parts = append(parts, p.Slug+":"+p.Color)
 	}
-	for _, k := range keys {
-		delete(out, k)
-	}
-	return out
-}
-
-// closeURL rebuilds the URL of the page behind the detail pane, without the task.
-func closeURL(ctx map[string]string) string {
-	path := "/"
-	switch ctx["page"] {
-	case "journal":
-		path = "/journal"
-	case "releases":
-		path = "/releases"
-	case "projects":
-		path = "/projects"
-	}
-	q := url.Values{}
-	for k, v := range ctx {
-		if k != "page" && v != "" {
-			q.Set(k, v)
-		}
-	}
-	if len(q) == 0 {
-		return path
-	}
-	return path + "?" + q.Encode()
+	return strings.Join(parts, " ")
 }
 
 // projectColors are the preset swatches offered in project settings.
@@ -122,8 +84,15 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("GET /login", s.loginPage)
 	s.mux.HandleFunc("POST /login", s.login)
 	s.mux.HandleFunc("POST /logout", s.logout)
-	s.mux.HandleFunc("GET /{$}", s.board)
-	s.mux.HandleFunc("GET /journal", s.journal)
+	s.mux.HandleFunc("GET /{$}", s.notebook)
+	s.mux.HandleFunc("GET /backlog", s.backlog)
+	s.mux.HandleFunc("POST /lines", s.createLine)
+	s.mux.HandleFunc("POST /lines/order", s.orderLines)
+	s.mux.HandleFunc("POST /lines/{id}", s.updateLine)
+	s.mux.HandleFunc("POST /lines/{id}/strike", s.strikeLine)
+	s.mux.HandleFunc("POST /lines/{id}/move", s.moveLine)
+	s.mux.HandleFunc("POST /lines/{id}/send", s.sendLine)
+	s.mux.HandleFunc("POST /lines/{id}/released", s.releaseLine)
 	s.mux.HandleFunc("GET /releases", s.releases)
 	s.mux.HandleFunc("POST /checklist/{id}/items", s.addChecklistItem)
 	s.mux.HandleFunc("POST /checklist/{id}/released", s.markReleased)
@@ -136,15 +105,6 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("POST /projects", s.createProject)
 	s.mux.HandleFunc("POST /projects/{id}", s.updateProject)
 	s.mux.HandleFunc("DELETE /projects/{id}", s.deleteProject)
-	s.mux.HandleFunc("POST /tasks/reorder", s.reorderTasks)
-	s.mux.HandleFunc("GET /palette", s.palette)
-	s.mux.HandleFunc("POST /palette", s.createQuick)
-	s.mux.HandleFunc("POST /tasks/{id}/state", s.setTaskState)
-	s.mux.HandleFunc("POST /tasks/{id}/waiting", s.setWaiting)
-	s.mux.HandleFunc("DELETE /tasks/{id}", s.deleteTask)
-	s.mux.HandleFunc("POST /tasks/{id}", s.updateTask)
-	s.mux.HandleFunc("POST /tasks/{id}/links", s.addLink)
-	s.mux.HandleFunc("DELETE /links/{id}", s.deleteLink)
 	return s
 }
 

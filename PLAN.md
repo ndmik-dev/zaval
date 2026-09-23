@@ -39,6 +39,19 @@ one week using exactly that syntax. If the file survives the week, the notebook
 is worth a week of building on this backend (Go, SQLite, deploy, PWA all stay;
 the model changes to lines and days). If it does not, neither is the app.
 
+**Decision, 9 September 2026:** built anyway, on the `notebook` branch, without
+the text-file week. Stage 1 is there: today + the struck-lines feed, the
+backlog page, the line editor with the syntax above, `/release` as a line,
+⌘⏎ / ⌥↑↓ / drag. The stored model did not change, so `main` and `notebook`
+read the same database. What is not there yet, in order:
+
+1. **Live chips** — Jira and GitHub status on the chip, and the «змерджено —
+   закреслити?» nudge. Needs two tokens and one poller; this is the item that
+   makes it not a text file.
+2. Phone pass: the line editor on iOS keyboard (Enter, no ⌥ — a move handle).
+3. Delete the board's leftovers once the notebook has lived a month: the
+   `/releases` history page becomes struck `/release` lines in the feed.
+
 ## What would make the current app indispensable instead
 
 Only one thing: live statuses on the chips — `ATL-412 · In review`,
