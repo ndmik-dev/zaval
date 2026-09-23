@@ -116,6 +116,7 @@ type line struct {
 	store.Task
 	Raw     string
 	Age     int // days waiting, shown from the second day
+	Days    int // days since the line was opened, shown from the third
 	Release *releaseBlock
 }
 
@@ -280,6 +281,8 @@ func (s *Server) line(t store.Task, now time.Time) (line, error) {
 	l := line{Task: t, Raw: rawText(t)}
 	if t.Waiting != "" && t.WaitingSince.Valid {
 		l.Age = ageDays(t.WaitingSince.String, now)
+	} else if t.State == "now" && t.NowSince.Valid {
+		l.Days = ageDays(t.NowSince.String, now) - 1 // ageDays counts today as 1
 	}
 	if isRelease(t) {
 		items, err := s.store.Checklist(t.ProjectID)

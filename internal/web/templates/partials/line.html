@@ -9,7 +9,8 @@
     {{if $l.Release}}<span class="t"><span class="mono dim">/release</span> {{$l.Project.Name}} <span class="mono dim">{{$l.Release.Done}} / {{$l.Release.Total}}</span></span>
     {{else}}<span class="t">{{$l.Title}}</span>{{end}}
     {{template "chips" $l.Links}}
-    {{if $l.Waiting}}<span class="ch wait"><i></i>чекаю {{$l.Waiting}}{{if ge $l.Age 2}} · {{$l.Age}} дн.{{end}}</span>{{end}}
+    {{if $l.Waiting}}<span class="ch wait"><i></i>чекаю {{$l.Waiting}}{{if ge $l.Age 2}} · {{$l.Age}} дн.{{end}}</span>
+    {{else if ge $l.Days 3}}<span class="ch age" title="у роботі {{$l.Days}} дн.">{{$l.Days}} дн.</span>{{end}}
   </div>
   <div class="ed" hidden><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" autocomplete="off" spellcheck="false">{{$l.Raw}}</textarea></div>
   <span class="ln-act">

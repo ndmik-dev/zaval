@@ -61,7 +61,9 @@ a{color:var(--atlas);text-decoration:none}
 .pwords a:hover{color:var(--ink)}
 .pwords .on{color:var(--ink);font-weight:600}
 .lines{display:flex;flex-direction:column}
-.lines.struck{margin-top:2px}
+.dh.sub{margin:14px 0 2px 6px}
+.lines.struck{margin-top:0}
+.ch.age{color:var(--faint)}
 .band .lines{padding-left:12px;border-left:2px solid var(--project)}
 
 .ln{

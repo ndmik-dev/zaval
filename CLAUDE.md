@@ -31,6 +31,11 @@ the notebook described there; `main` still carries the frozen board.
   `?` starts the waiting note, `→ беклог` / `→ сьогодні` at the end moves the
   line, `/release #tag` makes the line a release checklist. `rawText` is the
   inverse; the two must round-trip (tested).
+- Open lines are not bound to a day: tomorrow shows the same open lines under
+  tomorrow's date. A line open for three days or more carries a faint «N дн.»
+  (`Days`, from `now_since`); struck lines sit under a quiet «закрито · N».
+- In the backlog each project band is its own drag list — a line never
+  changes project by drag; `→ сьогодні` / `b` is how it leaves the page.
 - Without a tag a new line takes the project of the line above it, then the
   `lastp` cookie, then the first project.
 - The editor is a textarea that grows with the line, in the same face as the

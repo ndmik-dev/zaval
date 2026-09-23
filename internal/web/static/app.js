@@ -371,7 +371,7 @@ function initSortable() {
     if (sortables.has(list)) return;
     sortables.add(list);
     new Sortable(list, {
-      group: 'lines-' + list.dataset.state,
+      group: { name: 'lines-' + list.dataset.state, pull: false, put: false }, // a band is its own list: a line never leaves its project by drag
       draggable: '.ln:not(.new)',
       handle: '.pm',
       animation: 120,

@@ -4,10 +4,13 @@
   <form id="order" hx-post="/lines/order" hx-trigger="order" hidden></form>
 
   <section class="day today">
-    <div class="dh"><h1 class="d"><span class="wd">{{.Weekday}}</span> {{.DayLabel}}</h1>{{if .Struck}}<span class="n">{{len .Struck}} закрито</span>{{end}}</div>
+    <div class="dh"><h1 class="d"><span class="wd">{{.Weekday}}</span> {{.DayLabel}}</h1></div>
     <div class="lines sortable" id="today" data-state="now">{{range .Today}}{{template "line" (dict "L" . "Page" "today")}}{{end}}</div>
     {{template "newline" (printf "новий рядок… #%s" .NewTag)}}
-    {{if .Struck}}<div class="lines struck">{{range .Struck}}{{template "line" (dict "L" . "Page" "today")}}{{end}}</div>{{end}}
+    {{if .Struck}}
+    <div class="dh sub"><span class="n">закрито · {{len .Struck}}</span></div>
+    <div class="lines struck">{{range .Struck}}{{template "line" (dict "L" . "Page" "today")}}{{end}}</div>
+    {{end}}
   </section>
 
   {{range .Days}}
