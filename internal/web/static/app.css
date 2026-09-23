@@ -71,10 +71,11 @@ a{color:var(--atlas);text-decoration:none}
 .ln:hover{background:rgba(252,252,250,.75)}
 .ln .pm{width:9px;height:9px;border-radius:2px;background:var(--project);flex:none;position:relative;top:-1px;cursor:grab}
 .ln .pm.dashed{background:transparent;border:1.5px dashed #C9CCC5;cursor:default}
-.ln.done .pm{opacity:.45;cursor:default}
+.ln.done .pm{cursor:default}
 .ln .tx{min-width:0;flex:1;cursor:text}
 .ln .tx .t{overflow-wrap:anywhere}
-.ln.done .tx{color:var(--muted);text-decoration:line-through;text-decoration-color:#C9CCC5;text-decoration-thickness:1px}
+.ln.done .tx{color:var(--faint);text-decoration:line-through;text-decoration-color:#A9AEA6;text-decoration-thickness:1.5px}
+.ln.done .pm{opacity:.3}
 .ln.done .ch{text-decoration:none}
 .ln.editing .tx,.ln.editing .ln-act{display:none}
 /* The editor: a transparent textarea over a backdrop that paints the syntax. */
@@ -97,9 +98,9 @@ a{color:var(--atlas);text-decoration:none}
 .hl .c,.hl .r{color:var(--muted)}
 .ln.editing{background:var(--card);box-shadow:0 0 0 1px var(--line)}
 .ln.new.editing{background:transparent;box-shadow:none}
-.ln.focused{box-shadow:inset 2px 0 0 var(--ink)}
-.ln.editing.focused{box-shadow:0 0 0 1px var(--line)}
-.ln.new.editing.focused{box-shadow:none}
+/* The keyboard's line looks like the pointer's: a card lifted from the paper. */
+.ln.focused{background:var(--card);box-shadow:0 0 0 1px var(--line)}
+.ln.new.editing.focused{background:transparent;box-shadow:none}
 .ch{
   display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:13px;color:var(--muted);
   margin-left:9px;white-space:nowrap;vertical-align:baseline;
@@ -126,7 +127,11 @@ a.ch:hover{color:var(--ink)}
 .ci{font-size:15.5px;min-height:29px}
 .ci .box{width:15px;height:15px;border:1.5px solid #B9BDB5;border-radius:4px;flex:none;position:relative;top:2px;background:none;cursor:pointer;padding:0;display:block}
 .ci .box:hover{border-color:var(--ink)}
-.ci.done .box,.ci .box.on{background:#B9BDB5;border-color:#B9BDB5}
+.ci.done .box,.ci .box.on{
+  background:var(--muted) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3.4 7.3 6 9.8l4.6-5.4' fill='none' stroke='%23FCFCFA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat;
+  border-color:var(--muted);
+}
+.ci.done .box:hover{background-color:var(--ink);border-color:var(--ink)}
 .ci .box.dashed{border-style:dashed;border-color:#C9CCC5;cursor:default}
 .ci.hist:hover{background:transparent}
 .act{align-self:flex-start;font:inherit;font-size:14.5px;color:var(--atlas);background:none;border:0;padding:6px 0 0 26px;cursor:pointer}
@@ -164,8 +169,21 @@ a.ch:hover{color:var(--ink)}
 .sw.on{border-color:var(--ink)}
 .sw.custom{background:conic-gradient(#A0522D,#8A6A30,#5C7A3E,#3E7D6E,#4E6B8C,#7A5C99,#7C4A6B,#A0522D);position:relative;overflow:hidden}
 .sw.custom input{position:absolute;inset:-4px;width:200%;height:200%;opacity:0;cursor:pointer}
-.pact{display:flex;gap:18px;padding-top:4px}
+.pact{display:flex;gap:18px;padding-top:4px;align-items:baseline;font-size:13.5px}
 .pact .act{padding-left:0}
+
+/* The undo toast: one label, one word, gone in five seconds. */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:25;
+  display:flex;align-items:center;gap:16px;padding:10px 16px 10px 18px;
+  background:var(--ink);color:var(--card);border-radius:10px;font-size:14.5px;
+  box-shadow:0 10px 30px rgba(23,32,28,.28);animation:toast-in .18s var(--ease);
+}
+.toast .undo{font:inherit;font-weight:600;color:var(--card);background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.toast .undo:hover{text-decoration:underline}
+.toast kbd{font-family:var(--mono);font-size:12px;font-weight:400;opacity:.6}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (max-width:820px){.toast{bottom:74px}}
 
 /* ---------- dialogs, buttons ---------- */
 .btn{font:inherit;font-size:15px;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:7px 13px 8px;cursor:pointer}
@@ -203,7 +221,8 @@ dialog[open]{animation:dialog-in .16s var(--ease)}
 dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
 @keyframes dialog-in{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:1.5px solid var(--atlas);outline-offset:3px;border-radius:6px}
+.box:focus-visible{outline-offset:2px;border-radius:5px}
 a:focus-visible{outline:0}
 .ln .raw:focus-visible,.ln-act :focus-visible,.pin:focus-visible,.pin input:focus-visible,.picker input:focus-visible,.login input:focus-visible{outline:0}
 @media (prefers-reduced-motion:reduce){

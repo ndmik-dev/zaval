@@ -99,6 +99,7 @@ func (s *Server) respondReleases(w http.ResponseWriter, r *http.Request) {
 		itemVal = strconv.FormatInt(itemID, 10)
 	}
 	d.Ctx = map[string]string{"page": "releases", "p": slug, "i": itemVal}
+	d.Undo = undoFrom(r)
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "releases", "app", d)
 		return
@@ -170,7 +171,13 @@ func (s *Server) itemAction(w http.ResponseWriter, r *http.Request, do func(id i
 }
 
 func (s *Server) toggleChecklistItem(w http.ResponseWriter, r *http.Request) {
-	s.itemAction(w, r, s.store.ToggleChecklistItem)
+	s.itemAction(w, r, func(id int64) error {
+		if err := s.store.ToggleChecklistItem(id); err != nil {
+			return err
+		}
+		offerUndo(r, "Пункт перемкнуто", "toggle", id, "")
+		return nil
+	})
 }
 
 func (s *Server) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {

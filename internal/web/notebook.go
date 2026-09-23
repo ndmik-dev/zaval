@@ -184,6 +184,7 @@ func (s *Server) respondNotebook(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "notebook", err)
 		return
 	}
+	d.Undo = undoFrom(r)
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "notebook", "app", d)
 		return
@@ -203,6 +204,7 @@ func (s *Server) respondBacklog(w http.ResponseWriter, r *http.Request) {
 	}
 	d := backlogData{shell: sh, NewTag: s.newTag(sh, "backlog", preferredProject(r))}
 	d.Ctx = map[string]string{"page": "backlog"}
+	d.Undo = undoFrom(r)
 	tasks, err := s.store.TasksByState("backlog")
 	if err != nil {
 		s.fail(w, "backlog", err)
@@ -356,6 +358,8 @@ func (s *Server) updateLine(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, "delete line", err)
 			return
 		}
+		s.remember(task)
+		offerUndo(r, "Рядок видалено", "restore", task.ID, "")
 		s.respondNotebook(w, r)
 		return
 	}
@@ -471,20 +475,25 @@ func (s *Server) strikeLine(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	state := "done"
+	state, label := "done", "Закреслено"
 	if task.State == "done" {
-		state = "now"
+		state, label = "now", "Повернуто"
 	}
 	if err := s.store.SetTaskState(task.ID, state); err != nil {
 		s.fail(w, "strike", err)
 		return
 	}
+	offerUndo(r, label, "state", task.ID, undoState(task))
 	s.respondNotebook(w, r)
 }
 
-// moveLine shifts a line one step up or down within its page (⌥↑ / ⌥↓).
-func (s *Server) moveLine(w http.ResponseWriter, r *http.Request) {
-	task, err := s.store.Task(pathID(r))
+// moveLineHandler shifts a line one step up or down within its page (⌥↑ / ⌥↓).
+func (s *Server) moveLineHandler(w http.ResponseWriter, r *http.Request) {
+	s.moveLine(w, r, pathID(r))
+}
+
+func (s *Server) moveLine(w http.ResponseWriter, r *http.Request, id int64) {
+	task, err := s.store.Task(id)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -502,11 +511,12 @@ func (s *Server) moveLine(w http.ResponseWriter, r *http.Request) {
 			at = i
 		}
 	}
-	to := at
+	to, back := at, "down"
 	if r.FormValue("dir") == "up" {
 		to--
 	} else {
 		to++
+		back = "up"
 	}
 	if at >= 0 && to >= 0 && to < len(order) {
 		order[at], order[to] = order[to], order[at]
@@ -514,6 +524,7 @@ func (s *Server) moveLine(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, "move", err)
 			return
 		}
+		offerUndo(r, "Пересунуто", "move", task.ID, back)
 	}
 	s.respondNotebook(w, r)
 }
@@ -540,10 +551,20 @@ func (s *Server) sendLine(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad state", http.StatusBadRequest)
 		return
 	}
-	if err := s.store.SetTaskState(pathID(r), state); err != nil {
+	task, err := s.store.Task(pathID(r))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := s.store.SetTaskState(task.ID, state); err != nil {
 		s.fail(w, "send", err)
 		return
 	}
+	label := "→ беклог"
+	if state == "now" {
+		label = "→ сьогодні"
+	}
+	offerUndo(r, label, "state", task.ID, undoState(task))
 	s.respondNotebook(w, r)
 }
 
@@ -579,6 +600,22 @@ func (s *Server) releaseLine(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "release", err)
 		return
 	}
+	s.respondNotebook(w, r)
+}
+
+// deleteLine removes a line outright; the toast can bring it back.
+func (s *Server) deleteLine(w http.ResponseWriter, r *http.Request) {
+	task, err := s.store.Task(pathID(r))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := s.store.DeleteTask(task.ID); err != nil {
+		s.fail(w, "delete line", err)
+		return
+	}
+	s.remember(task)
+	offerUndo(r, "Рядок видалено", "restore", task.ID, "")
 	s.respondNotebook(w, r)
 }
 

@@ -53,6 +53,7 @@ func (s *Server) respondProjects(w http.ResponseWriter, r *http.Request, expandS
 		}
 	}
 	d.Ctx = map[string]string{"page": "projects"}
+	d.Undo = undoFrom(r)
 	if r.Header.Get("HX-Request") != "" {
 		s.renderPart(w, "projects", "app", d)
 		return
@@ -114,7 +115,7 @@ func (s *Server) updateProject(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteProject(w http.ResponseWriter, r *http.Request) {
 	err := s.store.DeleteProject(pathID(r))
 	if err == store.ErrHasTasks {
-		s.respondProjects(w, r, "", "У проєкті є задачі — спершу перенеси або видали їх")
+		s.respondProjects(w, r, "", "У проєкті є відкриті рядки — спершу закресли їх або перенеси в інший проєкт")
 		return
 	}
 	if err != nil {

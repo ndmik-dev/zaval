@@ -40,7 +40,7 @@ the notebook described there; `main` still carries the frozen board.
   (`/lines/{id}/move`); the project square is the drag handle (`/lines/order`,
   positions only — `SetPositions` never touches waiting or timestamps).
 - Keyboard focus is separate from editing: ↑/↓ (j/k) walk lines from the
-  moment the page opens (`.ln.focused`, an ink bar on the left), Enter opens
+  moment the page opens (`.ln.focused`, the same lifted card as hover), Enter opens
   the focused line (edits it, or follows a project row), Esc steps out of
   editing and then clears the focus; x / ⌘⏎ strike, b sends to the other page.
   Focus survives a morph by key, like the editing state.
@@ -48,6 +48,12 @@ the notebook described there; `main` still carries the frozen board.
   and links (`titleEnd`). Behind the transparent textarea a backdrop (`.hl`)
   paints the syntax: links underlined, `#tag` in the project's colour
   (`data-tags` on `#app`), waiting red, `→ command` muted — `paint()`.
+- Every reversible action (strike, send, move, delete, checklist toggle)
+  answers with a toast «Скасувати ⌘Z» for five seconds: the handler calls
+  `offerUndo`, the page renders `.Undo`, `/undo` reverses it. A deleted line
+  is kept in memory (`Server.deleted`) and restored under its old id.
+- In the project editor ↑/↓ walk the fields, ←/→ pick a kind or a colour,
+  Esc closes; the name and tag inputs carry `data-1p-ignore`.
 - The empty line's placeholder names the tag a new line will take
   (`NewTag`: the line above, then the `lastp` cookie, then the first project).
 - No tick buttons: actions are words that appear on hover at the line's end

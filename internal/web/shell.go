@@ -15,6 +15,7 @@ type shell struct {
 	Projects []projectItem
 	Ctx      map[string]string // page parameters every mutation carries back
 	AuthOn   bool
+	Undo     *undo // toast after a reversible action
 }
 
 func (s *Server) shell(title, nav, filter string) (shell, error) {

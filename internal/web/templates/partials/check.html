@@ -16,7 +16,7 @@
       {{else if eq .OpenID $it.ID}}<a href="/releases?p={{.Slug}}" hx-get="/releases?p={{.Slug}}" hx-include="unset" hx-push-url="true">згорнути</a>
       {{else}}<a href="/releases?p={{.Slug}}&i={{$it.ID}}" hx-get="/releases?p={{.Slug}}&i={{$it.ID}}" hx-include="unset" hx-push-url="true">→ задача</a>{{end}}
     {{end}}
-    <button type="button" hx-delete="/checklist-items/{{$it.ID}}" data-confirm="Прибрати пункт «{{$it.Title}}»?" data-confirm-ok="Прибрати" data-confirm-danger>прибрати</button>
+    <button type="button" class="del" hx-delete="/checklist-items/{{$it.ID}}" data-confirm="Прибрати пункт «{{$it.Title}}»?" data-confirm-ok="Прибрати" data-confirm-danger>прибрати</button>
   </span>
 </form>
 {{if and (eq .Page "releases") (eq .OpenID $it.ID) (not $it.TaskID.Valid)}}

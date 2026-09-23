@@ -64,7 +64,8 @@ type Server struct {
 	pages    map[string]*template.Template
 	store    *store.Store
 	auth     *auth
-	assetVer string // hash of the embedded static files; busts browser and service-worker caches
+	assetVer string               // hash of the embedded static files; busts browser and service-worker caches
+	deleted  map[int64]store.Task // lines deleted this run, kept so an undo can put them back
 }
 
 func New(st *store.Store, password string) *Server {
@@ -90,9 +91,11 @@ func New(st *store.Store, password string) *Server {
 	s.mux.HandleFunc("POST /lines/order", s.orderLines)
 	s.mux.HandleFunc("POST /lines/{id}", s.updateLine)
 	s.mux.HandleFunc("POST /lines/{id}/strike", s.strikeLine)
-	s.mux.HandleFunc("POST /lines/{id}/move", s.moveLine)
+	s.mux.HandleFunc("POST /lines/{id}/move", s.moveLineHandler)
 	s.mux.HandleFunc("POST /lines/{id}/send", s.sendLine)
 	s.mux.HandleFunc("POST /lines/{id}/released", s.releaseLine)
+	s.mux.HandleFunc("DELETE /lines/{id}", s.deleteLine)
+	s.mux.HandleFunc("POST /undo", s.undoAction)
 	s.mux.HandleFunc("GET /releases", s.releases)
 	s.mux.HandleFunc("POST /checklist/{id}/items", s.addChecklistItem)
 	s.mux.HandleFunc("POST /checklist/{id}/released", s.markReleased)

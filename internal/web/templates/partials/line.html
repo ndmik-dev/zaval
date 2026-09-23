@@ -15,9 +15,10 @@
   <span class="ln-act">
     {{if eq $l.State "done"}}<button type="button" class="strike" hx-post="/lines/{{$l.ID}}/strike">повернути</button>
     {{else}}<button type="button" class="strike" hx-post="/lines/{{$l.ID}}/strike" title="⌘⏎">закреслити</button>
-    {{if eq $page "backlog"}}<button type="button" hx-post="/lines/{{$l.ID}}/send" hx-vals='{"state":"now"}'>→ сьогодні</button>
-    {{else}}<button type="button" hx-post="/lines/{{$l.ID}}/send" hx-vals='{"state":"backlog"}'>→ беклог</button>{{end}}
+    {{if eq $page "backlog"}}<button type="button" class="send" hx-post="/lines/{{$l.ID}}/send" hx-vals='{"state":"now"}'>→ сьогодні</button>
+    {{else}}<button type="button" class="send" hx-post="/lines/{{$l.ID}}/send" hx-vals='{"state":"backlog"}'>→ беклог</button>{{end}}
     {{end}}
+    <button type="button" class="del" hx-delete="/lines/{{$l.ID}}" title="⌫">видалити</button>
   </span>
   {{if ne $l.State "done"}}
   <button type="button" class="mv up" hx-post="/lines/{{$l.ID}}/move" hx-vals='{"dir":"up"}' hidden tabindex="-1" aria-hidden="true"></button>

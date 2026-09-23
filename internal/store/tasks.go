@@ -284,3 +284,32 @@ func (s *Store) SetPositions(state string, ids []int64) error {
 	}
 	return tx.Commit()
 }
+
+// RestoreTask puts a deleted task back under its old id, links included, so
+// an undo keeps every URL that pointed at it.
+func (s *Store) RestoreTask(t Task) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`insert into tasks (id, project_id, title, state, notes, position, created_at, now_since, done_at, waiting, waiting_since)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.ProjectID, t.Title, t.State, t.Notes, t.Position, t.CreatedAt, t.NowSince, t.DoneAt, t.Waiting, t.WaitingSince); err != nil {
+		return err
+	}
+	for i, l := range t.Links {
+		if _, err := tx.Exec(`insert into task_links (task_id, url, kind, label, meta, position) values (?, ?, ?, ?, ?, ?)`,
+			t.ID, l.URL, l.Kind, l.Label, l.Meta, i); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// SetPosition puts a task back at a given slot; an undo uses it so a
+// restored line lands where it was, not at the end of the page.
+func (s *Store) SetPosition(id int64, pos int) error {
+	_, err := s.db.Exec(`update tasks set position = ? where id = ?`, pos, id)
+	return err
+}

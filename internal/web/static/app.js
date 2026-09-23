@@ -196,16 +196,50 @@ document.addEventListener('keydown', (e) => {
     startEdit(next);
   }
 });
-// The project editor: Esc closes it, a save keeps the row focused.
+// The project editor: Esc closes it, ↑/↓ walk the fields, ←/→ pick a kind or
+// a colour, a save keeps the row focused.
+function peditFields(pedit) {
+  return [
+    pedit.querySelector('input[name=name]'),
+    pedit.querySelector('input[name=slug]'),
+    pedit.querySelector('.kind input:checked') || pedit.querySelector('.kind input'),
+    pedit.querySelector('.sw.on') || pedit.querySelector('.sw'),
+    pedit.querySelector('.pact .act'),
+  ].filter(Boolean);
+}
+// Which field of the project editor has focus, so an autosave can hand it back.
+function peditFocus() {
+  const el = document.activeElement;
+  const pedit = el?.closest?.('.pedit');
+  if (!pedit) return null;
+  if (el.matches('.sw')) return { sel: '.sw.on' };
+  if (el.name) return { sel: `[name="${el.name}"]${el.type === 'radio' ? ':checked' : ''}`, caret: el.selectionStart };
+  return null;
+}
 document.addEventListener('keydown', (e) => {
   const pedit = e.target instanceof Element && e.target.closest('.pedit');
-  if (!pedit || e.key !== 'Escape') return;
-  e.preventDefault();
-  document.getElementById(pedit.dataset.row)?.click();
+  if (!pedit) return;
+  if (e.key === 'Escape') { e.preventDefault(); document.getElementById(pedit.dataset.row)?.click(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const fields = peditFields(pedit);
+    const at = fields.findIndex((f) => f === e.target || f.contains(e.target));
+    const next = fields[Math.min(fields.length - 1, Math.max(0, at + (e.key === 'ArrowDown' ? 1 : -1)))];
+    next?.focus();
+    if (next?.matches('input[type=text], input:not([type])')) next.setSelectionRange(next.value.length, next.value.length);
+    return;
+  }
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && e.target.matches('.sw')) {
+    e.preventDefault();
+    const sws = [...pedit.querySelectorAll('.sw[data-color]')];
+    const i = sws.indexOf(e.target);
+    const next = sws[Math.min(sws.length - 1, Math.max(0, i + (e.key === 'ArrowRight' ? 1 : -1)))];
+    if (next) { next.click(); next.focus(); }
+  }
 });
 document.addEventListener('submit', (e) => {
   const pedit = e.target.closest?.('.pedit');
-  if (pedit) window.__focusKey = '#' + pedit.dataset.row;
+  if (pedit) { window.__focusKey = '#' + pedit.dataset.row; window.__peditFocus = peditFocus(); }
 });
 
 // The page is morphed after every save. Remember what was being edited (and
@@ -218,6 +252,7 @@ document.addEventListener('htmx:before:swap', () => {
   window.__editing = form ? { key: lineKey(form), text: area.value, caret: area.selectionStart } : null;
   const f = focusedLine();
   if (f && !window.__focusKey) window.__focusKey = lineKey(f);
+  if (!window.__peditFocus) window.__peditFocus = peditFocus();
 });
 document.addEventListener('htmx:after:swap', () => {
   document.querySelectorAll('.ln.new .raw').forEach((a) => { if (!a.matches(':focus')) { a.value = ''; paint(a); } }); // a morph keeps typed text; the line is saved
@@ -241,12 +276,39 @@ document.addEventListener('htmx:after:swap', () => {
     return;
   }
   if (focus) focusLine(findLine(focus), false);
+  const pf = window.__peditFocus;
+  window.__peditFocus = null;
+  if (pf) {
+    const el = document.querySelector('.pedit ' + pf.sel);
+    if (el) { el.focus({ preventScroll: true }); if (pf.caret !== undefined && el.setSelectionRange) el.setSelectionRange(pf.caret, pf.caret); }
+  }
 });
 // A mouse click on an action word must not leave a focus ring on it.
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.ln-act button, .ln-act a, .box, .act, .strike, .sw');
   if (b && e.detail > 0) setTimeout(() => b.blur(), 0);
 });
+
+// The undo toast: ⌘Z presses its button; it leaves on its own after five seconds.
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.code === 'KeyZ' && !e.shiftKey) {
+    const undo = document.querySelector('#toast .undo');
+    if (undo && !typing(e)) { e.preventDefault(); undo.click(); }
+  }
+});
+// After an undo the line it brought back is the one to stand on.
+document.addEventListener('click', (e) => {
+  const undo = e.target.closest('#toast .undo');
+  if (undo) window.__focusKey = undo.closest('#toast').dataset.id;
+});
+function armToast() {
+  const toast = document.getElementById('toast');
+  if (!toast || toast.dataset.armed) return;
+  toast.dataset.armed = '1';
+  setTimeout(() => toast.remove(), 5000);
+}
+armToast();
+document.addEventListener('htmx:after:swap', armToast);
 
 // Keys outside inputs.
 const help = document.getElementById('help');
@@ -255,25 +317,41 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-open-help]')) help?.showModal();
   if (e.target.closest('[data-close-help]') || e.target === help) help?.close();
 });
+// Keys are read by position (e.code), so they work under the Ukrainian layout too.
+function newLineForm() {
+  const cur = focusedLine();
+  return cur?.closest('.chk')?.querySelector('.ln.new')
+    || document.getElementById('new-line') || document.getElementById('new-project') || document.querySelector('.ln.new');
+}
+function switchProject(step) {
+  const words = [...document.querySelectorAll('.pwords a, .pwords .on')];
+  const i = words.findIndex((w) => w.classList.contains('on'));
+  const next = words[i + step];
+  if (next?.matches('a')) next.click();
+}
 document.addEventListener('keydown', (e) => {
   if (typing(e) || e.altKey) return;
-  if (document.querySelector('dialog[open]') && e.key !== '?') return;
+  if (e.target instanceof Element && e.target.closest('.pedit')) return; // the project editor has its own keys
+  if (document.querySelector('dialog[open]') && e.code !== 'Slash') return;
   const cur = focusedLine();
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); cur?.querySelector('.strike')?.click(); return; }
   if (e.metaKey || e.ctrlKey) return;
-  switch (e.key) {
-    case '?': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
-    case 'ArrowDown': case 'j': e.preventDefault(); moveFocus(1); break;
-    case 'ArrowUp': case 'k': e.preventDefault(); moveFocus(-1); break;
+  switch (e.code) {
+    case 'Slash': e.preventDefault(); if (help) help.open ? help.close() : help.showModal(); break;
+    case 'ArrowDown': case 'KeyJ': e.preventDefault(); moveFocus(1); break;
+    case 'ArrowUp': case 'KeyK': e.preventDefault(); moveFocus(-1); break;
+    case 'ArrowLeft': switchProject(-1); break;
+    case 'ArrowRight': switchProject(1); break;
     case 'Enter': e.preventDefault(); activate(cur); break;
     case 'Escape': focusLine(null); break;
-    case 'x': cur?.querySelector('.strike')?.click(); break;
-    case 'b': cur?.querySelector('.ln-act button:not(.strike)')?.click(); break;
-    case 'n': e.preventDefault(); startEdit(document.querySelector('.ln.new')); break;
-    case '1': location.href = '/'; break;
-    case '2': location.href = '/backlog'; break;
-    case '3': location.href = '/releases'; break;
-    case '4': location.href = '/projects'; break;
+    case 'KeyX': cur?.querySelector('.strike')?.click(); break;
+    case 'KeyB': cur?.querySelector('.ln-act .send')?.click(); break;
+    case 'Backspace': case 'Delete': if (cur) { e.preventDefault(); cur.querySelector('.ln-act .del')?.click(); } break;
+    case 'KeyN': e.preventDefault(); startEdit(newLineForm()); break;
+    case 'Digit1': location.href = '/'; break;
+    case 'Digit2': location.href = '/backlog'; break;
+    case 'Digit3': location.href = '/releases'; break;
+    case 'Digit4': location.href = '/projects'; break;
   }
 });
 document.querySelectorAll('.ln.new .raw').forEach(paint);
@@ -359,7 +437,9 @@ document.addEventListener('click', (e) => {
   const sw = e.target.closest('.sw[data-color]');
   if (!sw) return;
   const wrap = sw.closest('.swatches');
-  wrap.querySelector('input[type=color]').value = sw.dataset.color;
+  const color = wrap.querySelector('input[type=color]');
+  color.value = sw.dataset.color;
+  color.dispatchEvent(new Event('change', { bubbles: true }));
   wrap.querySelectorAll('.sw').forEach((s) => s.classList.toggle('on', s === sw));
   const form = sw.closest('form');
   if (form) form.style.setProperty('--project', sw.dataset.color);

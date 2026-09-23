@@ -28,6 +28,7 @@
   {{template "topbar" .}}
   <main class="main">{{template "content" .}}</main>
   {{template "help" .}}
+  {{with .Undo}}<div class="toast" id="toast" data-op="{{.Op}}" data-id="{{.ID}}"><span>{{.Label}}</span><button type="button" class="undo" hx-post="/undo" hx-vals='{"op":"{{.Op}}","id":"{{.ID}}","arg":"{{.Arg}}"}'>Скасувати <kbd>⌘Z</kbd></button></div>{{end}}
   <dialog id="confirm" class="confirm-dialog">
     <p class="confirm-text"></p>
     <div class="confirm-actions">

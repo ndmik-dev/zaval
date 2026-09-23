@@ -108,16 +108,34 @@ func (s *Store) UpdateProject(p Project) error {
 }
 
 // DeleteProject removes a project that has no tasks; ErrHasTasks otherwise.
+// DeleteProject removes a project together with its struck lines, release
+// checklist and release history. Open lines block it: they must be moved or
+// struck first, so nothing you still mean to do disappears with a project.
 func (s *Store) DeleteProject(id int64) error {
 	var n int
-	if err := s.db.QueryRow(`select count(*) from tasks where project_id = ?`, id).Scan(&n); err != nil {
+	if err := s.db.QueryRow(`select count(*) from tasks where project_id = ? and state != 'done'`, id).Scan(&n); err != nil {
 		return err
 	}
 	if n > 0 {
 		return ErrHasTasks
 	}
-	_, err := s.db.Exec(`delete from projects where id = ?`, id)
-	return err
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, q := range []string{
+		`delete from release_items where release_id in (select id from releases where project_id = ?)`,
+		`delete from releases where project_id = ?`,
+		`delete from release_templates where project_id = ?`,
+		`delete from tasks where project_id = ?`,
+		`delete from projects where id = ?`,
+	} {
+		if _, err := tx.Exec(q, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 var ErrHasTasks = errors.New("project has tasks")
