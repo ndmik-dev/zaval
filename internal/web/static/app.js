@@ -124,6 +124,13 @@ document.addEventListener('click', (e) => {
   if (!tx || e.target.closest('a, button')) return;
   startEdit(lineOf(tx));
 });
+// The project square selects the line (on a phone, that is how the words appear).
+document.addEventListener('click', (e) => {
+  const pm = e.target.closest('.ln .pm:not(.dashed)');
+  if (!pm) return;
+  const line = lineOf(pm);
+  focusLine(line.classList.contains('focused') ? null : line, false);
+});
 document.addEventListener('click', (e) => {
   const row = e.target.closest('a.ln.pr');
   if (row && !row.classList.contains('open')) window.__openRow = row.id;

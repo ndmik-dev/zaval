@@ -134,8 +134,10 @@ a.ch:hover{color:var(--ink)}
 .ci.done .box:hover{background-color:var(--ink);border-color:var(--ink)}
 .ci .box.dashed{border-style:dashed;border-color:#C9CCC5;cursor:default}
 .ci.hist:hover{background:transparent}
-.act{align-self:flex-start;font:inherit;font-size:14.5px;color:var(--atlas);background:none;border:0;padding:6px 0 0 26px;cursor:pointer}
+/* Action words: padding hugs the word, so a focus ring hugs it too. */
+.act{align-self:flex-start;font:inherit;font-size:14.5px;color:var(--atlas);background:none;border:0;padding:2px 5px;margin:4px 0 0 21px;border-radius:5px;cursor:pointer}
 .act:hover{text-decoration:underline}
+.act:focus-visible{outline-offset:0}
 .act.ghost{color:var(--faint)}
 .act.ghost:hover{color:var(--attention);text-decoration:none}
 .picker{position:relative;margin:2px 0 6px 26px}
@@ -169,8 +171,8 @@ a.ch:hover{color:var(--ink)}
 .sw.on{border-color:var(--ink)}
 .sw.custom{background:conic-gradient(#A0522D,#8A6A30,#5C7A3E,#3E7D6E,#4E6B8C,#7A5C99,#7C4A6B,#A0522D);position:relative;overflow:hidden}
 .sw.custom input{position:absolute;inset:-4px;width:200%;height:200%;opacity:0;cursor:pointer}
-.pact{display:flex;gap:18px;padding-top:4px;align-items:baseline;font-size:13.5px}
-.pact .act{padding-left:0}
+.pact{display:flex;gap:14px;padding-top:4px;align-items:baseline;font-size:13.5px}
+.pact .act{margin:0 0 0 -5px}
 
 /* The undo toast: one label, one word, gone in five seconds. */
 .toast{
@@ -242,6 +244,9 @@ a:focus-visible{outline:0}
   .main{padding-bottom:58px}
   .col{overflow:visible}
   .col-in{padding-left:14px;padding-right:14px;max-width:none}
-  .ln-act{opacity:.8}
+  /* No hover on a phone: the words show on the line you tapped the square of. */
+  .ln-act{display:none;opacity:1}
+  .ln.focused .ln-act,.ln:focus-within .ln-act{display:flex}
+  .ln .pm{width:13px;height:13px;top:0}
   .pf{flex-direction:column;align-items:flex-start;gap:6px}
 }

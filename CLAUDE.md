@@ -57,7 +57,8 @@ the notebook described there; `main` still carries the frozen board.
 - The empty line's placeholder names the tag a new line will take
   (`NewTag`: the line above, then the `lastp` cookie, then the first project).
 - No tick buttons: actions are words that appear on hover at the line's end
-  («закреслити», «→ беклог», «повернути»); on a phone they are always visible.
+  («закреслити», «→ беклог», «видалити», «повернути»); on a phone they show on
+  the line whose square was tapped (a tap on the square toggles focus).
 - The page is morphed after every save. `app.js` remembers which line was
   being edited (and the caret) at swap time and reopens it, so a blur-save
   never swallows the click that started editing another line. Sortable
