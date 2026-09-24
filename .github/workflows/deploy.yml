@@ -1,0 +1,32 @@
+# Push to main → tests → Dokploy rebuilds and restarts the app.
+# The webhook URL comes from Dokploy (the app's Deployments tab) and lives in
+# the repository secret DOKPLOY_WEBHOOK; without the secret the job only tests.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test ./...
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: trigger Dokploy
+        env:
+          URL: ${{ secrets.DOKPLOY_WEBHOOK }}
+        run: |
+          if [ -z "$URL" ]; then echo "DOKPLOY_WEBHOOK is not set; skipping"; exit 0; fi
+          curl -fsS -X POST "$URL"

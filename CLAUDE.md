@@ -2,8 +2,8 @@
 
 Personal task board: Go + htmx 4 + SQLite. Single user, single binary.
 
-Read [PLAN.md](PLAN.md) first. The `notebook` branch replaces the board with
-the notebook described there; `main` still carries the frozen board.
+Read [PLAN.md](PLAN.md) first. `main` is the notebook described there; the
+frozen board it replaced is history before `38c6ce8`.
 
 ## Conventions
 - Commit messages: short, lowercase first letter, no trailers (no Co-Authored-By).
@@ -22,7 +22,7 @@ the notebook described there; `main` still carries the frozen board.
 - Dialogs: `[data-confirm]` opens the in-app modal, never `confirm()`.
 - Lists breathe: no hairlines between rows, sections separated by space.
 
-## The notebook (branch `notebook`)
+## The notebook
 - A page per day, a line per task. The stored model did not change: an open
   line is a task in `now`, a struck line is `done` on the day of `done_at`,
   the backlog page is `backlog`. Waiting is the `waiting` note.
@@ -92,3 +92,8 @@ the notebook described there; `main` still carries the frozen board.
     go run .            # http://localhost:8080, db at ./dayboard.db
     go test ./...
     docker compose up --build   # distroless image, /data volume, see README
+
+## Release
+A push to `main` is a release: the workflow tests, then calls the Dokploy
+webhook and the box rebuilds. Work on a branch, merge when it is meant to go
+live.
