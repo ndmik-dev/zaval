@@ -50,10 +50,10 @@ external and joined by the service, the domain is added in the Domains tab
 (service `zaval`, port `8080`), and `PASSWORD` goes in the Environment tab.
 
 Releases are pushes to `main`: [deploy.yml](.github/workflows/deploy.yml)
-runs the tests and then calls the app's Dokploy webhook (repository secret
-`DOKPLOY_WEBHOOK`, copied from the app's Deployments tab), and Dokploy pulls
-`main`, rebuilds the image on the box and restarts the service. Dokploy's own
-"Auto Deploy" stays off, so a red test never reaches the server.
+runs the tests and, when they pass, moves the `release` branch to that commit.
+Dokploy watches `release` (Provider: GitHub, branch `release`, trigger On
+Push), pulls it, rebuilds the image on the box and restarts the service. A red
+test never moves `release`, so it never reaches the server.
 
 Backups: with `BACKUP_DIR` set (the image sets `/data/backups`) the server
 writes `dayboard-YYYY-MM-DD.db` every night at 03:00 and keeps 30. To restore,

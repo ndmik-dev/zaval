@@ -1,13 +1,14 @@
-# Push to main → tests → Dokploy rebuilds and restarts the app.
-# The webhook URL comes from Dokploy (the app's Deployments tab) and lives in
-# the repository secret DOKPLOY_WEBHOOK; without the secret the job only tests.
+# Push to main → tests → the `release` branch is moved to main.
+# Dokploy watches `release` through its GitHub app (Trigger Type: On Push), so
+# the box rebuilds only from commits the tests have passed. No webhook, no
+# secret: what is live is always what `release` points at.
 name: deploy
 
 on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch: # `gh workflow run deploy` redeploys main without a commit
+  workflow_dispatch: # `gh workflow run deploy` re-releases main by hand
 
 jobs:
   test:
@@ -20,14 +21,15 @@ jobs:
       - run: go vet ./...
       - run: go test ./...
 
-  deploy:
+  release:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: trigger Dokploy
-        env:
-          URL: ${{ secrets.DOKPLOY_WEBHOOK }}
-        run: |
-          if [ -z "$URL" ]; then echo "DOKPLOY_WEBHOOK is not set; skipping"; exit 0; fi
-          curl -fsS -X POST "$URL"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: move release to main
+        run: git push origin HEAD:release

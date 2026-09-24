@@ -94,6 +94,6 @@ frozen board it replaced is history before `38c6ce8`.
     docker compose up --build   # distroless image, /data volume, see README
 
 ## Release
-A push to `main` is a release: the workflow tests, then calls the Dokploy
-webhook and the box rebuilds. Work on a branch, merge when it is meant to go
-live.
+A push to `main` is a release: the workflow tests, then fast-forwards the
+`release` branch, which Dokploy deploys. Never push `release` by hand. Work on
+a branch, merge to `main` when it is meant to go live.
