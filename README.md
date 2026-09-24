@@ -64,14 +64,10 @@ position, so the Ukrainian layout is fine).
 | `1` `2` `3` `4` | Сьогодні / Беклог / Релізи / Проєкти |
 | `?` | the full list |
 
-<p>
-<img src="docs/phone.png" width="300" align="left" alt="The same page on a phone">
 On a phone the row of words moves to the bottom, the page is installable as a
 PWA, and the words for a line («закреслити», «→ беклог») appear when you tap
 its square. The service worker is network-first: a new build shows up on the
 next reload.
-</p>
-<br clear="all">
 
 ## Run
 
