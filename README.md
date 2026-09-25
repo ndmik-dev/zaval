@@ -1,7 +1,5 @@
 # Day Board
 
-[![deploy](https://github.com/ndmik-dev/zaval/actions/workflows/deploy.yml/badge.svg)](https://github.com/ndmik-dev/zaval/actions/workflows/deploy.yml)
-
 A notebook for the working day: one page per day, one line per task.
 Write a line, strike it when it is done. Yesterday's struck lines sit under
 today's — that is the standup.
