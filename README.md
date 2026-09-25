@@ -1,5 +1,7 @@
 # Day Board
 
+[![deploy](https://github.com/ndmik-dev/zaval/actions/workflows/deploy.yml/badge.svg)](https://github.com/ndmik-dev/zaval/actions/workflows/deploy.yml)
+
 A notebook for the working day: one page per day, one line per task.
 Write a line, strike it when it is done. Yesterday's struck lines sit under
 today's — that is the standup.
@@ -113,3 +115,7 @@ Backups: every night at 03:00 the server writes `dayboard-YYYY-MM-DD.db` into
 Why there is no board, no dates, no states to pick from, and what comes next
 (live status on the chips): [PLAN.md](PLAN.md). Conventions for working on the
 code: [CLAUDE.md](CLAUDE.md).
+
+## License
+
+MIT.
