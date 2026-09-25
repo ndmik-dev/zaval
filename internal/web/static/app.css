@@ -9,7 +9,7 @@
   --faint:#9BA098;
   --line:#D6D8D0;
   --line-2:#E2E4DD;
-  --atlas:#2F5D50;
+  --accent:#2F5D50;
   --attention:#A3413A;
   --attention-bg:#F4E7E4;
   --mono:"IBM Plex Mono",ui-monospace,"SF Mono",monospace;
@@ -23,7 +23,7 @@ body{
   font-size:15.5px;line-height:1.45;font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;
 }
-a{color:var(--atlas);text-decoration:none}
+a{color:var(--accent);text-decoration:none}
 .mono{font-family:var(--mono)}
 .grow{flex:1}
 .dim{color:var(--faint);font-weight:400}
@@ -95,7 +95,7 @@ a{color:var(--atlas);text-decoration:none}
 .ln .raw::selection{background:rgba(47,93,80,.22)}
 .ln .hl{position:absolute;inset:0;pointer-events:none;color:var(--ink)}
 .hl .u{color:var(--muted);text-decoration:underline;text-decoration-color:#C3C7BE;text-underline-offset:3px}
-.hl .h{color:var(--atlas);font-weight:500}
+.hl .h{color:var(--accent);font-weight:500}
 .hl .w{color:var(--attention)}
 .hl .c,.hl .r{color:var(--muted)}
 .ln.editing{background:var(--card);box-shadow:0 0 0 1px var(--line)}
@@ -109,7 +109,7 @@ a{color:var(--atlas);text-decoration:none}
 }
 .ch b{color:var(--ink);font-weight:500}
 .ch i{width:7px;height:7px;border-radius:50%;background:#B9BDB5;display:inline-block;flex:none}
-.ch i.ok{background:var(--atlas)}
+.ch i.ok{background:var(--accent)}
 .ch i.amber{background:#B7791F}
 a.ch:hover{color:var(--ink)}
 .ch:hover b{text-decoration:underline;text-decoration-color:#B9BDB5}
@@ -137,7 +137,7 @@ a.ch:hover{color:var(--ink)}
 .ci .box.dashed{border-style:dashed;border-color:#C9CCC5;cursor:default}
 .ci.hist:hover{background:transparent}
 /* Action words: padding hugs the word, so a focus ring hugs it too. */
-.act{align-self:flex-start;font:inherit;font-size:14.5px;color:var(--atlas);background:none;border:0;padding:2px 5px;margin:4px 0 0 21px;border-radius:5px;cursor:pointer}
+.act{align-self:flex-start;font:inherit;font-size:14.5px;color:var(--accent);background:none;border:0;padding:2px 5px;margin:4px 0 0 21px;border-radius:5px;cursor:pointer}
 .act:hover{text-decoration:underline}
 .act:focus-visible{outline-offset:0}
 .act.ghost{color:var(--faint)}
@@ -192,7 +192,7 @@ a.ch:hover{color:var(--ink)}
 /* ---------- dialogs, buttons ---------- */
 .btn{font:inherit;font-size:15px;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:7px 13px 8px;cursor:pointer}
 .btn:hover{border-color:#B9BDB5}
-.btn.primary{font-weight:600;color:var(--card);background:var(--atlas);border-color:var(--atlas)}
+.btn.primary{font-weight:600;color:var(--card);background:var(--accent);border-color:var(--accent)}
 .btn.primary:hover{background:#274E43;border-color:#274E43}
 .btn.primary.danger{background:var(--attention);border-color:var(--attention)}
 .btn.primary.danger:hover{background:#8F372F;border-color:#8F372F}
@@ -225,7 +225,7 @@ dialog[open]{animation:dialog-in .16s var(--ease)}
 dialog[open]::backdrop{animation:fade-in .16s var(--ease)}
 @keyframes dialog-in{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:1.5px solid var(--atlas);outline-offset:3px;border-radius:6px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:1.5px solid var(--accent);outline-offset:3px;border-radius:6px}
 .box:focus-visible{outline-offset:2px;border-radius:5px}
 a:focus-visible{outline:0}
 .ln .raw:focus-visible,.ln-act :focus-visible,.pin:focus-visible,.pin input:focus-visible,.picker input:focus-visible,.login input:focus-visible{outline:0}

@@ -27,13 +27,13 @@ func TestMigrateAndSeed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(ps) != 7 {
-		t.Fatalf("want 7 projects, got %d", len(ps))
+	if len(ps) != 2 {
+		t.Fatalf("want 2 projects, got %d", len(ps))
 	}
 	if ps[0].Name != "Atlas" || ps[0].Slug != "atl" || ps[0].Kind != "work" {
 		t.Errorf("unexpected first project: %+v", ps[0])
 	}
-	if _, err := s.ProjectBySlug("tide"); err != nil {
+	if _, err := s.ProjectBySlug("harbor"); err != nil {
 		t.Fatal(err)
 	}
 	// Re-opening must not re-run migrations.
@@ -48,7 +48,7 @@ func TestTasks(t *testing.T) {
 		t.Fatal(err)
 	}
 	atl, _ := s.ProjectBySlug("atl")
-	nim, _ := s.ProjectBySlug("nim")
+	nim, _ := s.ProjectBySlug("harbor")
 	a, err := s.CreateTask(atl.ID, "first", "now")
 	if err != nil {
 		t.Fatal(err)
@@ -327,7 +327,7 @@ func TestBackup(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer copyDB.Close()
-	if ps, _ := copyDB.Projects(); len(ps) != 7 {
+	if ps, _ := copyDB.Projects(); len(ps) != 2 {
 		t.Errorf("backup has %d projects", len(ps))
 	}
 }

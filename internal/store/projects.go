@@ -61,12 +61,7 @@ func (s *Store) Seed() error {
 	}
 	seed := []Project{
 		{Name: "Atlas", Slug: "atl", Color: "#2F5D50", Kind: "work"},
-		{Name: "Nimbus", Slug: "nim", Color: "#7C4A6B", Kind: "work"},
 		{Name: "harbor", Slug: "harbor", Color: "#8A6A30", Kind: "pet"},
-		{Name: "kite", Slug: "kite", Color: "#4E6B8C", Kind: "pet"},
-		{Name: "moss", Slug: "moss", Color: "#7A5C99", Kind: "pet"},
-		{Name: "zaval", Slug: "zaval", Color: "#3E7D6E", Kind: "pet"},
-		{Name: "tide", Slug: "tide", Color: "#A0522D", Kind: "pet"},
 	}
 	tx, err := s.db.Begin()
 	if err != nil {
