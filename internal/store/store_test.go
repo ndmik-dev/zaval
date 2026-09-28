@@ -266,17 +266,17 @@ func TestChecklist(t *testing.T) {
 	s := testStore(t)
 	s.Seed()
 	atl, _ := s.ProjectBySlug("atl")
-	a, _ := s.AddChecklistItem(atl.ID, "before", "Merge release branch")
-	b, _ := s.AddChecklistItem(atl.ID, "before", "Run migrate check")
-	s.AddChecklistItem(atl.ID, "after", "Check Sentry")
-	if err := s.UpdateChecklistItem(b.ID, "Run migrations", "after"); err != nil {
+	a, _ := s.AddChecklistItem(atl.ID, "before", "Merge release branch", "")
+	b, _ := s.AddChecklistItem(atl.ID, "before", "Run migrate check", "")
+	s.AddChecklistItem(atl.ID, "after", "Check Sentry", "")
+	if err := s.UpdateChecklistItem(b.ID, "Run migrations", "https://github.com/acme/api/pull/1"); err != nil {
 		t.Fatal(err)
 	}
 	task, _ := s.CreateTask(atl.ID, "Rotate keys", "backlog")
 	s.SetChecklistItemTask(b.ID, task.ID)
 	s.ToggleChecklistItem(a.ID)
 	items, _ := s.Checklist(atl.ID)
-	if len(items) != 3 || !items[0].Done || items[1].Phase != "after" || items[1].TaskTitle.String != "Rotate keys" {
+	if len(items) != 3 || !items[0].Done || items[1].URL != "https://github.com/acme/api/pull/1" || items[1].TaskTitle.String != "Rotate keys" {
 		t.Fatalf("items: %+v", items)
 	}
 	if it, err := s.ChecklistItem(b.ID); err != nil || it.Title != "Run migrations" || it.TaskState.String != "backlog" {
@@ -304,7 +304,7 @@ func TestChecklist(t *testing.T) {
 	if hist, _ := s.ReleaseHistory(atl.ID, 5); hist[0].Items[1].TaskTitle.Valid {
 		t.Error("deleted task must unlink from history")
 	}
-	c, _ := s.AddChecklistItem(atl.ID, "before", "x")
+	c, _ := s.AddChecklistItem(atl.ID, "before", "x", "")
 	s.DeleteChecklistItem(c.ID)
 	if items, _ := s.Checklist(atl.ID); len(items) != 0 {
 		t.Error("delete failed")

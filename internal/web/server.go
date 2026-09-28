@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ndmik-dev/zaval/internal/links"
 	"github.com/ndmik-dev/zaval/internal/store"
 )
 
@@ -24,6 +25,12 @@ var funcs = template.FuncMap{
 	"add":    func(a, b int) int { return a + b },
 	"colors": func() []string { return projectColors },
 	"tagmap": tagmap,
+	"chip": func(u string) []links.Link {
+		if u == "" {
+			return nil
+		}
+		return []links.Link{links.Classify(u)}
+	},
 }
 
 // tagmap is "slug:#colour slug:#colour …" — app.js colours #tags in the editor with it.

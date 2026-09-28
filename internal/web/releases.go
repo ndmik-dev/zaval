@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ndmik-dev/zaval/internal/links"
 	"github.com/ndmik-dev/zaval/internal/store"
 )
 
@@ -38,8 +39,9 @@ func (s *Server) checklistView(p store.Project, now time.Time) (*checklistView, 
 		return nil, err
 	}
 	v := &checklistView{Project: p, Items: items, Total: len(items)}
-	for _, it := range items {
-		if it.Done {
+	for i := range v.Items {
+		v.Items[i].Title, v.Items[i].URL = splitLegacy(v.Items[i].Title, v.Items[i].URL)
+		if v.Items[i].Done {
 			v.Done++
 		}
 	}
@@ -53,8 +55,9 @@ func (s *Server) checklistView(p store.Project, now time.Time) (*checklistView, 
 		}
 		d := localDay(h.ReleasedAt, now.Location())
 		hv := historyView{ReleaseRecord: h, When: ukDate(d)}
-		for _, it := range h.Items {
-			if it.Done {
+		for j := range hv.Items {
+			hv.Items[j].Title, hv.Items[j].URL = splitLegacy(hv.Items[j].Title, hv.Items[j].URL)
+			if hv.Items[j].Done {
 				hv.Done++
 			}
 		}
@@ -129,11 +132,11 @@ func (s *Server) checklistAction(w http.ResponseWriter, r *http.Request, do func
 
 func (s *Server) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	s.checklistAction(w, r, func(p store.Project) error {
-		title := lineTitle(r)
+		title, url := lineTitle(r)
 		if title == "" {
 			return nil
 		}
-		_, err := s.store.AddChecklistItem(p.ID, "before", title)
+		_, err := s.store.AddChecklistItem(p.ID, "before", title, url)
 		return err
 	})
 }
@@ -188,11 +191,12 @@ func (s *Server) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) updateChecklistItem(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	if lineTitle(r) == "" {
+	title, url := lineTitle(r)
+	if title == "" {
 		s.itemAction(w, r, s.store.DeleteChecklistItem) // an emptied line is removed, like a notebook line
 		return
 	}
-	s.itemAction(w, r, func(id int64) error { return s.store.UpdateChecklistItem(id, lineTitle(r), "before") })
+	s.itemAction(w, r, func(id int64) error { return s.store.UpdateChecklistItem(id, title, url) })
 }
 
 func (s *Server) setChecklistItemTask(w http.ResponseWriter, r *http.Request) {
@@ -215,11 +219,28 @@ func (s *Server) taskOptions(w http.ResponseWriter, r *http.Request) {
 	s.renderPart(w, "releases", "task_options", map[string]any{"Tasks": found, "Item": itemID, "Query": q})
 }
 
-// lineTitle is the checklist line as typed: the notebook editor posts "raw",
-// older forms post "title".
-func lineTitle(r *http.Request) string {
-	if v := strings.TrimSpace(r.FormValue("raw")); v != "" {
-		return v
+// lineTitle is the checklist line as typed, split into its text and the first
+// link, which becomes a chip like on any other line.
+func lineTitle(r *http.Request) (title, url string) {
+	raw := strings.TrimSpace(r.FormValue("raw"))
+	if raw == "" {
+		raw = strings.TrimSpace(r.FormValue("title"))
 	}
-	return strings.TrimSpace(r.FormValue("title"))
+	title, ls := links.Parse(raw)
+	if len(ls) > 0 {
+		url = ls[0].URL
+	}
+	return title, url
+}
+
+// splitLegacy moves a link typed into an older line's title where it belongs.
+func splitLegacy(title, url string) (string, string) {
+	if url != "" {
+		return title, url
+	}
+	t, ls := links.Parse(title)
+	if len(ls) == 0 {
+		return title, ""
+	}
+	return t, ls[0].URL
 }

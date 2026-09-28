@@ -94,9 +94,9 @@ func TestPagesRender(t *testing.T) {
 	st := s.store
 	atl, _ := st.ProjectBySlug("atl")
 	st.CreateTask(atl.ID, "x", "now")
-	item, _ := st.AddChecklistItem(atl.ID, "before", "line")
+	item, _ := st.AddChecklistItem(atl.ID, "before", "line", "")
 	st.MarkReleased(atl.ID)
-	item, _ = st.AddChecklistItem(atl.ID, "before", "line 2")
+	item, _ = st.AddChecklistItem(atl.ID, "before", "line 2", "")
 	for _, path := range []string{"/", "/backlog", "/releases", "/releases?p=atl&i=" + itoa(item.ID), "/projects", "/projects?e=atl"} {
 		w := get(s, path, nil)
 		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "</html>") {

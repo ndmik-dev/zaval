@@ -29,6 +29,7 @@ type ReleaseRecord struct {
 type HistoryItem struct {
 	Phase     string
 	Title     string
+	URL       string
 	Done      bool
 	TaskID    sql.NullInt64
 	TaskTitle sql.NullString
@@ -74,10 +75,10 @@ func (s *Store) ChecklistProgress() (map[int64]Progress, error) {
 	return out, rows.Err()
 }
 
-func (s *Store) AddChecklistItem(projectID int64, phase, title string) (ChecklistItem, error) {
-	res, err := s.db.Exec(`insert into release_templates (project_id, phase, title, position)
-		values (?, ?, ?, coalesce((select max(position) from release_templates where project_id = ?), 0) + 1)`,
-		projectID, phase, title, projectID)
+func (s *Store) AddChecklistItem(projectID int64, phase, title, url string) (ChecklistItem, error) {
+	res, err := s.db.Exec(`insert into release_templates (project_id, phase, title, url, position)
+		values (?, ?, ?, ?, coalesce((select max(position) from release_templates where project_id = ?), 0) + 1)`,
+		projectID, phase, title, url, projectID)
 	if err != nil {
 		return ChecklistItem{}, err
 	}
@@ -85,8 +86,8 @@ func (s *Store) AddChecklistItem(projectID int64, phase, title string) (Checklis
 	return ChecklistItem{ID: id, ProjectID: projectID, Phase: phase, Title: title}, nil
 }
 
-func (s *Store) UpdateChecklistItem(id int64, title, phase string) error {
-	_, err := s.db.Exec(`update release_templates set title = ?, phase = ? where id = ?`, title, phase, id)
+func (s *Store) UpdateChecklistItem(id int64, title, url string) error {
+	_, err := s.db.Exec(`update release_templates set title = ?, url = ? where id = ?`, title, url, id)
 	return err
 }
 
@@ -145,8 +146,8 @@ func (s *Store) MarkReleased(projectID int64) error {
 		return err
 	}
 	id, _ := res.LastInsertId()
-	if _, err := tx.Exec(`insert into release_items (release_id, phase, title, done, position, task_id)
-		select ?, phase, title, done, position, task_id from release_templates where project_id = ? order by position, id`, id, projectID); err != nil {
+	if _, err := tx.Exec(`insert into release_items (release_id, phase, title, url, done, position, task_id)
+		select ?, phase, title, url, done, position, task_id from release_templates where project_id = ? order by position, id`, id, projectID); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`delete from release_templates where project_id = ?`, projectID); err != nil {
@@ -174,14 +175,14 @@ func (s *Store) ReleaseHistory(projectID int64, limit int) ([]ReleaseRecord, err
 	}
 	rows.Close()
 	for i := range out {
-		irows, err := s.db.Query(`select i.phase, i.title, i.done, i.task_id, t.title, t.state from release_items i left join tasks t on t.id = i.task_id
+		irows, err := s.db.Query(`select i.phase, i.title, i.url, i.done, i.task_id, t.title, t.state from release_items i left join tasks t on t.id = i.task_id
 			where i.release_id = ? order by i.position, i.id`, out[i].ID)
 		if err != nil {
 			return nil, err
 		}
 		for irows.Next() {
 			var it HistoryItem
-			if err := irows.Scan(&it.Phase, &it.Title, &it.Done, &it.TaskID, &it.TaskTitle, &it.TaskState); err != nil {
+			if err := irows.Scan(&it.Phase, &it.Title, &it.URL, &it.Done, &it.TaskID, &it.TaskTitle, &it.TaskState); err != nil {
 				irows.Close()
 				return nil, err
 			}

@@ -6,9 +6,10 @@
   <button type="button" class="box" hx-post="/checklist-items/{{$it.ID}}/toggle" aria-label="{{if $it.Done}}Зняти відмітку{{else}}Зроблено{{end}}"></button>
   <div class="tx" data-edit>
     <span class="t">{{$it.Title}}</span>
+    {{template "chips" (chip $it.URL)}}
     {{if $it.TaskID.Valid}}<a class="ch" href="/#task-{{$it.TaskID.Int64}}" title="{{$it.TaskTitle.String}}"><i{{if eq $it.TaskState.String "done"}} class="ok"{{end}}></i>{{$it.TaskTitle.String}}</a>{{end}}
   </div>
-  <div class="ed" hidden><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" autocomplete="off" spellcheck="false">{{$it.Title}}</textarea></div>
+  <div class="ed" hidden><div class="hl" aria-hidden="true"></div><textarea class="raw" name="raw" rows="1" autocomplete="off" spellcheck="false">{{$it.Title}}{{with $it.URL}} {{.}}{{end}}</textarea></div>
   <span class="ln-act">
     <button type="button" class="strike" hx-post="/checklist-items/{{$it.ID}}/toggle" title="⌘⏎">{{if $it.Done}}зняти{{else}}зроблено{{end}}</button>
     {{if eq .Page "releases"}}
@@ -41,6 +42,7 @@
   <span class="box{{if .Done}} on{{end}}" aria-hidden="true"></span>
   <div class="tx">
     <span class="t">{{.Title}}</span>
+    {{template "chips" (chip .URL)}}
     {{if .TaskID.Valid}}<a class="ch" href="/#task-{{.TaskID.Int64}}"><i{{if eq .TaskState.String "done"}} class="ok"{{end}}></i>{{.TaskTitle.String}}</a>{{end}}
   </div>
 </div>

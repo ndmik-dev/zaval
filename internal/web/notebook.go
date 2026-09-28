@@ -290,8 +290,9 @@ func (s *Server) line(t store.Task, now time.Time) (line, error) {
 			return l, err
 		}
 		b := &releaseBlock{Items: items, Total: len(items)}
-		for _, it := range items {
-			if it.Done {
+		for i := range b.Items {
+			b.Items[i].Title, b.Items[i].URL = splitLegacy(b.Items[i].Title, b.Items[i].URL)
+			if b.Items[i].Done {
 				b.Done++
 			}
 		}
